@@ -66,16 +66,6 @@
     var $meta = $("#reader-meta");
     var $lyrics = $("#reader-lyrics");
     var $back = $("#reader-back-song");
-    var $meaning = $("#reader-meaning");
-
-    function hubUrl() {
-      return (
-        "meaning-hub.html?id=" +
-        encodeURIComponent(String(id)) +
-        "&track=" +
-        encodeURIComponent(String(trackIdx))
-      );
-    }
 
     function showTrack(t) {
       t = t || {};
@@ -86,16 +76,8 @@
       } else {
         $artist.text("").attr("hidden", "");
       }
-      var parts = [];
-      if (window.SongShareThread && id && !isNaN(id)) {
-        try {
-          var n = window.SongShareThread.totalItems(id, trackIdx);
-          if (n) parts.push(String(n) + " thread note" + (n === 1 ? "" : "s"));
-        } catch (e) {}
-      }
-      $meta.text(parts.join(" · "));
+      $meta.text("");
       $back.attr("href", "song.html?id=" + encodeURIComponent(String(id)) + "&track=" + encodeURIComponent(String(trackIdx)));
-      $meaning.attr("href", hubUrl());
     }
 
     function applyLyricsHtml(html) {
@@ -153,7 +135,6 @@
     showTrack({ title: qTitle, artist: qArtist });
     document.title = (qTitle || "Lyrics") + " — Song Share";
     $back.attr("href", "home.html");
-    $meaning.attr("href", "home.html");
     if (qArtist && qTitle) {
       runFetch(qArtist, qTitle);
     } else if (qTitle && window.SongShareLyrics) {

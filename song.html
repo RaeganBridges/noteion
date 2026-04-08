@@ -7,6 +7,12 @@
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="song.css" />
     <link rel="stylesheet" href="auth.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body class="song-page">
     <div class="page">
@@ -90,7 +96,7 @@
                           aria-labelledby="song-heading"
                           tabindex="0"
                           role="link"
-                          aria-label="Song sheet — open full lyrics"
+                          aria-label="Song sheet — open lyrics notebook"
                         >
                           <div class="sheet-lines" aria-hidden="true"></div>
                           <div class="sheet-body sheet-body--song">
@@ -113,15 +119,15 @@
                   <div class="detail-column detail-column--meaning">
                     <div class="sheet-stack">
                       <div class="sheet-tabs sheet-tabs--right" role="toolbar" aria-label="Close">
-                        <button type="button" class="tab-btn tab-btn--close js-close" aria-label="Back to albums">×</button>
+                        <button type="button" class="tab-btn tab-btn--close js-close" aria-label="Back to board">×</button>
                       </div>
                       <div class="sheet-turn sheet-turn--meaning js-sheet-turn-meaning">
                         <section
                           class="detail-panel detail-panel--meaning sheet js-meaning-paper"
                           aria-labelledby="meaning-heading"
                           tabindex="0"
-                          role="link"
-                          aria-label="Meaning sheet — open meaning and thread"
+                          role="button"
+                          aria-label="Meaning sheet — open meaning notebook"
                         >
                           <div class="sheet-lines" aria-hidden="true"></div>
                           <div class="sheet-body">
@@ -149,11 +155,57 @@
       </footer>
     </div>
 
+    <div
+      id="song-sheet-modal"
+      class="song-sheet-modal"
+      hidden
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sheet-modal-title"
+    >
+      <button type="button" class="song-sheet-modal__scrim js-sheet-modal-close" tabindex="-1" aria-label="Close"></button>
+      <div class="song-sheet-modal__stage">
+        <div class="song-sheet-modal__slips js-modal-slips" aria-hidden="true"></div>
+        <article class="song-sheet-modal__paper">
+          <button type="button" class="song-sheet-modal__x js-sheet-modal-close" aria-label="Close">×</button>
+          <div class="song-sheet-modal__paper-lines" aria-hidden="true"></div>
+          <div class="song-sheet-modal__content">
+            <h2 id="sheet-modal-title" class="song-sheet-modal__title js-modal-script-title">—</h2>
+            <div class="song-sheet-modal__track-meta">
+              <p class="song-sheet-modal__track-artist js-modal-track-artist" hidden></p>
+              <p class="song-sheet-modal__track-released js-modal-track-released" hidden></p>
+            </div>
+
+            <div class="song-sheet-modal__sheet-body js-modal-body-song">
+              <div class="song-sheet-modal__lyrics-annotated js-modal-lyrics-annotated">
+                <div class="song-sheet-modal__lyrics-block">
+                  <div class="song-sheet-modal__lyrics js-modal-lyrics" role="text"></div>
+                  <div class="song-sheet-modal__modal-margin-slips js-modal-margin-slips" aria-hidden="true"></div>
+                </div>
+                <p class="song-sheet-modal__orphan-annotations-hint js-modal-orphan-hint" hidden>
+                  Extra slips (no matching highlight in order) — highlight lyrics in the editor so each slip can sit beside a line.
+                </p>
+                <div class="song-sheet-modal__orphan-annotations js-modal-orphan-slips" hidden></div>
+              </div>
+            </div>
+
+            <div class="song-sheet-modal__sheet-body song-sheet-modal__sheet-body--meaning js-modal-body-meaning" hidden>
+              <p class="song-sheet-modal__meaning-kicker">Meaning</p>
+              <div class="song-sheet-modal__meaning prose js-modal-meaning"></div>
+              <p class="song-sheet-modal__meaning-sub js-modal-meaning-meta"></p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
     <script src="auth-storage.js"></script>
     <script src="auth-gate.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="genres-data.js"></script>
     <script src="published-feed.js"></script>
+    <script src="song-comments.js"></script>
     <script src="song-page.js"></script>
   </body>
 </html>

@@ -1,5 +1,5 @@
 /**
- * Profile — desk rail + publish (lyrics, highlights, margin slips, meaning).
+ * Profile — desk rail + publish (lyrics, highlights, publisher annotation slips, meaning).
  */
 (function ($) {
   "use strict";
@@ -289,6 +289,8 @@
     var existing = editingPubId ? findUpload(session, editingPubId) : null;
     var songPublishedAt =
       existing && existing.songPublishedAt ? existing.songPublishedAt : now;
+    var meaningPublishedAt =
+      existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : now;
 
     var entry = {
       id: pubId,
@@ -299,7 +301,7 @@
       lyricsHtml: lyricsHtml,
       meaningText: meaningText,
       meaningAuthor: displayName,
-      meaningPublishedAt: now,
+      meaningPublishedAt: meaningPublishedAt,
       songPublishedAt: songPublishedAt,
       genreTags: genreTags,
       stickyNotes: collectStickies(),
