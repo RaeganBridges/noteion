@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Song Share</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="auth.css" />
+  </head>
+  <body>
+    <div class="page">
+      <div class="page-loading" aria-hidden="true"></div>
+
+      <header class="page-header">
+        <div class="header-brand">
+          <h1 class="logo">Song Share</h1>
+        </div>
+        <nav class="header-actions" aria-label="Toolbar">
+          <button type="button" class="icon-btn js-open-setlist" aria-label="Open genre list" aria-expanded="false" aria-controls="genre-setlist">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+          <a href="home.html" class="icon-btn" aria-label="Home" title="Home" aria-current="page">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm12-5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+          <a href="profile.html" class="icon-btn" aria-label="Profile">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M4 20c2-4 6-6 8-6s6 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </a>
+        </nav>
+      </header>
+
+      <main class="page-main">
+        <div class="main-back" aria-hidden="true"></div>
+        <div class="main-book" aria-hidden="true"></div>
+        <div class="main-fore" aria-hidden="true"></div>
+
+        <div class="board-wrap">
+          <div class="decade-tab" aria-hidden="true">
+            <span class="decade-text">Decade</span>
+          </div>
+          <div class="board-scroll-hint" aria-hidden="true">Scroll</div>
+          <div class="board-scroll" tabindex="0">
+            <div class="scrapbook-board" id="genre-board" aria-label="Top music genres"></div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-sns" aria-label="Listen on streaming apps">
+          <a class="sns-chip" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Open Spotify">Spotify</a>
+          <a class="sns-chip" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open Apple Music">Apple Music</a>
+          <a class="sns-chip" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="Open YouTube">YouTube</a>
+        </div>
+        <p class="footer-audio-credit">
+          Genre hover clips: Kevin MacLeod —
+          <a href="https://incompetech.com/music/royalty-free/music.html" target="_blank" rel="noopener noreferrer">incompetech.com</a>
+          (CC BY 4.0).
+        </p>
+      </footer>
+
+      <div class="page-setlist" id="genre-setlist" data-popup aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="setlist-title">
+        <div class="setlist-backdrop js-close-setlist" tabindex="-1"></div>
+        <div class="setlist-panel">
+          <div class="setlist-scroll">
+            <h2 id="setlist-title" class="setlist-heading">Setlist</h2>
+            <p class="setlist-lede">Twenty genres, most popular first. Tap a row to jump and center it in the horizontal strip.</p>
+            <ol class="setlist-list js-setlist-list"></ol>
+          </div>
+          <button type="button" class="setlist-close js-close-setlist" aria-label="Close">
+            <span class="setlist-close-text">Close</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="auth-storage.js"></script>
+    <script src="auth-gate.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="genres-data.js"></script>
+    <script src="published-feed.js"></script>
+    <script src="song-share.js"></script>
+  </body>
+</html>

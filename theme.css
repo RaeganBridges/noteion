@@ -1,0 +1,254 @@
+/* Shared shell — matches home.html (styles.css) for inner pages */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --void: #050506;
+  --ink: #0c0c0e;
+  --panel: #101014;
+  --line: rgba(250, 248, 240, 0.12);
+  --muted: rgba(250, 248, 240, 0.55);
+  --cream: #f6f3ea;
+  --paper: #ebe6dc;
+  --accent: #c4a574;
+  --vinyl: #121214;
+  --vinyl-groove: #2a2a2e;
+  --shadow: rgba(0, 0, 0, 0.45);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --safe-x: env(safe-area-inset-left, 0px);
+  --safe-x-right: env(safe-area-inset-right, 0px);
+  --safe-y-top: env(safe-area-inset-top, 0px);
+  --safe-y-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: var(--cream);
+  background: var(--void);
+}
+
+.page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.page-header {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding:
+    max(1.1rem, var(--safe-y-top)) max(1.25rem, var(--safe-x-right)) 0.85rem max(1.25rem, var(--safe-x));
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(8, 8, 10, 0.94) 0%, rgba(8, 8, 10, 0.72) 100%);
+  backdrop-filter: blur(10px);
+}
+
+.header-brand {
+  min-width: 0;
+}
+
+.logo {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.logo a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.logo a:hover {
+  color: var(--accent);
+}
+
+.header-tagline {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cream);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(250, 248, 240, 0.06);
+  border-color: var(--line);
+}
+
+.icon-btn[aria-expanded="true"] {
+  background: rgba(196, 165, 116, 0.15);
+  border-color: rgba(196, 165, 116, 0.35);
+  color: var(--accent);
+}
+
+/* Decorative toolbar glyphs (match home chrome without implying a control) */
+.icon-btn--quiet {
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+.page-main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-back,
+.main-book,
+.main-fore {
+  position: absolute;
+  inset: -8%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.main-back {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 20%, rgba(196, 165, 116, 0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(120, 140, 200, 0.06) 0%, transparent 50%),
+    var(--ink);
+  transition: transform 0.35s ease-out;
+}
+
+.main-book {
+  background:
+    linear-gradient(105deg, rgba(250, 248, 240, 0.03) 0%, transparent 42%),
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 3px,
+      rgba(250, 248, 240, 0.02) 3px,
+      rgba(250, 248, 240, 0.02) 4px
+    );
+  mix-blend-mode: soft-light;
+  opacity: 0.5;
+  transition: transform 0.45s ease-out;
+}
+
+.main-fore {
+  background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(0, 0, 0, 0.5) 0%, transparent 65%);
+  transition: transform 0.55s ease-out;
+}
+
+/* Scrollable page content above the depth layers */
+.subpage-inner {
+  position: relative;
+  z-index: 10;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-footer {
+  position: relative;
+  z-index: 50;
+  padding: 1.5rem max(1.25rem, var(--safe-x-right)) max(2rem, calc(1rem + var(--safe-y-bottom))) max(
+    1.25rem,
+    var(--safe-x)
+  );
+  border-top: 1px solid var(--line);
+  background: linear-gradient(0deg, rgba(5, 5, 6, 0.98) 0%, rgba(5, 5, 6, 0.88) 100%);
+}
+
+.footer-sns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sns-chip {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--muted);
+  padding: 0.2rem 0;
+  border-bottom: 1px solid transparent;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.sns-chip:hover {
+  color: var(--cream);
+  border-color: var(--line);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .icon-btn {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-actions {
+    align-self: flex-end;
+    margin-top: -0.25rem;
+  }
+}
