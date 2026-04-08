@@ -9,6 +9,7 @@
   var genres = window.SONG_SHARE_GENRES || [];
 
   var $openBtn;
+  var $lyricsSearchBtn;
   var parallaxRaf = null;
   /** Browsers block audio.play() until there has been a user gesture; hover alone is not enough. */
   var genreAudioPrimed = false;
@@ -209,6 +210,7 @@
   }
 
   function openSetlist() {
+    closeLyricsSearch();
     var $popup = $("#genre-setlist");
     $popup.addClass("is-open").attr("aria-hidden", "false");
     $("body").addClass("is-popup-open");
@@ -227,6 +229,46 @@
     $openBtn.trigger("focus");
   }
 
+  function openLyricsSearch() {
+    closeSetlist();
+    var $popup = $("#lyrics-search-panel");
+    $popup.addClass("is-open").attr("aria-hidden", "false");
+    $("body").addClass("is-popup-open");
+    if ($lyricsSearchBtn && $lyricsSearchBtn.length) {
+      $lyricsSearchBtn.attr("aria-expanded", "true");
+    }
+    $("#lyrics-q-title").trigger("focus");
+  }
+
+  function closeLyricsSearch() {
+    var $popup = $("#lyrics-search-panel");
+    $popup.removeClass("is-open").attr("aria-hidden", "true");
+    $("body").removeClass("is-popup-open");
+    if ($lyricsSearchBtn && $lyricsSearchBtn.length) {
+      $lyricsSearchBtn.attr("aria-expanded", "false");
+      $lyricsSearchBtn.trigger("focus");
+    }
+  }
+
+  function bindLyricsSearch() {
+    $lyricsSearchBtn = $(".js-open-lyrics-search");
+    if (!$lyricsSearchBtn.length) return;
+    $lyricsSearchBtn.on("click", function () {
+      openLyricsSearch();
+    });
+    $(".js-close-lyrics-search").on("click", function () {
+      closeLyricsSearch();
+    });
+    $(".js-submit-lyrics-search").on("click", function () {
+      var title = String($("#lyrics-q-title").val() || "").trim();
+      var artist = String($("#lyrics-q-artist").val() || "").trim();
+      if (!title) return;
+      var url = "song-reader.html?q=" + encodeURIComponent(title);
+      if (artist) url += "&artist=" + encodeURIComponent(artist);
+      window.location.href = url;
+    });
+  }
+
   function bindSetlist() {
     $openBtn = $(".js-open-setlist");
     $openBtn.on("click", function () {
@@ -238,8 +280,12 @@
     });
 
     $(document).on("keydown", function (e) {
-      if (e.key === "Escape" && $("#genre-setlist").hasClass("is-open")) {
+      if (e.key !== "Escape") return;
+      if ($("#genre-setlist").hasClass("is-open")) {
         closeSetlist();
+      }
+      if ($("#lyrics-search-panel").hasClass("is-open")) {
+        closeLyricsSearch();
       }
     });
 
@@ -336,6 +382,7 @@
     bindHover();
     bindCardNavigation();
     bindSetlist();
+    bindLyricsSearch();
     bindLoading();
     bindParallax();
     bindBoardScrollWheel();

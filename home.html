@@ -21,6 +21,18 @@
               <path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
           </button>
+          <button
+            type="button"
+            class="icon-btn js-open-lyrics-search"
+            aria-label="Search lyrics"
+            aria-expanded="false"
+            aria-controls="lyrics-search-panel"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M14 14l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
           <a href="home.html" class="icon-btn" aria-label="Home" title="Home" aria-current="page">
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -80,6 +92,34 @@
             <ol class="setlist-list js-setlist-list"></ol>
           </div>
           <button type="button" class="setlist-close js-close-setlist" aria-label="Close">
+            <span class="setlist-close-text">Close</span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="page-lyrics-search"
+        id="lyrics-search-panel"
+        data-popup
+        aria-hidden="true"
+        aria-modal="true"
+        role="dialog"
+        aria-labelledby="lyrics-search-title"
+      >
+        <div class="lyrics-search-backdrop js-close-lyrics-search" tabindex="-1"></div>
+        <div class="lyrics-search-panel">
+          <div class="lyrics-search-scroll">
+            <h2 id="lyrics-search-title" class="setlist-heading">Lyrics search</h2>
+            <p class="setlist-lede">Open the lyrics reader. Add a title; artist improves matches.</p>
+            <label class="lyrics-search-label" for="lyrics-q-title">Title</label>
+            <input id="lyrics-q-title" class="lyrics-search-input" type="search" autocomplete="off" placeholder="Song title" />
+            <label class="lyrics-search-label" for="lyrics-q-artist">Artist</label>
+            <input id="lyrics-q-artist" class="lyrics-search-input" type="search" autocomplete="off" placeholder="Optional" />
+            <div class="lyrics-search-actions">
+              <button type="button" class="lyrics-search-submit js-submit-lyrics-search">Open reader</button>
+            </div>
+          </div>
+          <button type="button" class="setlist-close js-close-lyrics-search" aria-label="Close">
             <span class="setlist-close-text">Close</span>
           </button>
         </div>

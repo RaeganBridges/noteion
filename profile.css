@@ -698,7 +698,8 @@ body.composer-open {
   background: linear-gradient(145deg, #fffef6 0%, #f5ebc8 100%);
   border: 1px solid rgba(80, 70, 50, 0.28);
   box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
+  pointer-events: auto;
+  outline: none;
 }
 
 .composer-slip-actions {

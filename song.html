@@ -16,6 +16,12 @@
           <p class="header-tagline">Genre · two sheets · prev / next</p>
         </div>
         <nav class="header-actions" aria-label="Toolbar">
+          <a href="#" class="icon-btn js-open-reader" aria-label="Open full lyrics reader" title="Lyrics reader">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M14 14l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </a>
           <a href="home.html" class="icon-btn" aria-label="Back to genre board">
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -82,6 +88,9 @@
                         <section
                           class="detail-panel detail-panel--song sheet js-song-paper"
                           aria-labelledby="song-heading"
+                          tabindex="0"
+                          role="link"
+                          aria-label="Song sheet — open full lyrics"
                         >
                           <div class="sheet-lines" aria-hidden="true"></div>
                           <div class="sheet-body sheet-body--song">
@@ -110,6 +119,9 @@
                         <section
                           class="detail-panel detail-panel--meaning sheet js-meaning-paper"
                           aria-labelledby="meaning-heading"
+                          tabindex="0"
+                          role="link"
+                          aria-label="Meaning sheet — open meaning and thread"
                         >
                           <div class="sheet-lines" aria-hidden="true"></div>
                           <div class="sheet-body">

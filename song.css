@@ -537,6 +537,11 @@
   transform: rotate(2.8deg);
 }
 
+.detail-column--song .sheet.js-song-paper:focus-visible {
+  outline: 3px solid rgba(196, 165, 116, 0.95);
+  outline-offset: 4px;
+}
+
 .detail-column--meaning .sheet.js-meaning-paper:focus-visible {
   outline: 3px solid rgba(196, 165, 116, 0.95);
   outline-offset: 4px;

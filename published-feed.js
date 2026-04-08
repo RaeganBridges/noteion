@@ -21,6 +21,7 @@
   }
 
   function toDisplayTrack(p) {
+    var meaningText = p.meaningText != null ? String(p.meaningText).trim() : "";
     return {
       title: p.title || "Untitled",
       artist: p.artist || "",
@@ -29,6 +30,11 @@
       displayName: p.displayName || "",
       userPublished: true,
       pubId: p.id,
+      lyricsHtml: p.lyricsHtml || "",
+      meaning: meaningText,
+      meaningBy: p.meaningAuthor || "",
+      meaningAt: p.meaningPublishedAt || null,
+      stickyNotes: Array.isArray(p.stickyNotes) ? p.stickyNotes : [],
     };
   }
 

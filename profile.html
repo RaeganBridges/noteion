@@ -59,7 +59,7 @@
           <section class="profile-desk-section" aria-labelledby="desk-heading">
             <h2 id="desk-heading" class="profile-desk-heading">The desk</h2>
             <p id="profile-empty" class="profile-empty" hidden>
-              Nothing published yet. Use <strong>New song</strong> to add a title, optional artist, and genre tags, then publish to the board.
+              Nothing published yet. Use <strong>New song</strong> to add lyrics, a meaning, genre tags, then publish to the board.
             </p>
             <div id="profile-desk" class="profile-desk-rail" aria-label="Your published songs"></div>
           </section>
@@ -94,27 +94,73 @@
         </header>
         <div class="profile-composer-scroll">
           <p class="profile-composer-lede">
-            Add a track title, optional artist, and at least one genre. Published tracks appear on the home board under those genres.
+            Fetch or paste lyrics, highlight lines, add margin slips, and write what the song means. Pick at least one genre so it appears on the board.
           </p>
 
-          <div class="composer-workspace--simple">
-            <div class="composer-grid">
-              <div class="composer-field">
-                <label class="profile-label" for="composer-track-title">Title</label>
-                <input id="composer-track-title" class="profile-input" type="text" autocomplete="off" placeholder="Track name" />
+          <div class="composer-workspace">
+            <div class="composer-workspace-main">
+              <div class="composer-grid">
+                <div class="composer-field composer-field--row">
+                  <div class="composer-field-grow">
+                    <label class="profile-label" for="composer-track-title">Title</label>
+                    <input id="composer-track-title" class="profile-input" type="text" autocomplete="off" placeholder="Track name" />
+                  </div>
+                  <div class="composer-field-grow">
+                    <label class="profile-label profile-label--inline" for="composer-artist">Artist</label>
+                    <input id="composer-artist" class="profile-input" type="text" autocomplete="off" placeholder="For lyrics lookup" />
+                  </div>
+                  <button type="button" class="profile-fetch-lyrics js-fetch-lyrics">Fetch lyrics</button>
+                </div>
               </div>
-              <div class="composer-field">
-                <label class="profile-label" for="composer-artist">Artist</label>
-                <input id="composer-artist" class="profile-input" type="text" autocomplete="off" placeholder="Optional" />
+
+              <p class="profile-lyrics-status js-lyrics-status" role="status" aria-live="polite"></p>
+              <div class="profile-lyrics-picks js-lyrics-picks-wrap" hidden>
+                <p class="profile-lyrics-picks-title">Pick a match</p>
+                <ul class="profile-lyrics-picks-list js-lyrics-picks"></ul>
               </div>
+
+              <div class="composer-field">
+                <label class="profile-label" for="composer-meaning">Meaning</label>
+                <textarea
+                  id="composer-meaning"
+                  class="profile-textarea"
+                  rows="4"
+                  maxlength="8000"
+                  placeholder="What this song means to you…"
+                ></textarea>
+              </div>
+
+              <fieldset class="composer-genres">
+                <legend class="profile-label">Genre tags (at least one)</legend>
+                <div class="composer-genre-grid js-composer-genre-tags"></div>
+              </fieldset>
+
+              <div class="composer-slip-actions">
+                <button type="button" class="profile-slip-btn js-add-slip">Add margin slip</button>
+              </div>
+
+              <p class="composer-publish-hint">Remove a card from your desk to unpublish it from the board.</p>
             </div>
 
-            <fieldset class="composer-genres">
-              <legend class="profile-label">Genre tags (at least one)</legend>
-              <div class="composer-genre-grid js-composer-genre-tags"></div>
-            </fieldset>
-
-            <p class="composer-publish-hint">Remove a card from your desk to unpublish it from the board.</p>
+            <div class="composer-workspace-lyrics">
+              <label class="profile-label" for="composer-lyrics-ed">Lyrics</label>
+              <div class="composer-hl-tools">
+                <button type="button" class="composer-hl-btn composer-hl-btn--amber js-hl" data-hl="lyric-hl--amber">Amber</button>
+                <button type="button" class="composer-hl-btn composer-hl-btn--mint js-hl" data-hl="lyric-hl--mint">Mint</button>
+                <button type="button" class="composer-hl-btn composer-hl-btn--rose js-hl" data-hl="lyric-hl--rose">Rose</button>
+                <button type="button" class="composer-hl-btn composer-hl-btn--sky js-hl" data-hl="lyric-hl--sky">Sky</button>
+                <button type="button" class="composer-hl-btn composer-hl-btn--clear js-hl-clear">Clear highlight</button>
+              </div>
+              <div class="composer-lyrics-stage">
+                <div
+                  id="composer-lyrics-ed"
+                  class="composer-lyrics-ed"
+                  contenteditable="true"
+                  data-placeholder="Paste lyrics or use Fetch lyrics…"
+                ></div>
+                <div class="composer-sticky-layer js-sticky-layer" aria-hidden="true"></div>
+              </div>
+            </div>
           </div>
         </div>
         <footer class="profile-composer-foot">
@@ -130,6 +176,7 @@
     <script src="genres-data.js"></script>
     <script src="published-feed.js"></script>
     <script src="uploads-storage.js"></script>
+    <script src="lyrics-api.js"></script>
     <script src="profile.js"></script>
   </body>
 </html>

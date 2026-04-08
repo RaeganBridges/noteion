@@ -32,6 +32,54 @@
     return [{ title: "—" }];
   }
 
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function newlinesToBrInLyricsHtml(s) {
+    s = String(s || "").replace(/\r\n/g, "\n");
+    s = s.replace(/>\s*\n\s*</g, "><");
+    return s.replace(/\n/g, "<br>");
+  }
+
+  function formatLyricsForDisplay(html) {
+    var s = String(html || "").trim();
+    if (!s) return "";
+    if (/<[a-z][\s\S]*>/i.test(s)) {
+      return newlinesToBrInLyricsHtml(s);
+    }
+    var stanzas = s.split(/\n\n+/);
+    return stanzas
+      .map(function (stanza) {
+        var t = stanza.trim();
+        if (!t) return "";
+        return "<p>" + escapeHtml(t).replace(/\n/g, "<br>") + "</p>";
+      })
+      .filter(Boolean)
+      .join("");
+  }
+
+  function readerUrlFor(id, trackIdx) {
+    return (
+      "song-reader.html?id=" +
+      encodeURIComponent(String(id)) +
+      "&track=" +
+      encodeURIComponent(String(trackIdx))
+    );
+  }
+
+  function meaningHubUrlFor(id, trackIdx) {
+    return (
+      "meaning-hub.html?id=" +
+      encodeURIComponent(String(id)) +
+      "&track=" +
+      encodeURIComponent(String(trackIdx))
+    );
+  }
+
   $(function () {
     var genres = window.SONG_SHARE_GENRES || [];
     var id = queryId();
@@ -52,7 +100,6 @@
     var $meaningTurn = $(".js-sheet-turn-meaning");
 
     $(".js-genre-label").text(g.name);
-    document.title = g.name + " — Song Share";
 
     function fmtWhen(ts) {
       if (ts == null || ts === "") return "";
@@ -61,6 +108,38 @@
       } catch (e) {
         return "";
       }
+    }
+
+    function renderStickies(notes) {
+      var $z = $(".js-song-stickies").empty();
+      if (!notes || !notes.length) {
+        $z.attr("aria-hidden", "true");
+        return;
+      }
+      $z.removeAttr("aria-hidden");
+      notes.forEach(function (n) {
+        if (!n || typeof n !== "object") return;
+        var left = typeof n.left === "number" ? n.left : parseFloat(n.left);
+        var top = typeof n.top === "number" ? n.top : parseFloat(n.top);
+        if (isNaN(left)) left = 8;
+        if (isNaN(top)) top = 12;
+        var $s = $("<div class=\"song-sticky\" />")
+          .css({ left: left + "%", top: top + "%" })
+          .text(n.text != null ? String(n.text) : "");
+        $z.append($s);
+      });
+    }
+
+    function syncNavLinks() {
+      $(".js-open-reader").attr("href", readerUrlFor(id, idx));
+    }
+
+    function openReader() {
+      window.location.href = readerUrlFor(id, idx);
+    }
+
+    function openMeaningHub() {
+      window.location.href = meaningHubUrlFor(id, idx);
     }
 
     function applyTrack(t) {
@@ -83,9 +162,16 @@
         $(".js-annotation-meta").text("").attr("hidden", "");
       }
 
+      var lh = t.lyricsHtml != null ? String(t.lyricsHtml).trim() : "";
       $(".js-song-lyrics").empty();
-      $(".js-song-lyrics-wrap").attr("hidden", "");
-      $(".js-song-stickies").empty().attr("aria-hidden", "true");
+      if (lh) {
+        $(".js-song-lyrics").html(formatLyricsForDisplay(lh));
+        $(".js-song-lyrics-wrap").removeAttr("hidden");
+      } else {
+        $(".js-song-lyrics-wrap").attr("hidden", "");
+      }
+
+      renderStickies(t.stickyNotes);
 
       var m = t.meaning != null ? String(t.meaning).trim() : "";
       $(".js-meaning").text(m ? m : "—");
@@ -97,6 +183,9 @@
       } else {
         $(".js-meaning-meta").text("").attr("hidden", "");
       }
+
+      document.title = (t.title || "Song") + " — " + g.name + " — Song Share";
+      syncNavLinks();
     }
 
     function clearFlipClasses() {
@@ -132,6 +221,38 @@
 
     showTrack(false);
     syncSongUrl(id, idx);
+
+    $(".js-open-reader").on("click", function (e) {
+      var href = $(this).attr("href");
+      if (!href || href === "#") {
+        e.preventDefault();
+        openReader();
+      }
+    });
+
+    $(".js-song-paper").on("click", function (e) {
+      if ($(e.target).closest("a, button").length) return;
+      openReader();
+    });
+
+    $(".js-song-paper").on("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openReader();
+      }
+    });
+
+    $(".js-meaning-paper").on("click", function (e) {
+      if ($(e.target).closest("a, button").length) return;
+      openMeaningHub();
+    });
+
+    $(".js-meaning-paper").on("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openMeaningHub();
+      }
+    });
 
     $(".js-prev").on("click", function (e) {
       e.stopPropagation();

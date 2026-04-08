@@ -668,6 +668,121 @@ body.is-popup-open {
   text-align: center;
 }
 
+/* —— Lyrics search drawer (home) —— */
+.page-lyrics-search {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: stretch;
+  padding: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility 0s linear 0.55s;
+}
+
+.page-lyrics-search.is-open {
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.lyrics-search-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 3, 4, 0.72);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.45s var(--ease-out);
+}
+
+.page-lyrics-search.is-open .lyrics-search-backdrop {
+  opacity: 1;
+}
+
+.lyrics-search-panel {
+  position: relative;
+  justify-self: end;
+  width: min(26rem, 100%);
+  height: 100%;
+  max-height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -24px 0 48px var(--shadow);
+  transform: translateX(100%);
+  transition: transform 0.55s var(--ease-out);
+}
+
+.page-lyrics-search.is-open .lyrics-search-panel {
+  transform: translateX(0);
+}
+
+.lyrics-search-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: max(2rem, calc(1rem + env(safe-area-inset-top, 0px))) max(1.35rem, env(safe-area-inset-right, 0px)) 1.25rem
+    max(1.35rem, env(safe-area-inset-left, 0px));
+  -webkit-overflow-scrolling: touch;
+}
+
+.lyrics-search-label {
+  display: block;
+  margin: 1rem 0 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lyrics-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--cream);
+  background: rgba(8, 8, 10, 0.65);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.lyrics-search-input:focus {
+  outline: 2px solid rgba(196, 165, 116, 0.45);
+  outline-offset: 1px;
+}
+
+.lyrics-search-actions {
+  margin-top: 1.25rem;
+}
+
+.lyrics-search-submit {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--void, #050506);
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.lyrics-search-submit:hover {
+  filter: brightness(1.06);
+}
+
 @media (hover: none) and (pointer: coarse) {
   .icon-btn {
     width: 2.75rem;
