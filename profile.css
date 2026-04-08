@@ -5,12 +5,23 @@
   --letter-long: 11in;
   /* Never wider than viewport minus safe padding (rotation bleed + rail inset) */
   --desk-safe-x: calc(env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px) + 3rem);
+  /* vh first for hosts / older WebKit where dvh is missing or flaky */
   --sheet-w: min(
     var(--letter-short),
     calc(100vw - var(--desk-safe-x)),
-    calc(min(var(--letter-long), calc(100dvh - 11rem)) * 8.5 / 11)
+    calc(min(var(--letter-long), calc(100vh - 11rem)) * 8.5 / 11)
   );
   --desk-overlap: clamp(1.75rem, 6vw, 3rem);
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --sheet-w: min(
+      var(--letter-short),
+      calc(100vw - var(--desk-safe-x)),
+      calc(min(var(--letter-long), calc(100dvh - 11rem)) * 8.5 / 11)
+    );
+  }
 }
 
 body.composer-open {
@@ -296,34 +307,56 @@ body.composer-open {
   position: fixed;
   inset: 0;
   z-index: 9500;
+  /* One grid cell so scrim + panel stack the same in every browser (avoids two implicit rows). */
   display: grid;
-  place-items: end stretch;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
   padding: 0;
+  isolation: isolate;
 }
 
 .profile-composer[hidden] {
   display: none !important;
 }
 
+.profile-composer-scrim,
+.profile-composer-panel {
+  grid-row: 1;
+  grid-column: 1;
+}
+
 .profile-composer-scrim {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(3, 3, 5, 0.72);
   backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .profile-composer-panel {
   position: relative;
+  z-index: 1;
+  align-self: end;
+  justify-self: end;
   width: min(52rem, 100%);
-  max-height: min(92dvh, 100%);
-  margin-left: auto;
+  max-height: min(92vh, 100%);
+  margin-left: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   background: rgba(18, 18, 22, 0.97);
   border: 1px solid var(--line, rgba(250, 248, 240, 0.12));
   border-right: none;
   border-radius: 12px 0 0 0;
   box-shadow: -20px 0 50px rgba(0, 0, 0, 0.45);
+}
+
+@supports (height: 100dvh) {
+  .profile-composer-panel {
+    max-height: min(92dvh, 100%);
+  }
 }
 
 .profile-composer-head {
@@ -404,7 +437,9 @@ body.composer-open {
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
-  max-width: 28rem;
+  width: 100%;
+  max-width: min(40rem, 100%);
+  box-sizing: border-box;
 }
 
 @media (min-width: 840px) {
@@ -431,6 +466,7 @@ body.composer-open {
     top: 0;
     align-self: start;
     width: 100%;
+    max-height: min(78vh, 40rem);
     max-height: min(78dvh, 40rem);
   }
 }
@@ -614,6 +650,7 @@ body.composer-open {
 
 @media (max-width: 839px) {
   .composer-lyrics-ed {
+    max-height: min(52vh, 24rem);
     max-height: min(52dvh, 24rem);
   }
 }
@@ -797,9 +834,14 @@ body.composer-open {
 @media (max-width: 700px) {
   .profile-composer-panel {
     width: 100%;
+    max-height: 100vh;
     max-height: 100dvh;
-    border-radius: 0;
-    border-left: none;
+    justify-self: stretch;
+    align-self: end;
+    border-radius: 12px 12px 0 0;
+    border-left: 1px solid var(--line, rgba(250, 248, 240, 0.12));
+    border-right: 1px solid var(--line, rgba(250, 248, 240, 0.12));
+    border-bottom: none;
   }
 
   .desk-card {
