@@ -33,7 +33,7 @@
     gate.innerHTML =
       '<div class="auth-panel">' +
       '<div class="auth-panel-header">' +
-      '<h2 id="auth-gate-title" class="auth-panel-title">Song Share</h2>' +
+      '<h2 id="auth-gate-title" class="auth-panel-title">Noteion</h2>' +
       '<p class="auth-panel-lede">Sign in or create an account to use the site. Everything stays on this device only (demo).</p>' +
       "</div>" +
       '<div class="auth-tabs" role="tablist">' +
@@ -43,19 +43,19 @@
       '<div class="auth-form-wrap">' +
       '<form id="auth-form-signin" class="auth-panel-form" role="tabpanel">' +
       '<div class="auth-field"><label class="auth-label" for="auth-in-email">Email</label>' +
-      '<input id="auth-in-email" name="email" class="auth-input" type="email" autocomplete="username" required placeholder="you@example.com" /></div>' +
+      '<input id="auth-in-email" name="email" class="auth-input" type="email" autocomplete="username" spellcheck="false" required placeholder="you@example.com" /></div>' +
       '<div class="auth-field"><label class="auth-label" for="auth-in-pass">Password</label>' +
-      '<input id="auth-in-pass" name="password" class="auth-input" type="password" autocomplete="current-password" required /></div>' +
+      '<input id="auth-in-pass" name="password" class="auth-input" type="password" autocomplete="current-password" spellcheck="false" required /></div>' +
       '<button type="submit" class="auth-submit">Sign in</button>' +
       '<p class="auth-msg" data-auth-msg-in aria-live="polite"></p>' +
       "</form>" +
       '<form id="auth-form-signup" class="auth-panel-form" hidden role="tabpanel">' +
       '<div class="auth-field"><label class="auth-label" for="auth-up-name">Display name</label>' +
-      '<input id="auth-up-name" name="displayName" class="auth-input" type="text" autocomplete="name" required placeholder="DJ name or nickname" /></div>' +
+      '<input id="auth-up-name" name="displayName" class="auth-input" type="text" autocomplete="name" spellcheck="true" required placeholder="DJ name or nickname" /></div>' +
       '<div class="auth-field"><label class="auth-label" for="auth-up-email">Email</label>' +
-      '<input id="auth-up-email" name="email" class="auth-input" type="email" autocomplete="email" required placeholder="you@example.com" /></div>' +
+      '<input id="auth-up-email" name="email" class="auth-input" type="email" autocomplete="email" spellcheck="false" required placeholder="you@example.com" /></div>' +
       '<div class="auth-field"><label class="auth-label" for="auth-up-pass">Password</label>' +
-      '<input id="auth-up-pass" name="password" class="auth-input" type="password" autocomplete="new-password" required /></div>' +
+      '<input id="auth-up-pass" name="password" class="auth-input" type="password" autocomplete="new-password" spellcheck="false" required /></div>' +
       '<button type="submit" class="auth-submit">Create account</button>' +
       '<p class="auth-msg" data-auth-msg-up aria-live="polite"></p>' +
       "</form>" +

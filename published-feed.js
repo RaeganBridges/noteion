@@ -20,8 +20,22 @@
     localStorage.setItem(KEY, JSON.stringify(items));
   }
 
+  function yearFromTimestamp(ts) {
+    if (ts == null || ts === "") return null;
+    try {
+      var y = new Date(ts).getFullYear();
+      return isNaN(y) ? null : y;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function toDisplayTrack(p) {
     var meaningText = p.meaningText != null ? String(p.meaningText).trim() : "";
+    var releaseYear =
+      typeof p.releaseYear === "number" && !isNaN(p.releaseYear)
+        ? p.releaseYear
+        : yearFromTimestamp(p.songPublishedAt);
     return {
       title: p.title || "Untitled",
       artist: p.artist || "",
@@ -35,6 +49,13 @@
       meaningBy: p.meaningAuthor || "",
       meaningAt: p.meaningPublishedAt || null,
       stickyNotes: Array.isArray(p.stickyNotes) ? p.stickyNotes : [],
+      releaseYear: releaseYear,
+      albumId: p.albumId || "",
+      albumTitle: p.albumTitle || "",
+      albumArtist: p.albumArtist || "",
+      albumTrackIndex:
+        typeof p.albumTrackIndex === "number" && !isNaN(p.albumTrackIndex) ? p.albumTrackIndex : null,
+      albumCoverDataUrl: p.albumCoverDataUrl || "",
     };
   }
 
@@ -52,13 +73,44 @@
           return (p.genreTags || []).indexOf(g.name) !== -1;
         })
         .map(toDisplayTrack);
+      var boardStackCoverUrl = "";
+      for (var bi = 0; bi < userTracks.length; bi++) {
+        var bc = userTracks[bi].albumCoverDataUrl;
+        if (bc && String(bc).trim()) {
+          boardStackCoverUrl = String(bc).trim();
+          break;
+        }
+      }
       var baseG = baseList[i] && baseList[i].name === g.name ? baseList[i] : baseList.find(function (b) { return b.name === g.name; });
       var baseTracks = baseG && baseG.tracks && baseG.tracks.length ? baseG.tracks.slice() : [];
       return {
         name: g.name,
         audio: (g && g.audio) || (baseG && baseG.audio) || "",
+        audioFallback:
+          (g && g.audioFallback) || (baseG && baseG.audioFallback) || "",
+        clipSlug: (g && g.clipSlug) || (baseG && baseG.clipSlug) || "",
+        audioHoverMaxSec:
+          g && g.audioHoverMaxSec != null
+            ? g.audioHoverMaxSec
+            : baseG && baseG.audioHoverMaxSec != null
+              ? baseG.audioHoverMaxSec
+              : undefined,
+        audioHoverPreload:
+          g && g.audioHoverPreload != null
+            ? g.audioHoverPreload
+            : baseG && baseG.audioHoverPreload != null
+              ? baseG.audioHoverPreload
+              : undefined,
+        audioHoverStartSec:
+          g && g.audioHoverStartSec != null
+            ? g.audioHoverStartSec
+            : baseG && baseG.audioHoverStartSec != null
+              ? baseG.audioHoverStartSec
+              : undefined,
         inspiredByArtists: (g && g.inspiredByArtists) || (baseG && baseG.inspiredByArtists),
         tracks: userTracks.length ? userTracks : baseTracks,
+        boardAlbums: (baseG && baseG.boardAlbums) || (g && g.boardAlbums),
+        boardStackCoverUrl: boardStackCoverUrl,
       };
     });
   }
@@ -89,6 +141,80 @@
     return next;
   }
 
+  function normalizeSongToken(str) {
+    return String(str || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[\u2013\u2014\u2212]/g, "-")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function titleMatchesQuery(normQuery, postTitle) {
+    var t = normalizeSongToken(postTitle);
+    if (!normQuery || !t) return false;
+    if (t === normQuery) return true;
+    if (normQuery.length >= 3 && t.indexOf(normQuery) !== -1) return true;
+    if (t.length >= 3 && normQuery.indexOf(t) !== -1) return true;
+    return false;
+  }
+
+  function artistMatchesQuery(normArtist, postArtist) {
+    var a = normalizeSongToken(postArtist);
+    if (!normArtist) return true;
+    if (!a) return false;
+    if (a === normArtist) return true;
+    if (normArtist.length >= 2 && (a.indexOf(normArtist) !== -1 || normArtist.indexOf(a) !== -1)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Match community posts: track title, album title (multi-track releases), and artist / album artist.
+   * Artist filter is ignored when empty.
+   */
+  function postMatchesSongSearch(tq, aq, p) {
+    var trackTitle = p.title || "";
+    var albumTitle = p.albumTitle || "";
+    var titleOk =
+      titleMatchesQuery(tq, trackTitle) || (albumTitle && titleMatchesQuery(tq, albumTitle));
+    if (!titleOk) return false;
+    if (!aq) return true;
+    var byTrack = artistMatchesQuery(aq, p.artist || "");
+    var byAlbum =
+      p.albumArtist && typeof p.albumArtist === "string"
+        ? artistMatchesQuery(aq, p.albumArtist)
+        : false;
+    return byTrack || byAlbum;
+  }
+
+  function findPostsBySong(title, artist) {
+    var tq = normalizeSongToken(title);
+    var aq = normalizeSongToken(artist);
+    if (!tq) return [];
+    return loadAll().filter(function (p) {
+      return postMatchesSongSearch(tq, aq, p);
+    });
+  }
+
+  /** First genre board slot for a published id after merge (for deep links). */
+  function resolvePostBoardLocation(pubId) {
+    if (!pubId) return null;
+    var genres = global.SONG_SHARE_GENRES || [];
+    for (var gi = 0; gi < genres.length; gi++) {
+      var tracks = genres[gi].tracks || [];
+      for (var ti = 0; ti < tracks.length; ti++) {
+        var t = tracks[ti];
+        if (t && t.userPublished && t.pubId === pubId) {
+          return { genreId: gi + 1, trackIdx: ti, genreName: genres[gi].name };
+        }
+      }
+    }
+    return null;
+  }
+
   function applyMerge() {
     if (!global.SONG_SHARE_GENRES || !global.SONG_SHARE_GENRES.length) return;
     global.SONG_SHARE_GENRES = mergeGenres(global.SONG_SHARE_GENRES);
@@ -101,6 +227,8 @@
     removeById: removeById,
     mergeGenres: mergeGenres,
     applyMerge: applyMerge,
+    findPostsBySong: findPostsBySong,
+    resolvePostBoardLocation: resolvePostBoardLocation,
   };
 
   applyMerge();

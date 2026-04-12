@@ -1,27 +1,38 @@
 /*
  * Shared genre list — demo track titles per genre (no bundled editorial text).
- * Hover preview audio: Kevin MacLeod (https://incompetech.com), CC BY 4.0 — genre-styled
- * royalty-free demos, not recordings by the mainstream artists named in inspiredByArtists.
- * Each `audio` URL is a distinct, genre-appropriate Kevin MacLeod piece (same folder on incompetech.com).
+ * Hover preview: short MP3 clips in genre-clips/ (build with scripts/fetch-genre-clips.py + yt-dlp).
+ * audioFallback: Kevin MacLeod (incompetech.com), CC BY 4.0 — used if the local clip is missing.
  */
 window.SONG_SHARE_GENRES = [
   {
     name: "Pop",
     inspiredByArtists: "Michael Jackson, Madonna, Taylor Swift, ABBA",
-    audio:
+    clipSlug: "pop",
+    /* Hover: sound_for_you-happy-indie-pop-energetic-upbeat-uplifting-catchy-indie-pop-487485 → genre-clips/pop.mp3 */
+    audio: "genre-clips/pop.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Brightly%20Fancy.mp3",
     tracks: [
-      { title: "Neon Heartbeat" },
-      { title: "Radio Static Love" },
-      { title: "Saturday Forever" },
-      { title: "Silver Lining" },
-      { title: "Echo Chamber" },
+      { title: "Neon Heartbeat", releaseYear: 1986 },
+      { title: "Radio Static Love", releaseYear: 1989 },
+      { title: "Saturday Forever", releaseYear: 1999 },
+      { title: "Silver Lining", releaseYear: 2007 },
+      { title: "Echo Chamber", releaseYear: 2018 },
+    ],
+    /** Home board only: browse demo “albums” (subsets of tracks by index into `tracks`). */
+    boardAlbums: [
+      { title: "Neon Pulse EP", trackIndices: [0, 1] },
+      { title: "Weekend Singles", trackIndices: [2, 3] },
+      { title: "After Hours", trackIndices: [4] },
     ],
   },
   {
     name: "Hip-Hop",
     inspiredByArtists: "Drake, Kendrick Lamar, Tupac, The Notorious B.I.G.",
-    audio:
+    clipSlug: "hip-hop",
+    /* Hover: nesterouk-street-flow-207462 → genre-clips/hip-hop.mp3 */
+    audio: "genre-clips/hip-hop.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Digya.mp3",
     tracks: [
       { title: "Block Party Ghost" },
@@ -34,7 +45,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Rock",
     inspiredByArtists: "Queen, Led Zeppelin, Nirvana",
-    audio:
+    clipSlug: "rock",
+    /* Hover: bundled clip at genre-clips/rock.mp3 (e.g. nastelbom-rock-rock-music-513418). */
+    audio: "genre-clips/rock.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Heavy%20Interlude.mp3",
     tracks: [
       { title: "Dust & Distortion" },
@@ -47,7 +61,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Electronic",
     inspiredByArtists: "Daft Punk, Calvin Harris, Avicii",
-    audio:
+    clipSlug: "electronic",
+    /* Hover: monume-abstract-electronic-509472 → genre-clips/electronic.mp3 */
+    audio: "genre-clips/electronic.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/EDM%20Detection%20Mode.mp3",
     tracks: [
       { title: "Pulse Lattice" },
@@ -60,7 +77,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "R&B",
     inspiredByArtists: "Beyoncé, Usher, Whitney Houston, Stevie Wonder",
-    audio:
+    clipSlug: "r-and-b",
+    /* Hover: bundled clip at genre-clips/r-and-b.mp3 (e.g. denis-pavlov-...-rampb-soul-music-225318). */
+    audio: "genre-clips/r-and-b.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Lobby%20Time.mp3",
     tracks: [
       { title: "Velvet Voicemail" },
@@ -73,7 +93,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Country",
     inspiredByArtists: "Dolly Parton, Garth Brooks, Shania Twain, Luke Combs",
-    audio:
+    clipSlug: "country",
+    /* Hover: bundled clip — tunetank-country-music-347561 → genre-clips/country.mp3 */
+    audio: "genre-clips/country.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Western%20Streets.mp3",
     tracks: [
       { title: "Dust Road Psalm" },
@@ -86,7 +109,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Latin",
     inspiredByArtists: "Bad Bunny, Shakira, Romeo Santos",
-    audio:
+    clipSlug: "latin",
+    /* Hover: bundled clip at genre-clips/latin.mp3 (e.g. hitslab-latin-mexican-latino-music-474676). */
+    audio: "genre-clips/latin.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Samba%20Isobel.mp3",
     tracks: [
       { title: "Caliente Horizonte" },
@@ -99,7 +125,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Indie",
     inspiredByArtists: "Arctic Monkeys, The Strokes",
-    audio:
+    clipSlug: "indie",
+    /* Hover: bundled clip at genre-clips/indie.mp3 (e.g. alex_kizenkov-soft-indie-folk-143928). */
+    audio: "genre-clips/indie.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Fluffing%20a%20Duck.mp3",
     tracks: [
       { title: "Lo-Fi Cathedral" },
@@ -112,7 +141,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Metal",
     inspiredByArtists: "Metallica, Iron Maiden, Black Sabbath",
-    audio:
+    clipSlug: "metal",
+    /* Hover: bundled clip at genre-clips/metal.mp3 (e.g. alexgrohl-metal-dark-matter-111451). */
+    audio: "genre-clips/metal.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Volatile%20Reaction.mp3",
     tracks: [
       { title: "Iron Liturgy" },
@@ -125,7 +157,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Jazz",
     inspiredByArtists: "Miles Davis, John Coltrane, Ella Fitzgerald",
-    audio:
+    clipSlug: "jazz",
+    /* Hover: bundled clip at genre-clips/jazz.mp3 (e.g. tunetank-jazz-background-music-349165). */
+    audio: "genre-clips/jazz.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Jazz%20Brunch.mp3",
     tracks: [
       { title: "Blue Note Drift" },
@@ -138,7 +173,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Classical",
     inspiredByArtists: "Beethoven, Mozart, Vivaldi",
-    audio:
+    clipSlug: "classical",
+    /* Hover: bundled clip at genre-clips/classical.mp3 (e.g. tunetank-piano-classical-music-347514). */
+    audio: "genre-clips/classical.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Gymnopedie%20No%201.mp3",
     tracks: [
       { title: "Etude In Mist" },
@@ -151,7 +189,13 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Folk",
     inspiredByArtists: "Bob Dylan, Joan Baez, Joni Mitchell",
-    audio:
+    clipSlug: "folk",
+    /* Full file is long — cap hover length. audioHoverPreload: buffer clip so hover starts sooner. */
+    audioHoverPreload: true,
+    audioHoverMaxSec: 12,
+    /* Hover: caffeine_creek_band-celtic-folk-song-109238 → genre-clips/folk.mp3 */
+    audio: "genre-clips/folk.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Folk%20Round.mp3",
     tracks: [
       { title: "Willow & Word" },
@@ -164,7 +208,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Blues",
     inspiredByArtists: "B.B. King, Muddy Waters, Robert Johnson",
-    audio:
+    clipSlug: "blues",
+    /* Hover: bundled clip at genre-clips/blues.mp3 (e.g. jean-paul-v-romantic-blues-286563). */
+    audio: "genre-clips/blues.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Blue%20Paint.mp3",
     tracks: [
       { title: "Crossroads Receipt" },
@@ -177,7 +224,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Reggae",
     inspiredByArtists: "Bob Marley, Peter Tosh",
-    audio:
+    clipSlug: "reggae",
+    /* Hover: bundled clip at genre-clips/reggae.mp3 (e.g. starostin-reggae-...-496206). */
+    audio: "genre-clips/reggae.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Island%20Meet%20and%20Greet.mp3",
     tracks: [
       { title: "Island Telegraph" },
@@ -190,7 +240,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Punk",
     inspiredByArtists: "Ramones, Sex Pistols, The Clash",
-    audio:
+    clipSlug: "punk",
+    /* Hover: bundled clip at genre-clips/punk.mp3 (e.g. octosound-punk-rock-374044). */
+    audio: "genre-clips/punk.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/District%20Four.mp3",
     tracks: [
       { title: "Safety Pin Anthem" },
@@ -203,7 +256,11 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Gospel",
     inspiredByArtists: "Mahalia Jackson, Kirk Franklin",
-    audio:
+    clipSlug: "gospel",
+    /* Amazing Grace — instrumental (Strolling Strings, U.S. Air Force Band). PD U.S. govt work; bundled as genre-clips/gospel.mp3 from Wikimedia Commons. */
+    audioHoverMaxSec: 22,
+    audio: "genre-clips/gospel.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Movement%20Proposition.mp3",
     tracks: [
       { title: "Raise the Row" },
@@ -216,7 +273,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Funk",
     inspiredByArtists: "James Brown, Parliament-Funkadelic",
-    audio:
+    clipSlug: "funk",
+    /* Hover: tunetank-eccentric-funk-music-348500 → genre-clips/funk.mp3 */
+    audio: "genre-clips/funk.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Funk%20Game%20Loop.mp3",
     tracks: [
       { title: "Bootleg Bounce" },
@@ -227,22 +287,28 @@ window.SONG_SHARE_GENRES = [
     ],
   },
   {
-    name: "Dance",
-    inspiredByArtists: "Calvin Harris, David Guetta",
-    audio:
-      "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Beach%20Party.mp3",
+    name: "Soundtracks",
+    inspiredByArtists: "Hans Zimmer, John Williams, Ludwig Göransson",
+    clipSlug: "soundtracks",
+    /* Hover: good_b_music-honor-and-sword-main-11222 → genre-clips/soundtracks.mp3 */
+    audio: "genre-clips/soundtracks.mp3",
+    audioFallback:
+      "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Movement%20Proposition.mp3",
     tracks: [
-      { title: "Strobe Doctrine" },
-      { title: "Build & Release" },
-      { title: "Floor Theory" },
-      { title: "Heartbeat 128" },
-      { title: "Smoke Machine Saints" },
+      { title: "Opening Titles (Rough)" },
+      { title: "Cue Stack" },
+      { title: "Motif Return" },
+      { title: "Scene Change" },
+      { title: "End Credits Tease" },
     ],
   },
   {
     name: "K-Pop",
     inspiredByArtists: "BTS, BLACKPINK",
-    audio:
+    clipSlug: "k-pop",
+    /* Hover: ultrafi-seoul-skyline-lofi-k-pop-beats-for-focus-amp-study-476583 → genre-clips/k-pop.mp3 */
+    audio: "genre-clips/k-pop.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Hamster%20March.mp3",
     tracks: [
       { title: "Mirror Stage" },
@@ -255,7 +321,10 @@ window.SONG_SHARE_GENRES = [
   {
     name: "Other",
     inspiredByArtists: "Various artists",
-    audio:
+    clipSlug: "other",
+    /* Hover: nastelbom-happy-birthday-471481 → genre-clips/other.mp3 */
+    audio: "genre-clips/other.mp3",
+    audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Amazing%20Plan.mp3",
     tracks: [
       { title: "Genre Unknown" },

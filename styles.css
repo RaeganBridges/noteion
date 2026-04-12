@@ -1,4 +1,4 @@
-/* Song Share — scrapbook on a dark, layered canvas (OWARI DIARY–style immersion) */
+/* Noteion — scrapbook on a dark, layered canvas (OWARI DIARY–style immersion) */
 
 *,
 *::before,
@@ -7,6 +7,8 @@
 }
 
 :root {
+  /* Space above each album tile for per-genre stack arrows */
+  --genre-stack-controls-gap: 2.65rem;
   --void: #050506;
   --ink: #0c0c0e;
   --panel: #101014;
@@ -40,7 +42,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   color: var(--cream);
   background: var(--void);
 }
@@ -94,6 +96,7 @@ body.is-popup-open {
 
 .logo {
   margin: 0;
+  font-family: var(--font-rajdhani);
   font-size: clamp(1.35rem, 3vw, 1.85rem);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -236,43 +239,12 @@ body.is-popup-open {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Decade tab — diary sticker */
-.decade-tab {
-  position: absolute;
-  top: 0.75rem;
-  left: 0;
-  width: 9.25rem;
-  height: 9.25rem;
-  background: linear-gradient(145deg, #2a2824 0%, #151412 100%);
-  border-radius: 0 0 100% 0;
-  box-shadow:
-    4px 4px 0 rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  z-index: 12;
-  pointer-events: none;
-}
-
-.decade-text {
-  position: absolute;
-  left: 1rem;
-  top: 2.2rem;
-  display: block;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  transform: rotate(-26deg);
-  transform-origin: left center;
-}
-
 .board-scroll {
   position: relative;
   z-index: 11;
   flex: 1 1 auto;
   min-width: 0;
-  margin-top: 0.5rem;
-  padding: 3.25rem max(1rem, env(safe-area-inset-right)) 1.25rem max(1rem, env(safe-area-inset-left));
+  padding: 1.25rem max(1rem, env(safe-area-inset-right)) 1.25rem max(1rem, env(safe-area-inset-left));
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -296,7 +268,7 @@ body.is-popup-open {
   align-items: flex-start;
   gap: var(--album-gap-row);
   width: max-content;
-  min-height: calc(2 * var(--album-size) + var(--album-gap-row));
+  min-height: calc(2 * (var(--album-size) + var(--genre-stack-controls-gap)) + var(--album-gap-row));
   padding: 0.35rem var(--album-stagger) 1rem 0.5rem;
   margin: 0;
 }
@@ -316,8 +288,11 @@ body.is-popup-open {
 
 .genre-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: var(--album-size);
-  height: var(--album-size);
+  height: auto;
   flex-shrink: 0;
   perspective: 500px;
   cursor: pointer;
@@ -325,6 +300,22 @@ body.is-popup-open {
     transform 0.35s var(--ease-out),
     z-index 0s;
   scroll-margin: 5rem max(1rem, env(safe-area-inset-left)) 3rem max(1rem, env(safe-area-inset-right));
+}
+
+.genre-card-controls {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  min-height: 1.85rem;
+  margin-bottom: 0.4rem;
+  z-index: 16;
+  pointer-events: none;
+}
+
+.genre-card-controls .stack-shuffle {
+  pointer-events: auto;
 }
 
 .genre-card.is-spotlight {
@@ -341,28 +332,97 @@ body.is-popup-open {
   }
 }
 
-.genre-card:hover,
-.genre-card:focus-within {
+.genre-card:hover:not(:has(.stack-shuffle:hover)),
+.genre-card:focus-within:not(:has(.stack-shuffle :focus)) {
   z-index: 20;
   transform: scale(1.07);
 }
 
 .card-inner {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: var(--album-size);
+  height: var(--album-size);
+  flex-shrink: 0;
   transform: rotate(var(--tilt, 0deg));
   transition: transform 0.4s var(--ease-out);
+  isolation: isolate;
 }
 
-.genre-card:hover .card-inner,
-.genre-card:focus-within .card-inner {
+/* Extra “cards” behind the face — stacked scrapbook look */
+.card-inner::before,
+.card-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow:
+    1px 2px 0 rgba(0, 0, 0, 0.1),
+    3px 10px 20px rgba(0, 0, 0, 0.32);
+  pointer-events: none;
+  transition:
+    transform 0.38s var(--ease-out),
+    opacity 0.3s ease;
+}
+
+.card-inner::before {
+  z-index: 0;
+  opacity: 0.93;
+}
+
+.card-inner::after {
+  z-index: 1;
+  opacity: 0.96;
+}
+
+/* Stack presets — shuffle via [data-stack-arr] on .card-inner */
+.card-inner[data-stack-arr="0"]::before {
+  transform: rotate(-4.5deg) translate(6px, 8px);
+}
+.card-inner[data-stack-arr="0"]::after {
+  transform: rotate(3.5deg) translate(3px, 4px);
+}
+
+.card-inner[data-stack-arr="1"]::before {
+  transform: rotate(5deg) translate(-4px, 6px);
+}
+.card-inner[data-stack-arr="1"]::after {
+  transform: rotate(-3deg) translate(5px, 5px);
+}
+
+.card-inner[data-stack-arr="2"]::before {
+  transform: rotate(-2deg) translate(8px, 3px);
+}
+.card-inner[data-stack-arr="2"]::after {
+  transform: rotate(6deg) translate(-2px, 8px);
+}
+
+.card-inner[data-stack-arr="3"]::before {
+  transform: rotate(4deg) translate(5px, -3px);
+}
+.card-inner[data-stack-arr="3"]::after {
+  transform: rotate(-5deg) translate(6px, 7px);
+}
+
+/* Community album art on the rearmost scrapbook square (shuffle still moves the stack) */
+.card-inner[data-has-board-cover="1"]::before {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.28) 0%, transparent 42%),
+    var(--board-cover) center / cover no-repeat,
+    var(--paper);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  opacity: 0.97;
+}
+
+.genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner,
+.genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-inner {
   transform: rotate(0deg) translateY(-2px);
 }
 
 .card-face {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,6 +437,216 @@ body.is-popup-open {
   transition:
     opacity 0.3s var(--ease-out),
     transform 0.3s var(--ease-out);
+}
+
+/* Circular sticker-bomb style controls — two overlapping discs per genre */
+.stack-shuffle {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.25rem;
+  overflow: visible;
+  pointer-events: auto;
+  background: none;
+  border: none;
+  filter: drop-shadow(2px 5px 10px rgba(0, 0, 0, 0.4));
+  transition:
+    filter 0.22s var(--ease-out),
+    opacity 0.3s var(--ease-out);
+}
+
+/* Slight vertical stagger so sticker rows don’t line up perfectly */
+.stack-shuffle[data-stack-rise="0"] {
+  transform: translateY(0);
+}
+.stack-shuffle[data-stack-rise="1"] {
+  transform: translateY(0.1rem);
+}
+.stack-shuffle[data-stack-rise="2"] {
+  transform: translateY(-0.09rem);
+}
+.stack-shuffle[data-stack-rise="3"] {
+  transform: translateY(0.14rem);
+}
+.stack-shuffle[data-stack-rise="4"] {
+  transform: translateY(-0.12rem);
+}
+.stack-shuffle[data-stack-rise="5"] {
+  transform: translateY(0.07rem);
+}
+.stack-shuffle[data-stack-rise="6"] {
+  transform: translateY(-0.06rem);
+}
+.stack-shuffle[data-stack-rise="7"] {
+  transform: translateY(0.11rem);
+}
+
+.stack-shuffle:hover {
+  filter: drop-shadow(3px 8px 16px rgba(0, 0, 0, 0.5));
+}
+
+.stack-shuffle-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  margin: 0;
+  border-width: 3px;
+  border-style: solid;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+/* Slight scuff / print grain */
+.stack-shuffle-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0 11deg,
+    rgba(0, 0, 0, 0.04) 11deg 12deg
+  );
+  pointer-events: none;
+  opacity: 0.55;
+  z-index: 1;
+  mix-blend-mode: multiply;
+}
+
+.stack-shuffle[data-sticker="1"] .stack-shuffle-btn::before {
+  mix-blend-mode: normal;
+  opacity: 0.42;
+}
+
+.stack-shuffle-btn:first-child {
+  transform: rotate(-13deg);
+  margin-right: -0.42rem;
+  z-index: 1;
+}
+
+.stack-shuffle-btn:last-child {
+  transform: rotate(11deg);
+  z-index: 2;
+}
+
+.stack-shuffle-icon {
+  position: relative;
+  z-index: 3;
+  display: block;
+  width: 0.78rem;
+  height: 0.78rem;
+}
+
+/* 0 — Navy + warm white ring (bold street sticker) */
+.stack-shuffle[data-sticker="0"] .stack-shuffle-btn {
+  border-color: #f4efe6;
+  background: radial-gradient(circle at 36% 30%, #2f6ea8 0%, #1a4a78 42%, #0c2848 100%);
+  color: #faf8f4;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 -4px 12px rgba(0, 0, 0, 0.35) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+/* 1 — White disc, black ring (high contrast) */
+.stack-shuffle[data-sticker="1"] .stack-shuffle-btn {
+  border-color: #141414;
+  background: radial-gradient(circle at 40% 35%, #ffffff 0%, #f0ebe3 70%, #e4ddd4 100%);
+  color: #111;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.95) inset,
+    0 -3px 10px rgba(0, 0, 0, 0.12) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+/* 2 — Black disc, off-white ring */
+.stack-shuffle[data-sticker="2"] .stack-shuffle-btn {
+  border-color: #ece8e0;
+  background: radial-gradient(circle at 38% 32%, #2a2a2a 0%, #121212 55%, #070707 100%);
+  color: #f2efe8;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 -5px 14px rgba(0, 0, 0, 0.55) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* 3 — Taxi yellow */
+.stack-shuffle[data-sticker="3"] .stack-shuffle-btn {
+  border-color: #181818;
+  background: radial-gradient(circle at 35% 30%, #ffe066 0%, #f5c933 45%, #e0b020 100%);
+  color: #141414;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.45) inset,
+    0 -3px 10px rgba(120, 90, 0, 0.25) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+/* 4 — Red + white ring */
+.stack-shuffle[data-sticker="4"] .stack-shuffle-btn {
+  border-color: #f8f4ee;
+  background: radial-gradient(circle at 38% 32%, #e64a3d 0%, #c43328 48%, #8f221a 100%);
+  color: #fff8f6;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 -4px 12px rgba(0, 0, 0, 0.35) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+/* 5 — Royal blue + white ring */
+.stack-shuffle[data-sticker="5"] .stack-shuffle-btn {
+  border-color: #f2f0eb;
+  background: radial-gradient(circle at 36% 30%, #3b5bdb 0%, #2438a8 50%, #152566 100%);
+  color: #fafbff;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 -4px 12px rgba(0, 0, 0, 0.4) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.stack-shuffle-btn:hover {
+  filter: brightness(1.08);
+}
+
+.stack-shuffle-btn:first-child:hover {
+  transform: rotate(-13deg) scale(1.04);
+}
+
+.stack-shuffle-btn:last-child:hover {
+  transform: rotate(11deg) scale(1.04);
+}
+
+.stack-shuffle-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(250, 248, 240, 0.95),
+    0 0 0 4px rgba(196, 165, 116, 0.85);
+}
+
+.stack-shuffle-btn:active {
+  filter: brightness(0.94);
+}
+
+.stack-shuffle-btn:first-child:active {
+  transform: rotate(-13deg) scale(0.965);
+}
+
+.stack-shuffle-btn:last-child:active {
+  transform: rotate(11deg) scale(0.965);
 }
 
 .genre-rank {
@@ -400,6 +670,7 @@ body.is-popup-open {
 .vinyl-wrap {
   position: absolute;
   inset: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -411,26 +682,63 @@ body.is-popup-open {
     transform 0.3s var(--ease-out);
 }
 
-.genre-card:hover .vinyl-wrap,
-.genre-card:focus-within .vinyl-wrap {
+.genre-card:hover:not(:has(.stack-shuffle:hover)) .vinyl-wrap,
+.genre-card:focus-within:not(:has(.stack-shuffle :focus)) .vinyl-wrap {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
 }
 
-.genre-card:hover .card-face,
-.genre-card:focus-within .card-face {
+.genre-card:hover:not(:has(.stack-shuffle:hover)) .card-face,
+.genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-face {
   opacity: 0;
   transform: scale(0.9);
+}
+
+/* Hide backing squares + shuffle chip while vinyl preview shows (not when using shuffle arrows) */
+.genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner::before,
+.genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner::after,
+.genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-inner::before,
+.genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-inner::after {
+  opacity: 0;
+}
+
+.genre-card:hover:not(:has(.stack-shuffle:hover)) .stack-shuffle,
+.genre-card:focus-within:not(:has(.stack-shuffle :focus)) .stack-shuffle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .vinyl {
   width: calc(var(--album-size) * 0.92);
   height: calc(var(--album-size) * 0.92);
   border-radius: 50%;
+  /* Label on top; then specular arcs + radial “catch” lines (rotate with the disc); then groove rings */
   background:
     radial-gradient(circle at 50% 50%, #f0ebe3 0 11%, transparent 11.5% 100%),
-    repeating-radial-gradient(circle at 50% 50%, var(--vinyl) 0 2px, var(--vinyl-groove) 2px 3px);
+    conic-gradient(
+      from 205deg,
+      transparent 0deg 26deg,
+      rgba(250, 248, 240, 0.052) 32deg,
+      rgba(250, 248, 240, 0.025) 42deg,
+      transparent 50deg 151deg,
+      rgba(250, 248, 240, 0.048) 161deg,
+      rgba(250, 248, 240, 0.022) 171deg,
+      transparent 176deg 250deg,
+      rgba(250, 248, 240, 0.045) 255deg,
+      rgba(250, 248, 240, 0.02) 265deg,
+      transparent 270deg 360deg
+    ),
+    repeating-conic-gradient(
+      from 12deg,
+      transparent 0 12.5deg,
+      rgba(250, 248, 240, 0.02) 12.5deg 13.15deg
+    ),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      #0e0e10 0 2px,
+      #3a3a42 2px 3px
+    );
   box-shadow:
     inset 0 0 0 3px #0a0a0c,
     0 0 0 1px rgba(250, 248, 240, 0.08),
@@ -474,26 +782,6 @@ body.is-popup-open {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.65rem;
-}
-
-.footer-audio-credit {
-  margin: 0;
-  max-width: 32rem;
-  font-size: 0.62rem;
-  line-height: 1.45;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
-
-.footer-audio-credit a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.footer-audio-credit a:hover {
-  color: var(--cream);
 }
 
 .sns-chip {
@@ -763,6 +1051,12 @@ body.is-popup-open {
   margin-top: 1.25rem;
 }
 
+.lyrics-search-actions--split {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .lyrics-search-submit {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -779,8 +1073,115 @@ body.is-popup-open {
   touch-action: manipulation;
 }
 
-.lyrics-search-submit:hover {
+.lyrics-search-submit--ghost {
+  color: var(--cream);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.lyrics-search-submit--ghost:hover {
+  filter: none;
+  border-color: rgba(196, 165, 116, 0.45);
+  background: rgba(250, 248, 240, 0.06);
+}
+
+.lyrics-search-submit:not(.lyrics-search-submit--ghost):hover {
   filter: brightness(1.06);
+}
+
+.lyrics-search-results {
+  margin-top: 1.35rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--line);
+}
+
+.lyrics-search-results-song {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cream);
+  line-height: 1.35;
+}
+
+.lyrics-search-results-count {
+  margin: 0 0 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.lyrics-search-posts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lyrics-search-post-item {
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid rgba(250, 248, 240, 0.08);
+}
+
+.lyrics-search-post-item:last-child {
+  border-bottom: none;
+}
+
+.lyrics-search-post-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.55rem 0;
+}
+
+.lyrics-search-post-track {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--cream, #f6f3ea);
+  min-width: 0;
+}
+
+.lyrics-search-post-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+
+.lyrics-search-post-by {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: rgba(250, 248, 240, 0.82);
+  min-width: 0;
+}
+
+.lyrics-search-post-link {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+.lyrics-search-post-link:hover {
+  text-decoration: underline;
+  color: var(--cream);
+}
+
+.lyrics-search-post-unavail {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 @media (hover: none) and (pointer: coarse) {
@@ -799,17 +1200,6 @@ body.is-popup-open {
   .header-actions {
     align-self: flex-end;
     margin-top: -0.25rem;
-  }
-
-  .decade-tab {
-    width: min(9.25rem, 44vw);
-    height: min(9.25rem, 44vw);
-  }
-
-  .decade-text {
-    font-size: clamp(0.72rem, 3.5vw, 0.88rem);
-    left: 0.85rem;
-    top: min(2.2rem, 24vw);
   }
 
   .board-wrap {
@@ -833,6 +1223,28 @@ body.is-popup-open {
   .card-face,
   .vinyl-wrap {
     transition: none;
+  }
+
+  .card-inner::before,
+  .card-inner::after {
+    transition: none;
+  }
+
+  .stack-shuffle,
+  .stack-shuffle-btn {
+    transition: none;
+  }
+
+  .stack-shuffle-btn:first-child:hover,
+  .stack-shuffle-btn:first-child:active {
+    transform: rotate(-13deg);
+    filter: none;
+  }
+
+  .stack-shuffle-btn:last-child:hover,
+  .stack-shuffle-btn:last-child:active {
+    transform: rotate(11deg);
+    filter: none;
   }
 
   .main-back,

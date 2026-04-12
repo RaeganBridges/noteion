@@ -553,7 +553,7 @@
 }
 
 .detail-meaning {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: clamp(0.9rem, 2.2vw, 1.02rem);
   line-height: 1.58;
   color: #252220;
@@ -584,7 +584,7 @@
 }
 
 .detail-song-title {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: clamp(1.35rem, 4.5vw, 2rem);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -594,7 +594,7 @@
 
 .detail-song-artist {
   margin: 0.35rem 0 0.5rem;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: clamp(0.88rem, 2.3vw, 1.05rem);
   font-weight: 500;
   color: #5b4dc9;
@@ -630,11 +630,17 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
+.detail-lyrics-scroll-inner {
+  position: relative;
+  padding-left: clamp(2.85rem, 11vw, 3.65rem);
+  padding-right: clamp(2.45rem, 10vw, 3.15rem);
+}
+
 /* Lyric sheet: title / artist / body — left-aligned stanzas like a lyric app */
 .detail-lyrics-page {
   margin: 0;
-  padding: clamp(0.65rem, 2.5%, 1.1rem) clamp(0.5rem, 2.5%, 1rem) clamp(0.85rem, 3%, 1.35rem);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: clamp(0.65rem, 2.5%, 1.1rem) clamp(0.35rem, 1.5%, 0.75rem) clamp(0.85rem, 3%, 1.35rem);
+  font-family: var(--font-roboto);
   font-size: clamp(0.86rem, 2vw, 0.98rem);
   font-weight: 400;
   line-height: 1.45;
@@ -647,7 +653,7 @@
 }
 
 .detail-lyrics-page p {
-  margin: 0 0 0.85em;
+  margin: 0 0 1.15em;
   white-space: pre-wrap;
   text-align: left;
 }
@@ -701,6 +707,9 @@
 
 .song-sticky {
   position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  width: clamp(2.75rem, 22vw, 6.25rem);
   max-width: 38%;
   padding: 0.45rem 0.5rem;
   font-size: 0.68rem;
@@ -710,6 +719,45 @@
   border: 1px solid rgba(80, 70, 50, 0.25);
   box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.12);
   pointer-events: none;
+  transform-origin: center center;
+}
+
+.song-sticky--left {
+  left: 0.15rem;
+  right: auto;
+  transform: translateY(-50%) rotate(-2.5deg);
+}
+
+.song-sticky--right {
+  right: 0.15rem;
+  left: auto;
+  transform: translateY(-50%) rotate(2.5deg);
+}
+
+.song-sticky--amber {
+  background: linear-gradient(148deg, #fff8e8 0%, #ffe6a8 100%);
+  border-color: rgba(140, 110, 40, 0.35);
+}
+
+.song-sticky--mint {
+  background: linear-gradient(148deg, #f4fff8 0%, #c8eedc 100%);
+  border-color: rgba(60, 120, 90, 0.32);
+}
+
+.song-sticky--rose {
+  background: linear-gradient(148deg, #fff8f8 0%, #ffd6de 100%);
+  border-color: rgba(140, 80, 90, 0.3);
+}
+
+.song-sticky--sky {
+  background: linear-gradient(148deg, #f6faff 0%, #c8e2ff 100%);
+  border-color: rgba(70, 110, 160, 0.32);
+}
+
+.song-sticky--legacy {
+  width: auto;
+  max-width: 38%;
+  transform: none;
 }
 
 /* —— Lined notebook modal (lyrics) —— */
@@ -895,7 +943,7 @@ body.sheet-modal-open {
   pointer-events: auto;
   max-width: min(11rem, 42vw);
   padding: 0.55rem 0.6rem 0.5rem;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: 0.72rem;
   line-height: 1.4;
   color: rgba(250, 248, 245, 0.95);
@@ -1160,10 +1208,10 @@ body.sheet-modal-open {
   margin: 0 0 0.25rem;
   padding-right: 2.75rem;
   flex-shrink: 0;
-  font-family: "Cormorant Garamond", "Times New Roman", Times, serif;
+  font-family: var(--font-rajdhani);
   font-size: clamp(1.35rem, 4.2vw, 2.35rem);
-  font-weight: 600;
-  font-style: italic;
+  font-weight: 700;
+  font-style: normal;
   letter-spacing: 0.02em;
   line-height: 1.08;
   color: #c4a574;
@@ -1178,7 +1226,7 @@ body.sheet-modal-open {
 
 .song-sheet-modal__track-artist {
   margin: 0 0 0.2rem;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: clamp(0.88rem, 2.2vw, 1.05rem);
   font-weight: 600;
   color: #5b4dc9;
@@ -1253,6 +1301,26 @@ body.sheet-modal-open {
   left: auto;
 }
 
+.song-sheet-modal__modal-slip--amber {
+  background: linear-gradient(148deg, #fff8e8 0%, #ffe6a8 100%);
+  border-color: rgba(140, 110, 40, 0.38);
+}
+
+.song-sheet-modal__modal-slip--mint {
+  background: linear-gradient(148deg, #f4fff8 0%, #c8eedc 100%);
+  border-color: rgba(60, 120, 90, 0.35);
+}
+
+.song-sheet-modal__modal-slip--rose {
+  background: linear-gradient(148deg, #fff8f8 0%, #ffd6de 100%);
+  border-color: rgba(140, 80, 90, 0.33);
+}
+
+.song-sheet-modal__modal-slip--sky {
+  background: linear-gradient(148deg, #f6faff 0%, #c8e2ff 100%);
+  border-color: rgba(70, 110, 160, 0.35);
+}
+
 .song-sheet-modal__orphan-annotations-hint {
   margin: 0.75rem 0 0.35rem;
   font-size: 0.65rem;
@@ -1282,7 +1350,7 @@ body.sheet-modal-open {
 }
 
 .song-sheet-modal__lyrics {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: clamp(0.86rem, 2.2vw, 0.98rem);
   line-height: 1.5;
   letter-spacing: 0.01em;
@@ -1328,7 +1396,7 @@ body.sheet-modal-open {
 .song-sheet-modal__meaning.prose,
 .song-sheet-modal__meaning {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: clamp(0.88rem, 2.1vw, 1rem);
   line-height: 1.55;
   letter-spacing: 0.01em;

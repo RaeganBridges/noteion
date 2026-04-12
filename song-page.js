@@ -45,13 +45,37 @@
     return s.replace(/\n/g, "<br>");
   }
 
-  function formatLyricsForDisplay(html) {
-    var s = String(html || "").trim();
-    if (!s) return "";
-    if (/<[a-z][\s\S]*>/i.test(s)) {
-      return newlinesToBrInLyricsHtml(s);
+  function normalizePlainLyrics(str) {
+    if (window.SongShareLyrics && window.SongShareLyrics.normalizeLyricsPlainText) {
+      return window.SongShareLyrics.normalizeLyricsPlainText(str);
     }
-    var stanzas = s.split(/\n\n+/);
+    return String(str || "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .trim();
+  }
+
+  function htmlLyricsToPlain(html) {
+    var d = document.createElement("div");
+    d.innerHTML = String(html || "").trim();
+    d.querySelectorAll("br").forEach(function (br) {
+      br.replaceWith("\n");
+    });
+    var paras = d.querySelectorAll("p");
+    if (paras.length) {
+      return Array.prototype.slice
+        .call(paras)
+        .map(function (p) {
+          return (p.textContent || "").trim();
+        })
+        .filter(Boolean)
+        .join("\n\n");
+    }
+    return (d.textContent || "").trim();
+  }
+
+  function formatPlainLyricsToParagraphHtml(plain) {
+    var stanzas = plain.split(/\n\n+/);
     return stanzas
       .map(function (stanza) {
         var t = stanza.trim();
@@ -60,6 +84,19 @@
       })
       .filter(Boolean)
       .join("");
+  }
+
+  function formatLyricsForDisplay(html) {
+    var s = String(html || "").trim();
+    if (!s) return "";
+    var hasHighlight = /lyric-hl/i.test(s);
+    if (/<[a-z][\s\S]*>/i.test(s) && hasHighlight) {
+      return newlinesToBrInLyricsHtml(s);
+    }
+    if (/<[a-z][\s\S]*>/i.test(s)) {
+      return formatPlainLyricsToParagraphHtml(normalizePlainLyrics(htmlLyricsToPlain(s)));
+    }
+    return formatPlainLyricsToParagraphHtml(normalizePlainLyrics(s));
   }
 
   function formatMeaningForDisplay(text) {
@@ -154,23 +191,71 @@
       $(".js-modal-orphan-hint").prop("hidden", true);
     }
 
+    function relayoutSongPageMarginStickies() {
+      var innerEl = document.querySelector(".detail-lyrics-scroll-inner");
+      if (!innerEl) return;
+      $(".js-song-stickies .song-sticky").not(".song-sticky--legacy").each(function () {
+        var $el = $(this);
+        var fixed = $el.attr("data-top-px");
+        if (fixed != null && fixed !== "") {
+          var px = parseFloat(fixed, 10);
+          if (!isNaN(px)) {
+            $el.css("top", Math.round(px) + "px");
+          }
+          return;
+        }
+        var idx = parseInt($el.attr("data-hl-idx"), 10);
+        if (isNaN(idx)) return;
+        var hl = document.querySelectorAll(".js-song-lyrics .lyric-hl")[idx];
+        if (!hl) return;
+        var br = innerEl.getBoundingClientRect();
+        var hr = hl.getBoundingClientRect();
+        var centerY = hr.top - br.top + hr.height / 2;
+        $el.css("top", Math.round(centerY) + "px");
+      });
+    }
+
     function renderStickies(notes) {
       var $z = $(".js-song-stickies").empty();
+      var innerEl = document.querySelector(".detail-lyrics-scroll-inner");
       if (!notes || !notes.length) {
         $z.attr("aria-hidden", "true");
         return;
       }
       $z.removeAttr("aria-hidden");
-      notes.forEach(function (n) {
+      notes.forEach(function (n, i) {
         if (!n || typeof n !== "object") return;
-        var left = typeof n.left === "number" ? n.left : parseFloat(n.left);
-        var top = typeof n.top === "number" ? n.top : parseFloat(n.top);
-        if (isNaN(left)) left = 8;
-        if (isNaN(top)) top = 12;
-        var $s = $("<div class=\"song-sticky\" />")
-          .css({ left: left + "%", top: top + "%" })
-          .text(n.text != null ? String(n.text) : "");
+        var hasHlIdx = typeof n.highlightIndex === "number" && !isNaN(n.highlightIndex);
+        var hlIdx = hasHlIdx ? n.highlightIndex : i;
+        var legacy =
+          !hasHlIdx &&
+          (n.left != null || n.top != null) &&
+          (typeof n.left === "number" ||
+            typeof n.left === "string" ||
+            typeof n.top === "number" ||
+            typeof n.top === "string");
+
+        var $s = $("<div class=\"song-sticky\" />").text(n.text != null ? String(n.text) : "");
+        if (legacy) {
+          var left = typeof n.left === "number" ? n.left : parseFloat(n.left);
+          var top = typeof n.top === "number" ? n.top : parseFloat(n.top);
+          if (isNaN(left)) left = 8;
+          if (isNaN(top)) top = 12;
+          $s.addClass("song-sticky--legacy").css({ left: left + "%", top: top + "%" });
+        } else {
+          $s.addClass("song-sticky--right").attr("data-hl-idx", String(hlIdx));
+          if (typeof n.topPx === "number" && !isNaN(n.topPx)) {
+            $s.attr("data-top-px", String(n.topPx));
+          }
+          var sc = n.slipColor;
+          if (sc && /^(amber|mint|rose|sky)$/.test(String(sc))) {
+            $s.addClass("song-sticky--" + sc);
+          }
+        }
         $z.append($s);
+      });
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(relayoutSongPageMarginStickies);
       });
     }
 
@@ -192,38 +277,49 @@
         return n && String(n.text || "").trim();
       });
       var hls = $lyrics.find(".lyric-hl").toArray();
-      var paired = Math.min(notes.length, hls.length);
       var blockEl = $block[0];
+      var orphans = [];
 
-      for (var i = 0; i < paired; i++) {
-        var hl = hls[i];
-        var note = notes[i];
+      notes.forEach(function (note, orderIdx) {
+        var hasHlIdx = typeof note.highlightIndex === "number" && !isNaN(note.highlightIndex);
+        var hlIdx = hasHlIdx ? note.highlightIndex : orderIdx;
+        var hl = hls[hlIdx];
+        if (!hl) {
+          orphans.push(note);
+          return;
+        }
         var br = blockEl.getBoundingClientRect();
         var hr = hl.getBoundingClientRect();
         var centerY = hr.top - br.top + hr.height / 2;
-        var isRight = i % 2 === 1;
-        var rot = isRight ? 2.8 : -2.8;
+        if (typeof note.topPx === "number" && !isNaN(note.topPx)) {
+          centerY = note.topPx;
+        }
+        var rot = 2.8;
+        var sc = note.slipColor;
         var $slip = $("<div/>")
-          .addClass("song-sheet-modal__modal-slip")
-          .addClass(isRight ? "song-sheet-modal__modal-slip--right" : "song-sheet-modal__modal-slip--left")
+          .addClass("song-sheet-modal__modal-slip song-sheet-modal__modal-slip--right")
           .css({
             top: Math.round(centerY) + "px",
             transform: "translateY(-50%) rotate(" + rot + "deg)",
           })
           .attr("role", "note")
           .text(note.text != null ? String(note.text) : "");
+        if (sc && /^(amber|mint|rose|sky)$/.test(String(sc))) {
+          $slip.addClass("song-sheet-modal__modal-slip--" + sc);
+        }
         $slips.append($slip);
-      }
+      });
 
-      if (notes.length > paired) {
+      if (orphans.length) {
         $orphanHint.prop("hidden", false);
         $orphan.prop("hidden", false);
-        for (var j = paired; j < notes.length; j++) {
-          var $o = $("<div/>")
-            .addClass("song-sheet-modal__orphan-slip")
-            .text(notes[j].text != null ? String(notes[j].text) : "");
-          $orphan.append($o);
-        }
+        orphans.forEach(function (note) {
+          $orphan.append(
+            $("<div/>")
+              .addClass("song-sheet-modal__orphan-slip")
+              .text(note.text != null ? String(note.text) : "")
+          );
+        });
       } else {
         $orphanHint.prop("hidden", true);
         $orphan.prop("hidden", true).empty();
@@ -293,7 +389,7 @@
       if (session) {
         $compose.append('<p class="song-sheet-modal__slip-label">Your comment</p>');
         $compose.append(
-          '<textarea class="song-sheet-modal__comment-input js-modal-comment-input" rows="2" maxlength="600" placeholder="Write a comment…" aria-label="Comment text"></textarea>'
+          '<textarea class="song-sheet-modal__comment-input js-modal-comment-input" rows="2" maxlength="600" spellcheck="true" placeholder="Write a comment…" aria-label="Comment text"></textarea>'
         );
         $compose.append(
           '<button type="button" class="song-sheet-modal__comment-post js-modal-comment-post">Post</button>'
@@ -447,7 +543,7 @@
         $(".js-meaning-meta").text("").attr("hidden", "");
       }
 
-      document.title = (t.title || "Song") + " — " + g.name + " — Song Share";
+      document.title = (t.title || "Song") + " — " + g.name + " — Noteion";
       syncNavLinks();
     }
 
@@ -573,11 +669,13 @@
 
     var lyricsSlipLayoutTimer = null;
     $(window).on("resize", function () {
-      if ($("#song-sheet-modal").prop("hidden") || $("#song-sheet-modal").hasClass("is-meaning-mode")) return;
       if (lyricsSlipLayoutTimer) window.clearTimeout(lyricsSlipLayoutTimer);
       lyricsSlipLayoutTimer = window.setTimeout(function () {
         lyricsSlipLayoutTimer = null;
-        layoutModalMarginSlips(tracks[idx] || {});
+        if (!$("#song-sheet-modal").prop("hidden") && !$("#song-sheet-modal").hasClass("is-meaning-mode")) {
+          layoutModalMarginSlips(tracks[idx] || {});
+        }
+        relayoutSongPageMarginStickies();
       }, 120);
     });
   });

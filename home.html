@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Song Share</title>
+    <title>Noteion</title>
+    <link rel="stylesheet" href="typefaces/fonts.css" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="auth.css" />
   </head>
@@ -13,7 +14,7 @@
 
       <header class="page-header">
         <div class="header-brand">
-          <h1 class="logo">Song Share</h1>
+          <h1 class="logo">Noteion</h1>
         </div>
         <nav class="header-actions" aria-label="Toolbar">
           <button type="button" class="icon-btn js-open-setlist" aria-label="Open genre list" aria-expanded="false" aria-controls="genre-setlist">
@@ -60,9 +61,6 @@
         <div class="main-fore" aria-hidden="true"></div>
 
         <div class="board-wrap">
-          <div class="decade-tab" aria-hidden="true">
-            <span class="decade-text">Decade</span>
-          </div>
           <div class="board-scroll-hint" aria-hidden="true">Scroll</div>
           <div class="board-scroll" tabindex="0">
             <div class="scrapbook-board" id="genre-board" aria-label="Top music genres"></div>
@@ -76,11 +74,6 @@
           <a class="sns-chip" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open Apple Music">Apple Music</a>
           <a class="sns-chip" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="Open YouTube">YouTube</a>
         </div>
-        <p class="footer-audio-credit">
-          Genre hover clips: Kevin MacLeod —
-          <a href="https://incompetech.com/music/royalty-free/music.html" target="_blank" rel="noopener noreferrer">incompetech.com</a>
-          (CC BY 4.0).
-        </p>
       </footer>
 
       <div class="page-setlist" id="genre-setlist" data-popup aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="setlist-title">
@@ -110,13 +103,21 @@
         <div class="lyrics-search-panel">
           <div class="lyrics-search-scroll">
             <h2 id="lyrics-search-title" class="setlist-heading">Lyrics search</h2>
-            <p class="setlist-lede">Open the lyrics reader. Add a title; artist improves matches.</p>
+            <p class="setlist-lede">
+              Search community posts by song, or open the full lyrics reader. Artist narrows matches.
+            </p>
             <label class="lyrics-search-label" for="lyrics-q-title">Title</label>
-            <input id="lyrics-q-title" class="lyrics-search-input" type="search" autocomplete="off" placeholder="Song title" />
+            <input id="lyrics-q-title" class="lyrics-search-input" type="search" autocomplete="off" spellcheck="true" placeholder="Song or album title" />
             <label class="lyrics-search-label" for="lyrics-q-artist">Artist</label>
-            <input id="lyrics-q-artist" class="lyrics-search-input" type="search" autocomplete="off" placeholder="Optional" />
-            <div class="lyrics-search-actions">
-              <button type="button" class="lyrics-search-submit js-submit-lyrics-search">Open reader</button>
+            <input id="lyrics-q-artist" class="lyrics-search-input" type="search" autocomplete="off" spellcheck="true" placeholder="Track or album artist" />
+            <div class="lyrics-search-actions lyrics-search-actions--split">
+              <button type="button" class="lyrics-search-submit js-search-lyrics-community">Search posts</button>
+              <button type="button" class="lyrics-search-submit lyrics-search-submit--ghost js-submit-lyrics-search">Open reader</button>
+            </div>
+            <div class="lyrics-search-results js-lyrics-search-results" hidden>
+              <p class="lyrics-search-results-song js-lyrics-search-song-line"></p>
+              <p class="lyrics-search-results-count js-lyrics-search-count" role="status" aria-live="polite"></p>
+              <ul class="lyrics-search-posts js-lyrics-search-posts"></ul>
             </div>
           </div>
           <button type="button" class="setlist-close js-close-lyrics-search" aria-label="Close">
@@ -131,6 +132,6 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="genres-data.js"></script>
     <script src="published-feed.js"></script>
-    <script src="song-share.js"></script>
+    <script src="noteion-home.js"></script>
   </body>
 </html>

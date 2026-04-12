@@ -59,7 +59,7 @@
 }
 
 .reader-lyrics {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-roboto);
   font-size: clamp(0.88rem, 2.2vw, 1rem);
   line-height: 1.55;
   color: rgba(250, 248, 240, 0.92);
@@ -68,7 +68,7 @@
 }
 
 .reader-lyrics p {
-  margin: 0 0 1em;
+  margin: 0 0 1.35em;
 }
 
 .reader-lyrics p:last-child {

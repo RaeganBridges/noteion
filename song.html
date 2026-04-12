@@ -3,22 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Song Share</title>
+    <title>Noteion</title>
+    <link rel="stylesheet" href="typefaces/fonts.css" />
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="song.css" />
     <link rel="stylesheet" href="auth.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body class="song-page">
     <div class="page">
       <header class="page-header">
         <div class="header-brand">
-          <h1 class="logo"><a href="home.html">Song Share</a></h1>
+          <h1 class="logo"><a href="home.html">Noteion</a></h1>
           <p class="header-tagline">Genre · two sheets · prev / next</p>
         </div>
         <nav class="header-actions" aria-label="Toolbar">
@@ -106,10 +101,12 @@
                             <p class="detail-meta-line detail-annotation-meta js-annotation-meta" hidden></p>
                             <div class="detail-lyrics-wrap js-song-lyrics-wrap" hidden>
                               <div class="detail-lyrics-scroll">
-                                <div class="detail-lyrics-page js-song-lyrics" role="text"></div>
+                                <div class="detail-lyrics-scroll-inner">
+                                  <div class="detail-lyrics-page js-song-lyrics" role="text"></div>
+                                  <div class="song-stickies js-song-stickies" aria-hidden="true"></div>
+                                </div>
                               </div>
                             </div>
-                            <div class="song-stickies js-song-stickies" aria-hidden="true"></div>
                           </div>
                         </section>
                       </div>
@@ -205,6 +202,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="genres-data.js"></script>
     <script src="published-feed.js"></script>
+    <script src="lyrics-api.js"></script>
     <script src="song-comments.js"></script>
     <script src="song-page.js"></script>
   </body>

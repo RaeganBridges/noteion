@@ -19,13 +19,37 @@
     return s.replace(/\n/g, "<br>");
   }
 
-  function formatLyricsForDisplay(html) {
-    var s = String(html || "").trim();
-    if (!s) return "";
-    if (/<[a-z][\s\S]*>/i.test(s)) {
-      return newlinesToBrInLyricsHtml(s);
+  function normalizePlainLyrics(str) {
+    if (window.SongShareLyrics && window.SongShareLyrics.normalizeLyricsPlainText) {
+      return window.SongShareLyrics.normalizeLyricsPlainText(str);
     }
-    var stanzas = s.split(/\n\n+/);
+    return String(str || "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .trim();
+  }
+
+  function htmlLyricsToPlain(html) {
+    var d = document.createElement("div");
+    d.innerHTML = String(html || "").trim();
+    d.querySelectorAll("br").forEach(function (br) {
+      br.replaceWith("\n");
+    });
+    var paras = d.querySelectorAll("p");
+    if (paras.length) {
+      return Array.prototype.slice
+        .call(paras)
+        .map(function (p) {
+          return (p.textContent || "").trim();
+        })
+        .filter(Boolean)
+        .join("\n\n");
+    }
+    return (d.textContent || "").trim();
+  }
+
+  function formatPlainLyricsToParagraphHtml(plain) {
+    var stanzas = plain.split(/\n\n+/);
     return stanzas
       .map(function (stanza) {
         var t = stanza.trim();
@@ -34,6 +58,19 @@
       })
       .filter(Boolean)
       .join("");
+  }
+
+  function formatLyricsForDisplay(html) {
+    var s = String(html || "").trim();
+    if (!s) return "";
+    var hasHighlight = /lyric-hl/i.test(s);
+    if (/<[a-z][\s\S]*>/i.test(s) && hasHighlight) {
+      return newlinesToBrInLyricsHtml(s);
+    }
+    if (/<[a-z][\s\S]*>/i.test(s)) {
+      return formatPlainLyricsToParagraphHtml(normalizePlainLyrics(htmlLyricsToPlain(s)));
+    }
+    return formatPlainLyricsToParagraphHtml(normalizePlainLyrics(s));
   }
 
   function getTracks(g) {
@@ -111,7 +148,7 @@
       trackIdx = Math.max(0, Math.min(trackIdx, tracks.length - 1));
       var t = tracks[trackIdx];
       showTrack(t);
-      document.title = (t.title || "Song") + " — Lyrics — Song Share";
+      document.title = (t.title || "Song") + " — Lyrics — Noteion";
       $(".reader-header-tagline").text((g && g.name) || "Genre");
 
       if (t.lyricsHtml && String(t.lyricsHtml).trim()) {
@@ -133,7 +170,7 @@
 
     /* Ad-hoc search from home */
     showTrack({ title: qTitle, artist: qArtist });
-    document.title = (qTitle || "Lyrics") + " — Song Share";
+    document.title = (qTitle || "Lyrics") + " — Noteion";
     $back.attr("href", "home.html");
     if (qArtist && qTitle) {
       runFetch(qArtist, qTitle);

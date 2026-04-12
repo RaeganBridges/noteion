@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Profile — Song Share</title>
+    <title>Profile — Noteion</title>
+    <link rel="stylesheet" href="typefaces/fonts.css" />
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="profile.css" />
     <link rel="stylesheet" href="auth.css" />
@@ -12,7 +13,7 @@
     <div class="page">
       <header class="page-header">
         <div class="header-brand">
-          <h1 class="logo"><a href="home.html">Song Share</a></h1>
+          <h1 class="logo"><a href="home.html">Noteion</a></h1>
           <p class="header-tagline">Your desk · publish tracks · sign out anytime</p>
         </div>
         <nav class="header-actions" aria-label="Toolbar">
@@ -52,6 +53,7 @@
             <p class="profile-welcome">Hi, <span class="js-profile-name">there</span></p>
             <div class="profile-toolbar-actions">
               <button type="button" class="profile-new-song js-open-composer">New song</button>
+              <button type="button" class="profile-new-album js-open-album-composer">New album</button>
               <button type="button" class="profile-signout js-profile-signout">Sign out</button>
             </div>
           </div>
@@ -59,7 +61,7 @@
           <section class="profile-desk-section" aria-labelledby="desk-heading">
             <h2 id="desk-heading" class="profile-desk-heading">The desk</h2>
             <p id="profile-empty" class="profile-empty" hidden>
-              Nothing published yet. Use <strong>New song</strong> to add lyrics, a meaning, genre tags, then publish to the board.
+              Nothing published yet. Use <strong>New song</strong> for a single track or <strong>New album</strong> to add several songs under one release, then publish to the board.
             </p>
             <div id="profile-desk" class="profile-desk-rail" aria-label="Your published songs"></div>
           </section>
@@ -94,7 +96,7 @@
         </header>
         <div class="profile-composer-scroll">
           <p class="profile-composer-lede">
-            Fetch or paste lyrics, then highlight lines and add annotation slips in order — the 1st slip lines up with the 1st highlight in the lyrics overlay, and so on. Write a meaning; commenters use the meaning overlay. Pick at least one genre so it appears on the board.
+            Fetch or paste lyrics, select a line, then pick a highlight color — a note card appears for that new line. <strong>Add annotation slip</strong> adds a card beside the line you highlighted most recently. Slips sit on the right; drag <strong>⋮</strong> to move a slip up or down, and use the color dots to match the highlight colors. Each slip has × to remove. Write a meaning; commenters use the meaning overlay. Pick at least one genre so it appears on the board.
           </p>
 
           <div class="composer-workspace">
@@ -103,11 +105,11 @@
                 <div class="composer-field composer-field--row">
                   <div class="composer-field-grow">
                     <label class="profile-label" for="composer-track-title">Title</label>
-                    <input id="composer-track-title" class="profile-input" type="text" autocomplete="off" placeholder="Track name" />
+                    <input id="composer-track-title" class="profile-input" type="text" autocomplete="off" spellcheck="true" placeholder="Track name" />
                   </div>
                   <div class="composer-field-grow">
                     <label class="profile-label profile-label--inline" for="composer-artist">Artist</label>
-                    <input id="composer-artist" class="profile-input" type="text" autocomplete="off" placeholder="For lyrics lookup" />
+                    <input id="composer-artist" class="profile-input" type="text" autocomplete="off" spellcheck="true" placeholder="For lyrics lookup" />
                   </div>
                   <button type="button" class="profile-fetch-lyrics js-fetch-lyrics">Fetch lyrics</button>
                 </div>
@@ -126,6 +128,7 @@
                   class="profile-textarea"
                   rows="4"
                   maxlength="8000"
+                  spellcheck="true"
                   placeholder="What this song means to you…"
                 ></textarea>
               </div>
@@ -139,7 +142,7 @@
                 <button type="button" class="profile-slip-btn js-add-slip">Add annotation slip</button>
               </div>
 
-              <p class="composer-publish-hint">Remove a card from your desk to unpublish it from the board.</p>
+              <p class="composer-publish-hint">When editing, use <strong>Delete</strong> in the footer to remove the post from your desk and the board.</p>
             </div>
 
             <div class="composer-workspace-lyrics">
@@ -149,23 +152,190 @@
                 <button type="button" class="composer-hl-btn composer-hl-btn--mint js-hl" data-hl="lyric-hl--mint">Mint</button>
                 <button type="button" class="composer-hl-btn composer-hl-btn--rose js-hl" data-hl="lyric-hl--rose">Rose</button>
                 <button type="button" class="composer-hl-btn composer-hl-btn--sky js-hl" data-hl="lyric-hl--sky">Sky</button>
-                <button type="button" class="composer-hl-btn composer-hl-btn--clear js-hl-clear">Clear highlight</button>
+                <button type="button" class="composer-hl-btn composer-hl-btn--clear js-hl-clear">Clear highlights</button>
               </div>
               <div class="composer-lyrics-stage">
-                <div
-                  id="composer-lyrics-ed"
-                  class="composer-lyrics-ed"
-                  contenteditable="true"
-                  data-placeholder="Paste lyrics or use Fetch lyrics…"
-                ></div>
-                <div class="composer-sticky-layer js-sticky-layer" aria-hidden="true"></div>
+                <div class="composer-lyrics-scroll js-composer-lyrics-scroll">
+                  <div class="composer-lyrics-scroll-inner js-composer-lyrics-inner">
+                    <div
+                      id="composer-lyrics-ed"
+                      class="composer-lyrics-ed"
+                      contenteditable="true"
+                      spellcheck="true"
+                      data-placeholder="Paste lyrics or use Fetch lyrics…"
+                    ></div>
+                    <div class="composer-sticky-layer js-sticky-layer" aria-hidden="true"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
         <footer class="profile-composer-foot">
+          <button
+            type="button"
+            class="profile-composer-delete js-composer-delete-post"
+            hidden
+            aria-label="Remove from desk and unpublish from board"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>Delete</span>
+          </button>
           <button type="button" class="profile-composer-cancel js-composer-close">Cancel</button>
           <button type="button" class="profile-add-btn js-publish-desk">Publish to desk</button>
+        </footer>
+      </div>
+    </div>
+
+    <div id="profile-album-composer" class="profile-composer profile-composer--album" hidden aria-hidden="true">
+      <div class="profile-composer-scrim js-album-composer-close" tabindex="-1"></div>
+      <div class="profile-composer-panel" role="dialog" aria-modal="true" aria-labelledby="album-dialog-title">
+        <header class="profile-composer-head">
+          <h2 id="album-dialog-title" class="profile-composer-title">Publish an album</h2>
+          <button type="button" class="profile-composer-dismiss js-album-composer-close" aria-label="Close album editor">×</button>
+        </header>
+        <div class="profile-composer-scroll">
+          <p class="profile-composer-lede">
+            Set the album title and artist, then add tracks. For each track, highlights create a right-margin note card; <strong>Add annotation slip</strong> targets the most recent highlight, and you can drag ⋮ or pick colors like the single-track editor. You can add multiple audio files at once (small clips are stored in the browser; very large files are skipped).
+          </p>
+
+          <div class="composer-grid">
+            <div class="composer-field composer-field--row">
+              <div class="composer-field-grow">
+                <label class="profile-label" for="album-album-title">Album title</label>
+                <input id="album-album-title" class="profile-input" type="text" autocomplete="off" spellcheck="true" placeholder="Album name" />
+              </div>
+              <div class="composer-field-grow">
+                <label class="profile-label profile-label--inline" for="album-album-artist">Album artist</label>
+                <input id="album-album-artist" class="profile-input" type="text" autocomplete="off" spellcheck="true" placeholder="Artist for all tracks" />
+              </div>
+            </div>
+          </div>
+
+          <div class="composer-field album-cover-field">
+            <label class="profile-label" for="album-cover-file">Album cover (optional)</label>
+            <div class="album-cover-row">
+              <div class="album-cover-thumb" aria-hidden="true">
+                <img id="album-cover-preview" class="album-cover-thumb-img" alt="" width="88" height="88" hidden />
+                <span id="album-cover-empty" class="album-cover-thumb-placeholder">No image</span>
+              </div>
+              <div class="album-cover-actions">
+                <label class="album-audio-file-label album-cover-file-label">
+                  Choose image
+                  <input type="file" id="album-cover-file" class="js-album-cover-file" accept="image/*" />
+                </label>
+                <button type="button" class="profile-slip-btn profile-slip-btn--ghost js-album-cover-clear">Remove cover</button>
+              </div>
+            </div>
+            <p class="album-cover-hint">Square images work best. Large files are skipped to save space on this device.</p>
+          </div>
+
+          <div class="album-workspace">
+            <aside class="album-track-sidebar" aria-label="Tracks on this album">
+              <p class="profile-label">Tracks</p>
+              <ul class="album-track-list js-album-track-list" role="list"></ul>
+              <div class="album-track-sidebar-actions">
+                <button type="button" class="profile-slip-btn js-album-add-track">Add track</button>
+                <label class="album-audio-file-label">
+                  Add from audio
+                  <input type="file" class="js-album-audio-files" multiple accept="audio/*,.mp3,.m4a,.wav,.ogg,.flac,.aac,.webm" />
+                </label>
+              </div>
+            </aside>
+
+            <div class="album-track-editor">
+              <div class="composer-field composer-field--row">
+                <div class="composer-field-grow">
+                  <label class="profile-label" for="album-track-title">Track title</label>
+                  <input id="album-track-title" class="profile-input" type="text" autocomplete="off" spellcheck="true" placeholder="Song title" />
+                </div>
+                <div class="composer-field-grow">
+                  <label class="profile-label profile-label--inline" for="album-track-artist">Track artist</label>
+                  <input id="album-track-artist" class="profile-input" type="text" autocomplete="off" spellcheck="true" placeholder="Optional override" />
+                </div>
+                <button type="button" class="profile-fetch-lyrics js-album-fetch-lyrics">Fetch lyrics</button>
+              </div>
+
+              <p class="profile-lyrics-status js-album-lyrics-status" role="status" aria-live="polite"></p>
+              <div class="profile-lyrics-picks js-album-lyrics-picks-wrap" hidden>
+                <p class="profile-lyrics-picks-title">Pick a match</p>
+                <ul class="profile-lyrics-picks-list js-album-lyrics-picks"></ul>
+              </div>
+
+              <div class="composer-field">
+                <label class="profile-label" for="album-meaning">Meaning</label>
+                <textarea
+                  id="album-meaning"
+                  class="profile-textarea"
+                  rows="3"
+                  maxlength="8000"
+                  spellcheck="true"
+                  placeholder="What this track means to you…"
+                ></textarea>
+              </div>
+
+              <fieldset class="composer-genres">
+                <legend class="profile-label">Genre tags (at least one)</legend>
+                <div class="composer-genre-grid js-album-genre-tags"></div>
+              </fieldset>
+
+              <div class="composer-slip-actions">
+                <button type="button" class="profile-slip-btn js-album-add-slip">Add annotation slip</button>
+                <button type="button" class="profile-slip-btn profile-slip-btn--ghost js-album-remove-track">Remove this track</button>
+              </div>
+
+              <div class="composer-workspace-lyrics album-lyrics-column">
+                <label class="profile-label" for="album-lyrics-ed">Lyrics</label>
+                <div class="composer-hl-tools">
+                  <button type="button" class="composer-hl-btn composer-hl-btn--amber js-album-hl" data-hl="lyric-hl--amber">Amber</button>
+                  <button type="button" class="composer-hl-btn composer-hl-btn--mint js-album-hl" data-hl="lyric-hl--mint">Mint</button>
+                  <button type="button" class="composer-hl-btn composer-hl-btn--rose js-album-hl" data-hl="lyric-hl--rose">Rose</button>
+                  <button type="button" class="composer-hl-btn composer-hl-btn--sky js-album-hl" data-hl="lyric-hl--sky">Sky</button>
+                  <button type="button" class="composer-hl-btn composer-hl-btn--clear js-album-hl-clear">Clear highlights</button>
+                </div>
+                <div class="composer-lyrics-stage">
+                  <div class="composer-lyrics-scroll js-album-lyrics-scroll">
+                    <div class="composer-lyrics-scroll-inner js-album-lyrics-inner">
+                      <div
+                        id="album-lyrics-ed"
+                        class="composer-lyrics-ed"
+                        contenteditable="true"
+                        spellcheck="true"
+                        data-placeholder="Paste lyrics or use Fetch lyrics…"
+                      ></div>
+                      <div class="composer-sticky-layer js-album-sticky-layer" aria-hidden="true"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="composer-publish-hint">When editing an album, <strong>Delete</strong> removes every track in it from your desk and the board.</p>
+        </div>
+        <footer class="profile-composer-foot">
+          <button type="button" class="profile-composer-delete js-album-delete-post" hidden aria-label="Remove album from desk and board">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>Delete</span>
+          </button>
+          <button type="button" class="profile-composer-cancel js-album-composer-close">Cancel</button>
+          <button type="button" class="profile-add-btn js-album-publish-desk">Publish album to desk</button>
         </footer>
       </div>
     </div>
