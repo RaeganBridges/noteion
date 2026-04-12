@@ -1,8 +1,10 @@
 /**
- * Optional: set url and anonKey from the Supabase dashboard (Settings → API).
- * Leave empty to use device-local demo auth and feed only.
+ * Project: wxcuipdfrohozowdhlql — keys from Supabase → Project Settings → API.
+ *
+ * anonKey must be the "anon" / "public" JWT (long string starting with "eyJ…"),
+ * NOT the project URL. Paste it between the quotes below.
  */
 window.SONGSHARE_SUPABASE = {
-  url: "",
+  url: "https://wxcuipdfrohozowdhlql.supabase.co",
   anonKey: "",
 };
