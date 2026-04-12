@@ -12,12 +12,27 @@
     (cfg.anonKey != null && cfg.anonKey) || global.SONGSHARE_SUPABASE_ANON_KEY || ""
   ).trim();
 
+  /** UMD builds may expose createClient on the namespace or under .default */
+  function resolveCreateClient() {
+    var s = global.supabase;
+    if (!s) return null;
+    if (typeof s.createClient === "function") {
+      return s.createClient.bind(s);
+    }
+    var d = s.default;
+    if (d && typeof d.createClient === "function") {
+      return d.createClient.bind(d);
+    }
+    return null;
+  }
+
+  var createClientFn = resolveCreateClient();
+
   var sb =
     cfg.url &&
     anonKey &&
-    global.supabase &&
-    typeof global.supabase.createClient === "function"
-      ? global.supabase.createClient(cfg.url, anonKey, {
+    createClientFn
+      ? createClientFn(cfg.url, anonKey, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,
@@ -36,6 +51,13 @@
       "[Noteion] Supabase project URL is set but the anon key is missing. " +
         "Add it to supabase-config.js, or set window.SONGSHARE_SUPABASE_ANON_KEY before this script. " +
         "Dashboard: Project Settings → API → anon public (JWT starting with eyJ)."
+    );
+  }
+
+  if (cfg.url && anonKey && !sb && typeof console !== "undefined" && console.error) {
+    console.error(
+      "[Noteion] Supabase URL and anon key are set but createClient failed. " +
+        "Load https://cdn.jsdelivr.net/npm/@supabase/supabase-js (UMD) before auth-storage.js, or check the browser console for script errors."
     );
   }
 

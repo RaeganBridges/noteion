@@ -1,0 +1,11 @@
+{
+  "name": "noteion",
+  "private": true,
+  "scripts": {
+    "sup": "node scripts/sync-supabase-config.mjs",
+    "config": "node scripts/sync-supabase-config.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

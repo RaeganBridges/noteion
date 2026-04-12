@@ -1,10 +1,6 @@
 /**
- * Copy to supabase-config.js and fill in your project URL + anon key
- * (Supabase → Project Settings → API). The anon key is safe to use in the
- * browser; security comes from Row Level Security on the database.
- *
- * If url is left empty, the app uses local-only auth and the published feed
- * stays on this device (original demo behavior).
+ * Prefer: copy .env.example to .env, set SUPABASE_ANON_KEY, run: npm run sup
+ * That overwrites supabase-config.js automatically (no manual copy of this file).
  */
 window.SONGSHARE_SUPABASE = {
   url: "",
