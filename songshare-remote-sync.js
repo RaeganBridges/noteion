@@ -17,7 +17,12 @@
         var err = result.error;
         if (err) {
           if (typeof console !== "undefined" && console.warn) {
-            console.warn("Noteion remote pull:", err.message || err);
+            console.warn("Noteion remote pull:", err.message || err, err);
+            if (String(err.message || "").indexOf("community_posts") !== -1) {
+              console.warn(
+                "[Noteion] Run supabase/migrations/001_community_posts.sql in the Supabase SQL Editor if the table is missing."
+              );
+            }
           }
           return;
         }

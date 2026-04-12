@@ -8,12 +8,16 @@
   var USERS_KEY = "songShareUsers";
 
   var cfg = global.SONGSHARE_SUPABASE || {};
+  var anonKey = String(
+    (cfg.anonKey != null && cfg.anonKey) || global.SONGSHARE_SUPABASE_ANON_KEY || ""
+  ).trim();
+
   var sb =
     cfg.url &&
-    cfg.anonKey &&
+    anonKey &&
     global.supabase &&
     typeof global.supabase.createClient === "function"
-      ? global.supabase.createClient(cfg.url, cfg.anonKey, {
+      ? global.supabase.createClient(cfg.url, anonKey, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,
@@ -25,6 +29,14 @@
 
   if (sb) {
     global.songShareSupabaseClient = sb;
+  }
+
+  if (cfg.url && !anonKey && typeof console !== "undefined" && console.warn) {
+    console.warn(
+      "[Noteion] Supabase project URL is set but the anon key is missing. " +
+        "Add it to supabase-config.js, or set window.SONGSHARE_SUPABASE_ANON_KEY before this script. " +
+        "Dashboard: Project Settings → API → anon public (JWT starting with eyJ)."
+    );
   }
 
   if (!sb) {
