@@ -1693,7 +1693,16 @@
       applySlipColorClass($(this).closest(".composer-slip"), k);
     });
 
-    render();
+    function bootProfile() {
+      var wr = window.SongShareAuth && window.SongShareAuth.whenReady;
+      if (typeof wr === "function") {
+        wr.call(window.SongShareAuth).then(render).catch(render);
+      } else {
+        render();
+      }
+    }
+
     window.addEventListener("songshare:authed", render);
+    bootProfile();
   });
 })(jQuery);

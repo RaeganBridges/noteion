@@ -177,6 +177,9 @@
 
   readyPromise = sb.auth.getSession().then(function (res) {
     setCache(res.data.session);
+    if (sessionCache) {
+      global.dispatchEvent(new CustomEvent("songshare:authed"));
+    }
   });
 
   sb.auth.onAuthStateChange(function (event, sbSession) {
