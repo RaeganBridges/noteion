@@ -183,6 +183,17 @@
     setCache(sbSession);
   });
 
+  /** Where Supabase should send users after they click the email confirmation link (must match Redirect URLs in the dashboard). */
+  function emailRedirectToAfterConfirm() {
+    try {
+      var loc = global.location;
+      if (!loc || !loc.href || loc.protocol === "file:") return undefined;
+      return new URL("home.html", loc.href).href;
+    } catch (e) {
+      return undefined;
+    }
+  }
+
   global.SongShareAuth = {
     getSession: function () {
       return sessionCache;
@@ -198,24 +209,42 @@
       if (password.length < 6) {
         return Promise.resolve({ error: "Use a password with at least 6 characters (Supabase policy)." });
       }
-      return sb.auth
-        .signUp({
-          email: email,
-          password: password,
-          options: {
-            data: { display_name: displayName },
-          },
-        })
-        .then(function (res) {
-          if (res.error) return { error: res.error.message };
-          if (!res.data.session) {
-            return {
-              ok: true,
-              message: "Check your email to confirm your account, then sign in.",
-            };
+      var redirect = emailRedirectToAfterConfirm();
+      var signUpOpts = {
+        email: email,
+        password: password,
+        options: {
+          data: { display_name: displayName },
+        },
+      };
+      if (redirect) {
+        signUpOpts.options.emailRedirectTo = redirect;
+      }
+      return sb.auth.signUp(signUpOpts).then(function (res) {
+        if (res.error) return { error: res.error.message };
+        if (!res.data.session) {
+          var hint =
+            "Check your email to confirm your account, then sign in.";
+          if (redirect && typeof console !== "undefined" && console.info) {
+            console.info(
+              "[Noteion] Confirmation redirect URL (add to Supabase → Authentication → URL Configuration → Redirect URLs if the link fails):",
+              redirect
+            );
           }
-          return { ok: true };
-        });
+          if (global.location && global.location.protocol === "file:") {
+            hint +=
+              " Open the site over http://localhost (Live Server, etc.), not file:// — or turn off “Confirm email” in Supabase for testing.";
+          } else if (redirect) {
+            hint +=
+              " If the link errors, add " + redirect + " to Redirect URLs in the Supabase dashboard (Authentication → URL Configuration).";
+          }
+          return {
+            ok: true,
+            message: hint,
+          };
+        }
+        return { ok: true };
+      });
     },
     signIn: function (email, password) {
       email = (email || "").trim();
