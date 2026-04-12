@@ -34,7 +34,7 @@
       '<div class="auth-panel">' +
       '<div class="auth-panel-header">' +
       '<h2 id="auth-gate-title" class="auth-panel-title">Noteion</h2>' +
-      '<p class="auth-panel-lede">Sign in or create an account to use the site. Everything stays on this device only (demo).</p>' +
+      '<p class="auth-panel-lede">Sign in or create an account. If this deployment uses Supabase (see supabase-config.js), your session and published posts sync across devices.</p>' +
       "</div>" +
       '<div class="auth-tabs" role="tablist">' +
       '<button type="button" class="auth-tab" role="tab" aria-selected="true" aria-controls="auth-form-signin" id="auth-tab-signin">Sign in</button>' +
@@ -91,37 +91,54 @@
       e.preventDefault();
       showMsg(msgIn, "");
       var fd = new FormData(e.target);
-      var res = window.SongShareAuth.signIn(String(fd.get("email") || ""), String(fd.get("password") || ""));
-      if (res.error) showMsg(msgIn, res.error);
-      else closeGate(gate);
+      Promise.resolve(
+        window.SongShareAuth.signIn(String(fd.get("email") || ""), String(fd.get("password") || ""))
+      ).then(function (res) {
+        if (res.error) showMsg(msgIn, res.error);
+        else closeGate(gate);
+      });
     });
 
     gate.querySelector("#auth-form-signup").addEventListener("submit", function (e) {
       e.preventDefault();
       showMsg(msgUp, "");
       var fd = new FormData(e.target);
-      var res = window.SongShareAuth.signUp(
-        String(fd.get("email") || ""),
-        String(fd.get("password") || ""),
-        String(fd.get("displayName") || "")
-      );
-      if (res.error) showMsg(msgUp, res.error);
-      else closeGate(gate);
+      Promise.resolve(
+        window.SongShareAuth.signUp(
+          String(fd.get("email") || ""),
+          String(fd.get("password") || ""),
+          String(fd.get("displayName") || "")
+        )
+      ).then(function (res) {
+        if (res.error) showMsg(msgUp, res.error);
+        else if (res.message) showMsg(msgUp, res.message);
+        else closeGate(gate);
+      });
     });
   }
 
   function run() {
     if (!window.SongShareAuth) return;
-    if (window.SongShareAuth.getSession()) return;
 
-    var gate = document.getElementById("songshare-auth-gate");
-    if (!gate) gate = buildGate();
-    if (!gate.dataset.ssWired) {
-      wireTabs(gate);
-      wireForms(gate);
-      gate.dataset.ssWired = "1";
+    function maybeOpenGate() {
+      if (window.SongShareAuth.getSession()) return;
+
+      var gate = document.getElementById("songshare-auth-gate");
+      if (!gate) gate = buildGate();
+      if (!gate.dataset.ssWired) {
+        wireTabs(gate);
+        wireForms(gate);
+        gate.dataset.ssWired = "1";
+      }
+      openGate(gate);
     }
-    openGate(gate);
+
+    var wr = window.SongShareAuth.whenReady;
+    if (typeof wr === "function") {
+      wr.call(window.SongShareAuth).then(maybeOpenGate).catch(maybeOpenGate);
+    } else {
+      maybeOpenGate();
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);

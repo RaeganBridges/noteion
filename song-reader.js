@@ -90,6 +90,7 @@
   }
 
   $(function () {
+    function start() {
     var genres = window.SONG_SHARE_GENRES || [];
     var id = parseInt(qp("id"), 10);
     var trackIdx = parseInt(qp("track"), 10);
@@ -204,5 +205,12 @@
     } else {
       setStatus("Open a song from the board or search from home.", true);
     }
+    }
+
+    var _pull = Promise.resolve();
+    if (window.SongShareRemoteSync && typeof window.SongShareRemoteSync.whenReady === "function") {
+      _pull = window.SongShareRemoteSync.whenReady();
+    }
+    _pull.then(start).catch(start);
   });
 })(jQuery);

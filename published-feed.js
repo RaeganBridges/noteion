@@ -1,12 +1,15 @@
 /**
- * Community-published songs (localStorage). Merged into genre track lists on load.
+ * Community-published songs: localStorage plus optional Supabase `community_posts`.
  */
 (function (global) {
   "use strict";
 
   var KEY = "songSharePublishedV1";
 
-  function loadAll() {
+  /** Entries loaded from Supabase (remote wins over local when ids collide). */
+  var remoteEntries = null;
+
+  function loadLocalOnly() {
     try {
       var raw = localStorage.getItem(KEY);
       var arr = raw ? JSON.parse(raw) : [];
@@ -16,8 +19,66 @@
     }
   }
 
+  function loadAll() {
+    var merged = {};
+    loadLocalOnly().forEach(function (p) {
+      if (p && p.id) merged[p.id] = p;
+    });
+    if (remoteEntries && remoteEntries.length) {
+      remoteEntries.forEach(function (p) {
+        if (p && p.id) merged[p.id] = p;
+      });
+    }
+    return Object.keys(merged).map(function (k) {
+      return merged[k];
+    });
+  }
+
   function saveAll(items) {
     localStorage.setItem(KEY, JSON.stringify(items));
+  }
+
+  function persistRemoteUpsert(entry) {
+    var sb = global.songShareSupabaseClient;
+    if (!sb || !entry || !entry.id) return;
+    sb.auth.getSession().then(function (r) {
+      var sess = r.data && r.data.session;
+      if (!sess || !sess.user) return;
+      sb.from("community_posts")
+        .upsert(
+          {
+            id: String(entry.id),
+            user_id: sess.user.id,
+            payload: entry,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        )
+        .then(function (result) {
+          var err = result && result.error;
+          if (err && typeof console !== "undefined" && console.warn) {
+            console.warn("Noteion sync:", err.message || err);
+          }
+        });
+    });
+  }
+
+  function persistRemoteDelete(pubId) {
+    var sb = global.songShareSupabaseClient;
+    if (!sb || !pubId) return;
+    sb.auth.getSession().then(function (r) {
+      var sess = r.data && r.data.session;
+      if (!sess || !sess.user) return;
+      sb.from("community_posts")
+        .delete()
+        .eq("id", String(pubId))
+        .then(function (result) {
+          var err = result && result.error;
+          if (err && typeof console !== "undefined" && console.warn) {
+            console.warn("Noteion delete sync:", err.message || err);
+          }
+        });
+    });
   }
 
   function yearFromTimestamp(ts) {
@@ -119,6 +180,7 @@
     var all = loadAll();
     all.unshift(entry);
     saveAll(all);
+    persistRemoteUpsert(entry);
     return all;
   }
 
@@ -129,6 +191,7 @@
     });
     next.unshift(entry);
     saveAll(next);
+    persistRemoteUpsert(entry);
     return next;
   }
 
@@ -138,7 +201,12 @@
       return x.id !== pubId;
     });
     saveAll(next);
+    persistRemoteDelete(pubId);
     return next;
+  }
+
+  function setRemoteEntries(entries) {
+    remoteEntries = Array.isArray(entries) ? entries : null;
   }
 
   function normalizeSongToken(str) {
@@ -199,6 +267,36 @@
     });
   }
 
+  function displayNameMatchesQuery(normProfile, displayName) {
+    var d = normalizeSongToken(displayName || "");
+    if (!normProfile || !d) return false;
+    if (d === normProfile) return true;
+    if (
+      normProfile.length >= 2 &&
+      (d.indexOf(normProfile) !== -1 || normProfile.indexOf(d) !== -1)
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  /** Posts whose publisher display name matches (substring, normalized). */
+  function findPostsByProfile(profileQuery) {
+    var pq = normalizeSongToken(profileQuery || "");
+    if (!pq) return [];
+    return loadAll().filter(function (p) {
+      return displayNameMatchesQuery(pq, p.displayName || "");
+    });
+  }
+
+  function filterPostsByProfile(posts, profileQuery) {
+    var pq = normalizeSongToken(profileQuery || "");
+    if (!pq || !posts || !posts.length) return posts || [];
+    return posts.filter(function (p) {
+      return displayNameMatchesQuery(pq, p.displayName || "");
+    });
+  }
+
   /** First genre board slot for a published id after merge (for deep links). */
   function resolvePostBoardLocation(pubId) {
     if (!pubId) return null;
@@ -225,9 +323,12 @@
     add: add,
     upsert: upsert,
     removeById: removeById,
+    setRemoteEntries: setRemoteEntries,
     mergeGenres: mergeGenres,
     applyMerge: applyMerge,
     findPostsBySong: findPostsBySong,
+    findPostsByProfile: findPostsByProfile,
+    filterPostsByProfile: filterPostsByProfile,
     resolvePostBoardLocation: resolvePostBoardLocation,
   };
 

@@ -1331,8 +1331,15 @@
     });
 
     $(".js-profile-signout").on("click", function () {
-      window.SongShareAuth.signOut();
-      window.location.href = "home.html";
+      var out = window.SongShareAuth.signOut();
+      function goHome() {
+        window.location.href = "home.html";
+      }
+      if (out && typeof out.then === "function") {
+        out.then(goHome).catch(goHome);
+      } else {
+        goHome();
+      }
     });
 
     $(document).on("keydown", function (e) {

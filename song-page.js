@@ -123,6 +123,7 @@
   }
 
   $(function () {
+    function start() {
     var genres = window.SONG_SHARE_GENRES || [];
     var id = queryId();
     if (!genres.length || !id || id < 1 || id > genres.length) {
@@ -678,5 +679,12 @@
         relayoutSongPageMarginStickies();
       }, 120);
     });
+    }
+
+    var _pull = Promise.resolve();
+    if (window.SongShareRemoteSync && typeof window.SongShareRemoteSync.whenReady === "function") {
+      _pull = window.SongShareRemoteSync.whenReady();
+    }
+    _pull.then(start).catch(start);
   });
 })(jQuery);

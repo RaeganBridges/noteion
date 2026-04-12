@@ -6,7 +6,9 @@
 (function ($) {
   "use strict";
 
-  var genres = window.SONG_SHARE_GENRES || [];
+  function getGenres() {
+    return window.SONG_SHARE_GENRES || [];
+  }
 
   var $openBtn;
   var $lyricsSearchBtn;
@@ -152,6 +154,7 @@
 
     var $rowTop = $('<div class="scrapbook-row scrapbook-row--top"></div>');
     var $rowBottom = $('<div class="scrapbook-row scrapbook-row--bottom"></div>');
+    var genres = getGenres();
     var half = Math.ceil(genres.length / 2);
 
     genres.forEach(function (g, i) {
@@ -168,6 +171,7 @@
   }
 
   function buildSetlist() {
+    var genres = getGenres();
     var $list = $(".js-setlist-list");
     $list.empty();
     genres.forEach(function (g, i) {
@@ -191,7 +195,7 @@
     var raw = ($card.attr("id") || "").replace(/^genre-card-/, "");
     var rank = parseInt(raw, 10);
     if (isNaN(rank) || rank < 1) return null;
-    return genres[rank - 1] || null;
+    return getGenres()[rank - 1] || null;
   }
 
   function pauseAllExcept($keep) {
@@ -417,28 +421,59 @@
   function runLyricsCommunitySearch() {
     var title = String($("#lyrics-q-title").val() || "").trim();
     var artist = String($("#lyrics-q-artist").val() || "").trim();
-    if (!title) {
-      window.alert("Add a song or album title to search.");
+    var profile = String($("#lyrics-q-profile").val() || "").trim();
+    var SP = window.SongSharePublished;
+    if (!SP || typeof SP.findPostsBySong !== "function") {
       return;
     }
-    if (!window.SongSharePublished || typeof window.SongSharePublished.findPostsBySong !== "function") {
+    if (!title && !profile) {
+      window.alert("Add a song or album title, or a profile display name to search.");
       return;
     }
-    var posts = window.SongSharePublished.findPostsBySong(title, artist);
+    var posts;
+    var profileOnly = !title && !!profile;
+    if (profileOnly) {
+      posts =
+        typeof SP.findPostsByProfile === "function"
+          ? SP.findPostsByProfile(profile)
+          : [];
+    } else {
+      posts = SP.findPostsBySong(title, artist);
+      if (profile && typeof SP.filterPostsByProfile === "function") {
+        posts = SP.filterPostsByProfile(posts, profile);
+      }
+    }
     var $block = $(".js-lyrics-search-results");
     var $songLine = $(".js-lyrics-search-song-line");
     var $count = $(".js-lyrics-search-count");
     var $ul = $(".js-lyrics-search-posts").empty();
 
-    $songLine.text(artist ? title + " · " + artist : title);
+    if (profileOnly) {
+      $songLine.text('Profile: "' + profile + '"');
+    } else {
+      var head = artist ? title + " · " + artist : title;
+      $songLine.text(profile ? head + " · profile: " + profile : head);
+    }
     $block.removeAttr("hidden");
 
     if (!posts.length) {
-      $count.text("No community posts match (try a track title, album title, or artist).");
+      if (profileOnly) {
+        $count.text('No community posts from publishers matching that display name.');
+      } else if (profile) {
+        $count.text(
+          "No community posts match this song and profile (try a different spelling or profile)."
+        );
+      } else {
+        $count.text("No community posts match (try a track title, album title, or artist).");
+      }
       return;
     }
     var n = posts.length;
-    $count.text(n === 1 ? "1 post by the community" : n + " posts by the community");
+    if (profileOnly) {
+      $count.text(n === 1 ? "1 post from this profile" : n + " posts from matching profiles");
+    } else {
+      $count.text(n === 1 ? "1 post by the community" : n + " posts by the community");
+    }
 
     posts.forEach(function (p) {
       var loc =
@@ -519,18 +554,10 @@
     $(".js-search-lyrics-community").on("click", function () {
       runLyricsCommunitySearch();
     });
-    $("#lyrics-q-title, #lyrics-q-artist").on("keydown", function (e) {
+    $("#lyrics-q-title, #lyrics-q-artist, #lyrics-q-profile").on("keydown", function (e) {
       if (e.key !== "Enter") return;
       e.preventDefault();
       runLyricsCommunitySearch();
-    });
-    $(".js-submit-lyrics-search").on("click", function () {
-      var title = String($("#lyrics-q-title").val() || "").trim();
-      var artist = String($("#lyrics-q-artist").val() || "").trim();
-      if (!title) return;
-      var url = "song-reader.html?q=" + encodeURIComponent(title);
-      if (artist) url += "&artist=" + encodeURIComponent(artist);
-      window.location.href = url;
     });
   }
 
@@ -637,7 +664,7 @@
 
   $(function () {
     bindGenreAudioPriming();
-    if (!genres.length) return;
+    if (!getGenres().length) return;
     buildCards();
     buildSetlist();
     bindStackShuffle();
@@ -648,5 +675,11 @@
     bindLoading();
     bindParallax();
     bindBoardScrollWheel();
+
+    $(window).on("songshare:remote-posts", function () {
+      if (!getGenres().length) return;
+      buildCards();
+      buildSetlist();
+    });
   });
 })(jQuery);
