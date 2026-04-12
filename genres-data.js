@@ -287,6 +287,22 @@ window.SONG_SHARE_GENRES = [
     ],
   },
   {
+    name: "Disco",
+    inspiredByArtists: "Bee Gees, Donna Summer, Chic, Gloria Gaynor",
+    clipSlug: "disco",
+    /* Hover: add URL in genre-clips/sources.json → genre-clips/disco.mp3 */
+    audio: "genre-clips/disco.mp3",
+    audioFallback:
+      "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Disco%20Medusae.mp3",
+    tracks: [
+      { title: "Mirror Ball Confessional" },
+      { title: "Saturday Night Satellite" },
+      { title: "Four-on-the-Floor Faith" },
+      { title: "Velvet Rope Refrain" },
+      { title: "Last Dance Latitude" },
+    ],
+  },
+  {
     name: "Soundtracks",
     inspiredByArtists: "Hans Zimmer, John Williams, Ludwig Göransson",
     clipSlug: "soundtracks",
