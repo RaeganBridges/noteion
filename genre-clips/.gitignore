@@ -1,2 +1,2 @@
-*.mp3
+# Local yt-dlp manifest (URLs); clips are committed so GitHub Pages serves hover audio.
 sources.json
