@@ -85,13 +85,16 @@
   }
 
   function applyInnerBoardCover($inner, covers, idx) {
-    if (!$inner || !covers || !covers.length) {
+    if (!$inner || !$inner.length) return;
+    if (!covers || !covers.length) {
       $inner.removeData("noteionBoardCovers");
       $inner.removeAttr("data-has-board-cover").css("--board-cover", "");
       return;
     }
-    var i = idx % covers.length;
-    if (i < 0) i = (i % covers.length) + covers.length;
+    var len = covers.length;
+    var n = Number(idx);
+    if (isNaN(n)) n = 0;
+    var i = ((n % len) + len) % len;
     var url = covers[i];
     $inner.data("noteionBoardCovers", covers);
     $inner.attr("data-has-board-cover", "1").css(
@@ -386,7 +389,7 @@
         setStoredStackPreset(rank, next);
         var covers = $inner.data("noteionBoardCovers") || [];
         if (covers.length > 1) {
-          var curC = getStoredCoverIdx(rank);
+          var curC = getStoredCoverIdx(rank) % covers.length;
           var nextC;
           if ($btn.hasClass("stack-shuffle-btn--prev")) {
             nextC = (curC - 1 + covers.length) % covers.length;
