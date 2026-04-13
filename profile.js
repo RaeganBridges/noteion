@@ -9,9 +9,252 @@
   var albumState = { activeIdx: 0, tracks: [] };
   var MAX_ALBUM_AUDIO_BYTES = 140000;
   var MAX_ALBUM_COVER_BYTES = 220000;
+  var MAX_SONG_COVER_DATA_URL_CHARS = 280000;
+  var MAX_EMBEDDED_RASTER_BYTES = 450000;
+  var MAX_AUDIO_BYTES_FOR_COVER_PARSE = 12000000;
   var albumCoverDataUrl = "";
   var composerHlSeqRef = { n: 0 };
   var albumHlSeqRef = { n: 0 };
+
+  function applyAlbumCoverFromAutoExtract(dataUrl) {
+    if (!dataUrl || albumCoverDataUrl) return;
+    if (dataUrl.length > MAX_SONG_COVER_DATA_URL_CHARS) return;
+    albumCoverDataUrl = dataUrl;
+    $("#album-cover-preview").attr("src", dataUrl).removeAttr("hidden");
+    $("#album-cover-empty").attr("hidden", "");
+  }
+
+  function uint8ToBase64(u8) {
+    var CHUNK = 0x8000;
+    var s = "";
+    for (var i = 0; i < u8.length; i += CHUNK) {
+      s += String.fromCharCode.apply(null, u8.subarray(i, i + CHUNK));
+    }
+    return btoa(s);
+  }
+
+  function dataUrlFromRawImage(u8, mimeGuess) {
+    if (!u8 || !u8.length || u8.length > MAX_EMBEDDED_RASTER_BYTES) return null;
+    var mime = mimeGuess || "image/jpeg";
+    if (u8[0] === 0xff && u8[1] === 0xd8) mime = "image/jpeg";
+    else if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47) mime = "image/png";
+    var url = "data:" + mime + ";base64," + uint8ToBase64(u8);
+    return url.length <= MAX_SONG_COVER_DATA_URL_CHARS ? url : null;
+  }
+
+  function id3Syncsafe(s0, s1, s2, s3) {
+    return (((s0 & 0x7f) << 21) | ((s1 & 0x7f) << 14) | ((s2 & 0x7f) << 7) | (s3 & 0x7f)) >>> 0;
+  }
+
+  function readU32BE(u8, o) {
+    if (o + 4 > u8.length) return 0;
+    return ((u8[o] << 24) | (u8[o + 1] << 16) | (u8[o + 2] << 8) | u8[o + 3]) >>> 0;
+  }
+
+  function parseApicFrameBody(body) {
+    if (!body || body.length < 16) return null;
+    var enc = body[0];
+    var i = 1;
+    while (i < body.length && body[i] !== 0) i++;
+    if (i >= body.length) return null;
+    var mime = "";
+    for (var j = 1; j < i; j++) mime += String.fromCharCode(body[j]);
+    i++;
+    if (i >= body.length) return null;
+    i++;
+    if (enc === 0 || enc === 3) {
+      while (i < body.length && body[i] !== 0) i++;
+      i++;
+    } else {
+      while (i + 1 < body.length && !(body[i] === 0 && body[i + 1] === 0)) i += 2;
+      i += 2;
+    }
+    if (i >= body.length) return null;
+    var img = body.subarray(i);
+    return dataUrlFromRawImage(img, (mime || "image/jpeg").trim()) || null;
+  }
+
+  function parseId3v2PicV22(body) {
+    if (!body || body.length < 8) return null;
+    var fmt = String.fromCharCode(body[1], body[2], body[3]);
+    var mime = fmt === "PNG" ? "image/png" : "image/jpeg";
+    var i = 5;
+    while (i < body.length && body[i] !== 0) i++;
+    i++;
+    if (i >= body.length) return null;
+    return dataUrlFromRawImage(body.subarray(i), mime);
+  }
+
+  function extractCoverFromMp3(u8) {
+    if (u8.length < 10) return null;
+    if (u8[0] !== 0x49 || u8[1] !== 0x44 || u8[2] !== 0x33) return null;
+    var ver = u8[3];
+    var tagFlags = u8[5];
+    var tagSize = id3Syncsafe(u8[6], u8[7], u8[8], u8[9]);
+    var pos = 10;
+    var tagEnd = Math.min(10 + tagSize, u8.length);
+    if (tagFlags & 0x40 && pos + 4 <= u8.length) {
+      var extLen = readU32BE(u8, pos);
+      pos += 4 + Math.min(extLen, tagEnd - pos - 4);
+    }
+    if (ver === 2) {
+      while (pos + 6 <= tagEnd) {
+        var id2 = String.fromCharCode(u8[pos], u8[pos + 1], u8[pos + 2]);
+        var fs2 = (u8[pos + 3] << 16) | (u8[pos + 4] << 8) | u8[pos + 5];
+        if (fs2 <= 0 || pos + 6 + fs2 > tagEnd) break;
+        if (id2 === "PIC") {
+          var p2 = parseId3v2PicV22(u8.subarray(pos + 6, pos + 6 + fs2));
+          if (p2) return p2;
+        }
+        pos += 6 + fs2;
+      }
+      return null;
+    }
+    if (ver !== 3 && ver !== 4) return null;
+    while (pos + 10 <= tagEnd) {
+      var id = String.fromCharCode(u8[pos], u8[pos + 1], u8[pos + 2], u8[pos + 3]);
+      var frameSize =
+        ver === 3
+          ? readU32BE(u8, pos + 4)
+          : id3Syncsafe(u8[pos + 4], u8[pos + 5], u8[pos + 6], u8[pos + 7]);
+      if (id === "\0\0\0\0" || frameSize <= 0) break;
+      if (pos + 10 + frameSize > tagEnd) break;
+      if (id === "APIC" && frameSize > 0) {
+        var ap = parseApicFrameBody(u8.subarray(pos + 10, pos + 10 + frameSize));
+        if (ap) return ap;
+      }
+      pos += 10 + frameSize;
+    }
+    return null;
+  }
+
+  function findJpegOrPngStart(u8, from, maxScan) {
+    var end = Math.min(from + maxScan, u8.length);
+    for (var o = from; o + 2 < end; o++) {
+      if (u8[o] === 0xff && u8[o + 1] === 0xd8 && u8[o + 2] === 0xff) return o;
+    }
+    if (from + 4 <= u8.length && u8[from] === 0x89 && u8[from + 1] === 0x50) return from;
+    return -1;
+  }
+
+  function extractCoverFromMp4ish(u8) {
+    for (var o = 0; o + 16 < u8.length; o++) {
+      if (u8[o + 4] !== 99 || u8[o + 5] !== 111 || u8[o + 6] !== 118 || u8[o + 7] !== 114) continue;
+      var covrSize = readU32BE(u8, o);
+      if (covrSize < 24 || o + covrSize > u8.length) continue;
+      var p = o + 8;
+      var boxEnd = o + covrSize;
+      while (p + 8 <= boxEnd) {
+        var boxSize = readU32BE(u8, p);
+        var typ = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+        if (boxSize < 8 || p + boxSize > boxEnd) break;
+        if (typ === "data" && boxSize > 16) {
+          var inner = u8.subarray(p + 8, p + boxSize);
+          var imgStart = findJpegOrPngStart(inner, 0, Math.min(inner.length, 64));
+          if (imgStart < 0) imgStart = findJpegOrPngStart(inner, 8, inner.length - 8);
+          if (imgStart < 0) imgStart = 8;
+          var img = inner.subarray(imgStart);
+          var guessed =
+            img[0] === 0x89 && img[1] === 0x50 ? "image/png" : "image/jpeg";
+          var pic = dataUrlFromRawImage(img, guessed);
+          if (pic) return pic;
+        }
+        p += boxSize;
+      }
+    }
+    return null;
+  }
+
+  function extractCoverFromAudioBytes(u8, fileName) {
+    var lower = String(fileName || "").toLowerCase();
+    var tryMp3 =
+      /\.(mp3|mpeg)$/i.test(lower) ||
+      (u8[0] === 0x49 && u8[1] === 0x44 && u8[2] === 0x33);
+    var tryM4a = /\.(m4a|mp4|aac)$/i.test(lower);
+    if (tryMp3) {
+      var c = extractCoverFromMp3(u8);
+      if (c) return c;
+    }
+    if (tryM4a) {
+      c = extractCoverFromMp4ish(u8);
+      if (c) return c;
+    }
+    return extractCoverFromMp3(u8) || extractCoverFromMp4ish(u8);
+  }
+
+  function normMatchToken(str) {
+    return String(str || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function fetchItunesCoverDataUrl(artist, title) {
+    var q = (String(artist || "").trim() + " " + String(title || "").trim()).trim();
+    if (!q) return Promise.resolve(null);
+    return fetch(
+      "https://itunes.apple.com/search?term=" + encodeURIComponent(q) + "&entity=song&limit=12"
+    )
+      .then(function (r) {
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function (data) {
+        var results = (data && data.results) || [];
+        if (!results.length) return null;
+        var nt = normMatchToken(title);
+        var na = normMatchToken(artist);
+        var best = null;
+        for (var i = 0; i < results.length; i++) {
+          var row = results[i];
+          if (!row || !row.trackName || !row.artworkUrl100) continue;
+          var rt = normMatchToken(row.trackName);
+          var ra = normMatchToken(row.artistName || "");
+          var titleOk =
+            !nt || rt.indexOf(nt) !== -1 || nt.indexOf(rt) !== -1 || rt === nt;
+          var artistOk =
+            !na || ra.indexOf(na) !== -1 || na.indexOf(ra) !== -1 || ra === na;
+          if (titleOk && artistOk) {
+            best = row;
+            break;
+          }
+        }
+        if (!best) best = results[0];
+        if (!best || !best.artworkUrl100) return null;
+        var imgUrl = String(best.artworkUrl100).replace(/100x100bb/, "600x600bb");
+        return fetch(imgUrl);
+      })
+      .then(function (imgRes) {
+        if (!imgRes || !imgRes.ok) return null;
+        return imgRes.blob();
+      })
+      .then(function (blob) {
+        if (!blob || blob.size > 900000) return null;
+        return new Promise(function (resolve) {
+          var fr = new FileReader();
+          fr.onload = function () {
+            var s = fr.result;
+            if (
+              typeof s === "string" &&
+              s.length > 0 &&
+              s.length <= MAX_SONG_COVER_DATA_URL_CHARS
+            ) {
+              resolve(s);
+            } else {
+              resolve(null);
+            }
+          };
+          fr.onerror = function () {
+            resolve(null);
+          };
+          fr.readAsDataURL(blob);
+        });
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
   var slipDragState = {
     active: false,
     $slip: null,
@@ -524,7 +767,7 @@
     }
 
     var coverPersist = albumCoverDataUrl || "";
-    if (coverPersist.length > 280000) {
+    if (coverPersist.length > MAX_SONG_COVER_DATA_URL_CHARS) {
       coverPersist = "";
     }
 
@@ -1094,6 +1337,41 @@
       return;
     }
 
+    var $btn = $(".js-publish-desk");
+    $btn.prop("disabled", true);
+    setLyricsStatus("Looking up cover art…");
+
+    fetchItunesCoverDataUrl(artist, title)
+      .then(function (fetchedCover) {
+        setLyricsStatus("");
+        execPublishSong(
+          session,
+          title,
+          artist,
+          meaningText,
+          lyricsHtml,
+          genreTags,
+          fetchedCover
+        );
+      })
+      .catch(function () {
+        setLyricsStatus("");
+        execPublishSong(session, title, artist, meaningText, lyricsHtml, genreTags, null);
+      })
+      .finally(function () {
+        $btn.prop("disabled", false);
+      });
+  }
+
+  function execPublishSong(
+    session,
+    title,
+    artist,
+    meaningText,
+    lyricsHtml,
+    genreTags,
+    fetchedCover
+  ) {
     var now = Date.now();
     var pubId =
       editingPubId ||
@@ -1104,6 +1382,12 @@
       existing && existing.songPublishedAt ? existing.songPublishedAt : now;
     var meaningPublishedAt =
       existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : now;
+
+    var cover = fetchedCover && String(fetchedCover).trim();
+    if (cover && cover.length > MAX_SONG_COVER_DATA_URL_CHARS) cover = "";
+    if (!cover && existing && existing.albumCoverDataUrl) {
+      cover = String(existing.albumCoverDataUrl || "").trim();
+    }
 
     var entry = {
       id: pubId,
@@ -1118,6 +1402,7 @@
       songPublishedAt: songPublishedAt,
       genreTags: genreTags,
       stickyNotes: collectStickies(),
+      albumCoverDataUrl: cover || "",
     };
 
     if (editingPubId) {
@@ -1456,6 +1741,19 @@
             };
             reader.readAsDataURL(file);
           })(tr);
+        }
+        if (file.size <= MAX_AUDIO_BYTES_FOR_COVER_PARSE) {
+          (function (fname) {
+            var r2 = new FileReader();
+            r2.onload = function () {
+              try {
+                var u8 = new Uint8Array(r2.result);
+                var cov = extractCoverFromAudioBytes(u8, fname);
+                if (cov) applyAlbumCoverFromAutoExtract(cov);
+              } catch (ignore) {}
+            };
+            r2.readAsArrayBuffer(file);
+          })(file.name);
         }
       });
       albumState.activeIdx = albumState.tracks.length - 1;

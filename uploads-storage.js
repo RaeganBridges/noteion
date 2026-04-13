@@ -77,6 +77,7 @@
       songPublishedAt: raw.songPublishedAt || raw.createdAt || Date.now(),
       genreTags: Array.isArray(raw.genreTags) ? raw.genreTags : [],
       stickyNotes: Array.isArray(raw.stickyNotes) ? raw.stickyNotes : [],
+      albumCoverDataUrl: raw.albumCoverDataUrl || "",
       createdAt: raw.createdAt || raw.songPublishedAt || Date.now(),
     };
   }
@@ -114,6 +115,7 @@
         songPublishedAt: item.songPublishedAt || Date.now(),
         genreTags: Array.isArray(item.genreTags) ? item.genreTags : [],
         stickyNotes: Array.isArray(item.stickyNotes) ? item.stickyNotes : [],
+        albumCoverDataUrl: item.albumCoverDataUrl || "",
         createdAt: item.songPublishedAt || Date.now(),
       };
     }
