@@ -304,7 +304,8 @@ window.SONG_SHARE_GENRES = [
     name: "Disco",
     inspiredByArtists: "Bee Gees, Donna Summer, Chic, Gloria Gaynor",
     clipSlug: "disco",
-    /* Hover: add URL in genre-clips/sources.json → genre-clips/disco.mp3 */
+    /* Hover: bundled clip at genre-clips/disco.mp3 (rainbow76-disco-fever-retro-disco-energetic-and-nostalgic-70s-vibe-rain-459307). */
+    audioHoverMaxSec: 18,
     audio: "genre-clips/disco.mp3",
     audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Disco%20Medusae.mp3",
@@ -320,7 +321,8 @@ window.SONG_SHARE_GENRES = [
     name: "Holidays",
     inspiredByArtists: "Mariah Carey, Bing Crosby, José Feliciano, Pentatonix",
     clipSlug: "holidays",
-    /* Hover: add URL in genre-clips/sources.json → genre-clips/holidays.mp3 */
+    /* Hover: bundled clip at genre-clips/holidays.mp3 (tunetank-christmas-jazz-christmas-holiday-347485). */
+    audioHoverMaxSec: 18,
     audio: "genre-clips/holidays.mp3",
     audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Jingle%20Punks.mp3",
