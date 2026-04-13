@@ -317,6 +317,22 @@ window.SONG_SHARE_GENRES = [
     ],
   },
   {
+    name: "Holidays",
+    inspiredByArtists: "Mariah Carey, Bing Crosby, José Feliciano, Pentatonix",
+    clipSlug: "holidays",
+    /* Hover: add URL in genre-clips/sources.json → genre-clips/holidays.mp3 */
+    audio: "genre-clips/holidays.mp3",
+    audioFallback:
+      "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Jingle%20Punks.mp3",
+    tracks: [
+      { title: "Snow Globe Serenade" },
+      { title: "Mistletoe Motif" },
+      { title: "Evergreen Echo" },
+      { title: "Candlelight Canon" },
+      { title: "Midnight Mass Transit" },
+    ],
+  },
+  {
     name: "Soundtracks",
     inspiredByArtists: "Hans Zimmer, John Williams, Ludwig Göransson",
     clipSlug: "soundtracks",
