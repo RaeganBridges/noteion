@@ -60,6 +60,56 @@
     } catch (e) {}
   }
 
+  function getStoredCoverIdx(rank) {
+    try {
+      var raw = localStorage.getItem("noteion.genreCoverIdx");
+      if (raw) {
+        var m = JSON.parse(raw);
+        if (m && typeof m === "object" && typeof m[String(rank)] === "number") {
+          var n = m[String(rank)];
+          return !isNaN(n) && n >= 0 ? n : 0;
+        }
+      }
+    } catch (e) {}
+    return 0;
+  }
+
+  function setStoredCoverIdx(rank, idx) {
+    try {
+      var raw = localStorage.getItem("noteion.genreCoverIdx");
+      var m = raw ? JSON.parse(raw) : {};
+      if (typeof m !== "object" || m === null) m = {};
+      m[String(rank)] = idx;
+      localStorage.setItem("noteion.genreCoverIdx", JSON.stringify(m));
+    } catch (e) {}
+  }
+
+  function applyInnerBoardCover($inner, covers, idx) {
+    if (!$inner || !covers || !covers.length) {
+      $inner.removeData("noteionBoardCovers");
+      $inner.removeAttr("data-has-board-cover").css("--board-cover", "");
+      return;
+    }
+    var i = idx % covers.length;
+    if (i < 0) i = (i % covers.length) + covers.length;
+    var url = covers[i];
+    $inner.data("noteionBoardCovers", covers);
+    $inner.attr("data-has-board-cover", "1").css(
+      "--board-cover",
+      "url(" + JSON.stringify(String(url).trim()) + ")"
+    );
+  }
+
+  function collectBoardCovers(g) {
+    if (Array.isArray(g.boardStackCoverUrls) && g.boardStackCoverUrls.length) {
+      return g.boardStackCoverUrls.slice();
+    }
+    if (g.boardStackCoverUrl && String(g.boardStackCoverUrl).trim()) {
+      return [String(g.boardStackCoverUrl).trim()];
+    }
+    return [];
+  }
+
   function buildGenreCard(g, rank) {
     var tilt = hashAngle(rank * 7 + 3).toFixed(2);
     var id = "genre-card-" + rank;
@@ -86,11 +136,11 @@
         stickerKind +
         '" data-stack-rise="' +
         stackRise +
-        '" role="group" aria-label="Layered stack for this genre">' +
-        '<button type="button" class="stack-shuffle-btn stack-shuffle-btn--prev" aria-label="Previous stack arrangement">' +
+        '" role="group" aria-label="Shuffle stack layout and cover art for this genre">' +
+        '<button type="button" class="stack-shuffle-btn stack-shuffle-btn--prev" aria-label="Previous stack layout and cover art">' +
         '<svg class="stack-shuffle-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M15 6L9 12l6 6"/></svg>' +
         "</button>" +
-        '<button type="button" class="stack-shuffle-btn stack-shuffle-btn--next" aria-label="Next stack arrangement">' +
+        '<button type="button" class="stack-shuffle-btn stack-shuffle-btn--next" aria-label="Next stack layout and cover art">' +
         '<svg class="stack-shuffle-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6"/></svg>' +
         "</button>" +
         "</div>" +
@@ -113,13 +163,12 @@
     );
     $card.find(".genre-name").text(g.name);
     var $innerNode = $card.find(".card-inner");
-    if (g.boardStackCoverUrl && String(g.boardStackCoverUrl).trim()) {
-      $innerNode.attr("data-has-board-cover", "1").css(
-        "--board-cover",
-        "url(" + JSON.stringify(String(g.boardStackCoverUrl).trim()) + ")"
-      );
+    var covers = collectBoardCovers(g);
+    if (covers.length) {
+      var ci = getStoredCoverIdx(rank) % covers.length;
+      applyInnerBoardCover($innerNode, covers, ci);
     } else {
-      $innerNode.removeAttr("data-has-board-cover").css("--board-cover", "");
+      applyInnerBoardCover($innerNode, [], 0);
     }
     var $au = $card.find("audio");
     if (g.audioHoverPreload) {
@@ -335,6 +384,18 @@
       var rank = parseInt(raw, 10);
       if (!isNaN(rank) && rank > 0) {
         setStoredStackPreset(rank, next);
+        var covers = $inner.data("noteionBoardCovers") || [];
+        if (covers.length > 1) {
+          var curC = getStoredCoverIdx(rank);
+          var nextC;
+          if ($btn.hasClass("stack-shuffle-btn--prev")) {
+            nextC = (curC - 1 + covers.length) % covers.length;
+          } else {
+            nextC = (curC + 1) % covers.length;
+          }
+          setStoredCoverIdx(rank, nextC);
+          applyInnerBoardCover($inner, covers, nextC);
+        }
       }
     });
   }

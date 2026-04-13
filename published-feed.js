@@ -151,12 +151,17 @@
           .map(toDisplayTrack);
       }
       var boardStackCoverUrl = "";
-      for (var bi = 0; bi < userTracks.length; bi++) {
+      var boardStackCoverUrls = [];
+      var seenCover = {};
+      var maxCovers = 16;
+      for (var bi = 0; bi < userTracks.length && boardStackCoverUrls.length < maxCovers; bi++) {
         var bc = userTracks[bi].albumCoverDataUrl;
-        if (bc && String(bc).trim()) {
-          boardStackCoverUrl = String(bc).trim();
-          break;
-        }
+        if (!bc || !String(bc).trim()) continue;
+        var cs = String(bc).trim();
+        if (seenCover[cs]) continue;
+        seenCover[cs] = true;
+        boardStackCoverUrls.push(cs);
+        if (!boardStackCoverUrl) boardStackCoverUrl = cs;
       }
       var baseG = baseList[i] && baseList[i].name === g.name ? baseList[i] : baseList.find(function (b) { return b.name === g.name; });
       var baseTracks = baseG && baseG.tracks && baseG.tracks.length ? baseG.tracks.slice() : [];
@@ -188,6 +193,7 @@
         tracks: userTracks.length ? userTracks : baseTracks,
         boardAlbums: (baseG && baseG.boardAlbums) || (g && g.boardAlbums),
         boardStackCoverUrl: boardStackCoverUrl,
+        boardStackCoverUrls: boardStackCoverUrls,
       };
     });
   }

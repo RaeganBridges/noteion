@@ -404,14 +404,30 @@ body.is-popup-open {
   transform: rotate(-5deg) translate(6px, 7px);
 }
 
-/* Community album art on the rearmost scrapbook square (shuffle still moves the stack) */
+/* Community album art on the rearmost scrapbook square; shuffle cycles layouts + cover when multiple */
 .card-inner[data-has-board-cover="1"]::before {
   background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.28) 0%, transparent 42%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--accent, #c4a574) 52%, transparent) 0%,
+      rgba(22, 18, 32, 0.48) 48%,
+      color-mix(in srgb, var(--accent, #c4a574) 38%, transparent) 100%
+    ),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.2) 0%, transparent 40%),
     var(--board-cover) center / cover no-repeat,
     var(--paper);
   border: 1px solid rgba(0, 0, 0, 0.07);
   opacity: 0.97;
+}
+
+@supports not (background: color-mix(in srgb, red, blue)) {
+  .card-inner[data-has-board-cover="1"]::before {
+    background:
+      linear-gradient(145deg, rgba(196, 165, 116, 0.5) 0%, rgba(22, 18, 32, 0.5) 48%, rgba(196, 165, 116, 0.38) 100%),
+      linear-gradient(155deg, rgba(255, 255, 255, 0.2) 0%, transparent 40%),
+      var(--board-cover) center / cover no-repeat,
+      var(--paper);
+  }
 }
 
 .genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner,
