@@ -5,6 +5,20 @@
  */
 window.SONG_SHARE_GENRES = [
   {
+    name: "All genres",
+    inspiredByArtists: "Community — every posted track",
+    clipSlug: "all-genres",
+    /* Hover: reuse neutral clip; “All genres” lists every publish, not a single style. */
+    audio: "genre-clips/other.mp3",
+    audioFallback:
+      "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Amazing%20Plan.mp3",
+    tracks: [
+      { title: "Everything posted", releaseYear: 2026 },
+      { title: "Across every tag" },
+      { title: "Newest first in the stack" },
+    ],
+  },
+  {
     name: "Pop",
     inspiredByArtists: "Michael Jackson, Madonna, Taylor Swift, ABBA",
     clipSlug: "pop",

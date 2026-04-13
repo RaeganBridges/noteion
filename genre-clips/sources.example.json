@@ -1,5 +1,6 @@
 {
   "_readme": "Copy this file to sources.json. Keys must match clipSlug in genres-data.js. Add a YouTube watch URL per genre and optional section (start-end, default 0:00-0:18). Empty url skips that genre. Then run: python3 scripts/fetch-genre-clips.py",
+  "all-genres": { "url": "" },
   "pop": {
     "url": "",
     "section": "0:00-0:18"

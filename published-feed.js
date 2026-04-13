@@ -120,8 +120,12 @@
     };
   }
 
+  /** Board slot that aggregates every published song (not a tag users pick when posting). */
+  var ALL_GENRES_SLOT_NAME = "All genres";
+
   /**
    * Per genre: if any published songs are tagged with that genre name, show only those;
+   * for the "All genres" slot, show every published song (newest first);
    * otherwise keep bundled demo tracks.
    */
   function mergeGenres(genres) {
@@ -129,11 +133,23 @@
     var published = loadAll();
     var baseList = global.SONG_SHARE_GENRES_BASE || genres;
     return genres.map(function (g, i) {
-      var userTracks = published
-        .filter(function (p) {
-          return (p.genreTags || []).indexOf(g.name) !== -1;
-        })
-        .map(toDisplayTrack);
+      var userTracks;
+      if (g.name === ALL_GENRES_SLOT_NAME) {
+        userTracks = published
+          .slice()
+          .sort(function (a, b) {
+            var ta = a.songPublishedAt || a.createdAt || 0;
+            var tb = b.songPublishedAt || b.createdAt || 0;
+            return tb - ta;
+          })
+          .map(toDisplayTrack);
+      } else {
+        userTracks = published
+          .filter(function (p) {
+            return (p.genreTags || []).indexOf(g.name) !== -1;
+          })
+          .map(toDisplayTrack);
+      }
       var boardStackCoverUrl = "";
       for (var bi = 0; bi < userTracks.length; bi++) {
         var bc = userTracks[bi].albumCoverDataUrl;
@@ -301,16 +317,20 @@
   function resolvePostBoardLocation(pubId) {
     if (!pubId) return null;
     var genres = global.SONG_SHARE_GENRES || [];
-    for (var gi = 0; gi < genres.length; gi++) {
-      var tracks = genres[gi].tracks || [];
-      for (var ti = 0; ti < tracks.length; ti++) {
-        var t = tracks[ti];
-        if (t && t.userPublished && t.pubId === pubId) {
-          return { genreId: gi + 1, trackIdx: ti, genreName: genres[gi].name };
+    function findSlot(skipAllGenres) {
+      for (var gi = 0; gi < genres.length; gi++) {
+        if (skipAllGenres && genres[gi].name === ALL_GENRES_SLOT_NAME) continue;
+        var tracks = genres[gi].tracks || [];
+        for (var ti = 0; ti < tracks.length; ti++) {
+          var t = tracks[ti];
+          if (t && t.userPublished && t.pubId === pubId) {
+            return { genreId: gi + 1, trackIdx: ti, genreName: genres[gi].name };
+          }
         }
       }
+      return null;
     }
-    return null;
+    return findSlot(true) || findSlot(false);
   }
 
   function applyMerge() {
@@ -319,6 +339,7 @@
   }
 
   global.SongSharePublished = {
+    ALL_GENRES_SLOT_NAME: ALL_GENRES_SLOT_NAME,
     loadAll: loadAll,
     add: add,
     upsert: upsert,

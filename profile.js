@@ -466,10 +466,21 @@
     $(".js-album-remove-track").prop("disabled", n <= 1).attr("aria-disabled", n <= 1 ? "true" : "false");
   }
 
+  function genresSelectableForPosts() {
+    var genres = window.SONG_SHARE_GENRES || [];
+    var skip =
+      window.SongSharePublished && window.SongSharePublished.ALL_GENRES_SLOT_NAME
+        ? window.SongSharePublished.ALL_GENRES_SLOT_NAME
+        : "All genres";
+    return genres.filter(function (g) {
+      return g && g.name !== skip;
+    });
+  }
+
   function buildAlbumGenreTags() {
     var $wrap = $(".js-album-genre-tags");
     $wrap.empty();
-    var genres = window.SONG_SHARE_GENRES || [];
+    var genres = genresSelectableForPosts();
     genres.forEach(function (g, i) {
       var id = "album-genre-tag-" + i;
       var $lab = $('<label class="composer-genre-tag" />').attr("for", id);
@@ -1124,7 +1135,7 @@
   function buildGenreTags() {
     var $wrap = $(".js-composer-genre-tags");
     $wrap.empty();
-    var genres = window.SONG_SHARE_GENRES || [];
+    var genres = genresSelectableForPosts();
     genres.forEach(function (g, i) {
       var id = "genre-tag-" + i;
       var $lab = $('<label class="composer-genre-tag" />').attr("for", id);
