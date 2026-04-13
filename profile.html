@@ -204,7 +204,7 @@
         </header>
         <div class="profile-composer-scroll">
           <p class="profile-composer-lede">
-            Set the album title and artist, then add tracks. For each track, highlights create a right-margin note card; <strong>Add annotation slip</strong> targets the most recent highlight, and you can drag ⋮ or pick colors like the single-track editor. You can add multiple audio files at once (small clips are stored in the browser; very large files are skipped).
+            Set the album title and artist, then add tracks. For each track, highlights create a right-margin note card; <strong>Add annotation slip</strong> targets the most recent highlight, and you can drag ⋮ or pick colors like the single-track editor. You can add multiple audio files at once (small clips are stored in the browser; very large files are skipped). Album artwork is taken from embedded audio when possible, otherwise from iTunes when you publish.
           </p>
 
           <div class="composer-grid">
@@ -218,24 +218,6 @@
                 <input id="album-album-artist" class="profile-input" type="text" autocomplete="off" spellcheck="true" placeholder="Artist for all tracks" />
               </div>
             </div>
-          </div>
-
-          <div class="composer-field album-cover-field">
-            <label class="profile-label" for="album-cover-file">Album cover (optional)</label>
-            <div class="album-cover-row">
-              <div class="album-cover-thumb" aria-hidden="true">
-                <img id="album-cover-preview" class="album-cover-thumb-img" alt="" width="88" height="88" hidden />
-                <span id="album-cover-empty" class="album-cover-thumb-placeholder">No image</span>
-              </div>
-              <div class="album-cover-actions">
-                <label class="album-audio-file-label album-cover-file-label">
-                  Choose image
-                  <input type="file" id="album-cover-file" class="js-album-cover-file" accept="image/*" />
-                </label>
-                <button type="button" class="profile-slip-btn profile-slip-btn--ghost js-album-cover-clear">Remove cover</button>
-              </div>
-            </div>
-            <p class="album-cover-hint">Square images work best. Large files are skipped to save space on this device.</p>
           </div>
 
           <div class="album-workspace">

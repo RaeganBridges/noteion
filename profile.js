@@ -8,7 +8,6 @@
   var editingAlbumPubId = null;
   var albumState = { activeIdx: 0, tracks: [] };
   var MAX_ALBUM_AUDIO_BYTES = 140000;
-  var MAX_ALBUM_COVER_BYTES = 220000;
   var MAX_SONG_COVER_DATA_URL_CHARS = 280000;
   var MAX_EMBEDDED_RASTER_BYTES = 450000;
   var MAX_AUDIO_BYTES_FOR_COVER_PARSE = 12000000;
@@ -20,8 +19,6 @@
     if (!dataUrl || albumCoverDataUrl) return;
     if (dataUrl.length > MAX_SONG_COVER_DATA_URL_CHARS) return;
     albumCoverDataUrl = dataUrl;
-    $("#album-cover-preview").attr("src", dataUrl).removeAttr("hidden");
-    $("#album-cover-empty").attr("hidden", "");
   }
 
   function uint8ToBase64(u8) {
@@ -189,6 +186,42 @@
       .trim();
   }
 
+  /** Loads Apple’s 100×100 artwork URL at higher resolution and returns a data URL. */
+  function artworkUrlToDataUrl(artworkUrl100) {
+    if (!artworkUrl100) return Promise.resolve(null);
+    var imgUrl = String(artworkUrl100).replace(/100x100bb/, "600x600bb");
+    return fetch(imgUrl)
+      .then(function (imgRes) {
+        if (!imgRes || !imgRes.ok) return null;
+        return imgRes.blob();
+      })
+      .then(function (blob) {
+        if (!blob || blob.size > 900000) return null;
+        return new Promise(function (resolve) {
+          var fr = new FileReader();
+          fr.onload = function () {
+            var s = fr.result;
+            if (
+              typeof s === "string" &&
+              s.length > 0 &&
+              s.length <= MAX_SONG_COVER_DATA_URL_CHARS
+            ) {
+              resolve(s);
+            } else {
+              resolve(null);
+            }
+          };
+          fr.onerror = function () {
+            resolve(null);
+          };
+          fr.readAsDataURL(blob);
+        });
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
   function fetchItunesCoverDataUrl(artist, title) {
     var q = (String(artist || "").trim() + " " + String(title || "").trim()).trim();
     if (!q) return Promise.resolve(null);
@@ -221,34 +254,55 @@
         }
         if (!best) best = results[0];
         if (!best || !best.artworkUrl100) return null;
-        var imgUrl = String(best.artworkUrl100).replace(/100x100bb/, "600x600bb");
-        return fetch(imgUrl);
+        return artworkUrlToDataUrl(best.artworkUrl100);
       })
-      .then(function (imgRes) {
-        if (!imgRes || !imgRes.ok) return null;
-        return imgRes.blob();
+      .catch(function () {
+        return null;
+      });
+  }
+
+  /** Album artwork from iTunes Search (entity=album). */
+  function fetchItunesAlbumCoverDataUrl(albumArtist, albumTitle) {
+    var q = (String(albumArtist || "").trim() + " " + String(albumTitle || "").trim()).trim();
+    if (!q) return Promise.resolve(null);
+    return fetch(
+      "https://itunes.apple.com/search?term=" + encodeURIComponent(q) + "&entity=album&limit=15"
+    )
+      .then(function (r) {
+        if (!r.ok) return null;
+        return r.json();
       })
-      .then(function (blob) {
-        if (!blob || blob.size > 900000) return null;
-        return new Promise(function (resolve) {
-          var fr = new FileReader();
-          fr.onload = function () {
-            var s = fr.result;
-            if (
-              typeof s === "string" &&
-              s.length > 0 &&
-              s.length <= MAX_SONG_COVER_DATA_URL_CHARS
-            ) {
-              resolve(s);
-            } else {
-              resolve(null);
+      .then(function (data) {
+        var results = (data && data.results) || [];
+        if (!results.length) return null;
+        var nt = normMatchToken(albumTitle);
+        var na = normMatchToken(albumArtist);
+        var best = null;
+        var i;
+        for (i = 0; i < results.length; i++) {
+          var row = results[i];
+          if (!row || !row.collectionName || !row.artworkUrl100) continue;
+          var ct = normMatchToken(row.collectionName);
+          var ra = normMatchToken(row.artistName || "");
+          var titleOk =
+            !nt || ct.indexOf(nt) !== -1 || nt.indexOf(ct) !== -1 || ct === nt;
+          var artistOk =
+            !na || ra.indexOf(na) !== -1 || na.indexOf(ra) !== -1 || ra === na;
+          if (titleOk && artistOk) {
+            best = row;
+            break;
+          }
+        }
+        if (!best) {
+          for (i = 0; i < results.length; i++) {
+            if (results[i] && results[i].artworkUrl100) {
+              best = results[i];
+              break;
             }
-          };
-          fr.onerror = function () {
-            resolve(null);
-          };
-          fr.readAsDataURL(blob);
-        });
+          }
+        }
+        if (!best || !best.artworkUrl100) return null;
+        return artworkUrlToDataUrl(best.artworkUrl100);
       })
       .catch(function () {
         return null;
@@ -655,9 +709,6 @@
     hideAlbumLyricsPicks();
     $(".js-album-delete-post").prop("hidden", true);
     albumCoverDataUrl = "";
-    $("#album-cover-preview").attr("hidden", "").removeAttr("src");
-    $("#album-cover-empty").removeAttr("hidden");
-    $(".js-album-cover-file").val("");
   }
 
   function openAlbumComposer() {
@@ -698,14 +749,6 @@
     $("#album-album-title").val(item.albumTitle || "");
     $("#album-album-artist").val(item.albumArtist || "");
     albumCoverDataUrl = item.albumCoverDataUrl || "";
-    if (albumCoverDataUrl) {
-      $("#album-cover-preview").attr("src", albumCoverDataUrl).removeAttr("hidden");
-      $("#album-cover-empty").attr("hidden", "");
-    } else {
-      $("#album-cover-preview").attr("hidden", "").removeAttr("src");
-      $("#album-cover-empty").removeAttr("hidden");
-    }
-    $(".js-album-cover-file").val("");
     buildAlbumGenreTags();
     renderAlbumTrackList();
     fillAlbumFormFromTrack(0);
@@ -782,70 +825,94 @@
       coverPersist = "";
     }
 
-    albumState.tracks.forEach(function (tr, i) {
-      var existing = window.SongSharePublished.loadAll().find(function (p) {
-        return p.id === tr.pubId;
+    var $albumPubBtn = $(".js-album-publish-desk");
+
+    function finishAlbumPublish(finalCover) {
+      var coverUse = finalCover != null ? finalCover : "";
+      if (typeof coverUse !== "string") coverUse = "";
+      if (coverUse.length > MAX_SONG_COVER_DATA_URL_CHARS) coverUse = "";
+
+      albumState.tracks.forEach(function (tr, i) {
+        var existing = window.SongSharePublished.loadAll().find(function (p) {
+          return p.id === tr.pubId;
+        });
+        var songPublishedAt = existing && existing.songPublishedAt ? existing.songPublishedAt : now;
+        var meaningPublishedAt = existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : now;
+        var trackArtist = String(tr.artist || "").trim() || albumArtist;
+        var entry = {
+          id: tr.pubId,
+          userId: session.userId,
+          displayName: displayName,
+          title: tr.title,
+          artist: trackArtist,
+          lyricsHtml: tr.lyricsHtml || "",
+          meaningText: tr.meaningText || "",
+          meaningAuthor: displayName,
+          meaningPublishedAt: meaningPublishedAt,
+          songPublishedAt: songPublishedAt,
+          genreTags: tr.genreTags || [],
+          stickyNotes: tr.stickyNotes || [],
+          albumId: albumPubId,
+          albumTitle: albumTitle,
+          albumArtist: albumArtist,
+          albumTrackIndex: i,
+          albumCoverDataUrl: coverUse,
+        };
+        window.SongSharePublished.upsert(entry);
       });
-      var songPublishedAt = existing && existing.songPublishedAt ? existing.songPublishedAt : now;
-      var meaningPublishedAt = existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : now;
-      var trackArtist = String(tr.artist || "").trim() || albumArtist;
-      var entry = {
-        id: tr.pubId,
-        userId: session.userId,
-        displayName: displayName,
-        title: tr.title,
-        artist: trackArtist,
-        lyricsHtml: tr.lyricsHtml || "",
-        meaningText: tr.meaningText || "",
-        meaningAuthor: displayName,
-        meaningPublishedAt: meaningPublishedAt,
-        songPublishedAt: songPublishedAt,
-        genreTags: tr.genreTags || [],
-        stickyNotes: tr.stickyNotes || [],
-        albumId: albumPubId,
+
+      var albumEntry = {
+        kind: "album",
+        pubId: albumPubId,
         albumTitle: albumTitle,
         albumArtist: albumArtist,
-        albumTrackIndex: i,
-        albumCoverDataUrl: coverPersist,
+        albumCoverDataUrl: coverUse,
+        tracks: albumState.tracks.map(function (t) {
+          var o = Object.assign({}, t);
+          delete o.audioDataUrl;
+          return o;
+        }),
+        createdAt: editingAlbumPubId
+          ? (function () {
+              var prev = window.SongShareUploads.list(session.userId).find(function (x) {
+                return x.pubId === albumPubId;
+              });
+              return prev && prev.createdAt ? prev.createdAt : now;
+            })()
+          : now,
       };
-      window.SongSharePublished.upsert(entry);
-    });
 
-    var albumEntry = {
-      kind: "album",
-      pubId: albumPubId,
-      albumTitle: albumTitle,
-      albumArtist: albumArtist,
-      albumCoverDataUrl: coverPersist,
-      tracks: albumState.tracks.map(function (t) {
-        var o = Object.assign({}, t);
-        delete o.audioDataUrl;
-        return o;
-      }),
-      createdAt: editingAlbumPubId
-        ? (function () {
-            var prev = window.SongShareUploads.list(session.userId).find(function (x) {
-              return x.pubId === albumPubId;
-            });
-            return prev && prev.createdAt ? prev.createdAt : now;
-          })()
-        : now,
-    };
+      try {
+        window.SongShareUploads.add(session.userId, albumEntry);
+      } catch (err) {
+        window.alert(
+          "Could not save the album to your device (storage may be full). Try removing large audio uploads or older posts, then publish again."
+        );
+        return;
+      }
+      window.SongSharePublished.applyMerge();
 
-    try {
-      window.SongShareUploads.add(session.userId, albumEntry);
-    } catch (err) {
-      window.alert(
-        "Could not save the album to your device (storage may be full). Try removing large audio uploads or older posts, then publish again."
-      );
+      editingAlbumPubId = null;
+      resetAlbumComposer();
+      closeAlbumComposer();
+      render();
+    }
+
+    if (!coverPersist && albumArtist && albumTitle) {
+      $albumPubBtn.prop("disabled", true);
+      fetchItunesAlbumCoverDataUrl(albumArtist, albumTitle)
+        .then(function (fetched) {
+          $albumPubBtn.prop("disabled", false);
+          finishAlbumPublish(fetched || "");
+        })
+        .catch(function () {
+          $albumPubBtn.prop("disabled", false);
+          finishAlbumPublish("");
+        });
       return;
     }
-    window.SongSharePublished.applyMerge();
 
-    editingAlbumPubId = null;
-    resetAlbumComposer();
-    closeAlbumComposer();
-    render();
+    finishAlbumPublish(coverPersist);
   }
 
   function escapeHtml(str) {
@@ -1653,37 +1720,6 @@
       resetComposer();
       resetAlbumComposer();
       openAlbumComposer();
-    });
-
-    $(".js-album-cover-file").on("change", function () {
-      var f = this.files && this.files[0];
-      this.value = "";
-      if (!f) return;
-      if (!/^image\//.test(f.type)) {
-        window.alert("Choose an image file.");
-        return;
-      }
-      if (f.size > MAX_ALBUM_COVER_BYTES) {
-        window.alert("Image is too large. Use a smaller file (about 200KB or less).");
-        return;
-      }
-      var reader = new FileReader();
-      reader.onload = function () {
-        albumCoverDataUrl = reader.result;
-        $("#album-cover-preview").attr("src", albumCoverDataUrl).removeAttr("hidden");
-        $("#album-cover-empty").attr("hidden", "");
-      };
-      reader.onerror = function () {
-        window.alert("Could not read that image.");
-      };
-      reader.readAsDataURL(f);
-    });
-
-    $(".js-album-cover-clear").on("click", function () {
-      albumCoverDataUrl = "";
-      $("#album-cover-preview").attr("hidden", "").removeAttr("src");
-      $("#album-cover-empty").removeAttr("hidden");
-      $(".js-album-cover-file").val("");
     });
 
     $(".js-album-composer-close").on("click", function () {
