@@ -1,7 +1,6 @@
 /**
- * Viewer comments on the meaning notebook overlay only.
- * Separate from publisher annotations (margin slips on the lyrics overlay / stickyNotes).
- * Keyed by genre id + track index; stored in localStorage.
+ * Viewer comments on the song page (song.html), keyed by genre id + track index.
+ * Stored in localStorage. Separate from publisher annotation slips (stickyNotes).
  */
 (function (global) {
   "use strict";

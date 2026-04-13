@@ -153,45 +153,6 @@
       }
     }
 
-    function fmtDateOnly(ts) {
-      if (ts == null || ts === "") return "";
-      try {
-        return new Date(ts).toLocaleDateString(undefined, { dateStyle: "medium" });
-      } catch (e) {
-        return "";
-      }
-    }
-
-    function fillModalTrackMeta(t) {
-      t = t || {};
-      var artist = String(t.artist || t.songArtist || "").trim();
-      var $a = $(".js-modal-track-artist");
-      var $d = $(".js-modal-track-released");
-      if (artist) {
-        $a.text(artist).removeAttr("hidden");
-      } else {
-        $a.text("").attr("hidden", "");
-      }
-      var released = "";
-      if (t.releasedAt != null && t.releasedAt !== "") {
-        released = fmtDateOnly(t.releasedAt);
-      } else if (t.userPublished && t.songPublishedAt != null && t.songPublishedAt !== "") {
-        released = fmtDateOnly(t.songPublishedAt);
-      }
-      if (released) {
-        $d.text("Released " + released).removeAttr("hidden");
-      } else {
-        $d.text("").attr("hidden", "");
-      }
-    }
-
-    function clearModalSlips() {
-      $(".js-modal-slips").empty().attr("aria-hidden", "true");
-      $(".js-modal-margin-slips").empty().attr("aria-hidden", "true");
-      $(".js-modal-orphan-slips").empty().prop("hidden", true);
-      $(".js-modal-orphan-hint").prop("hidden", true);
-    }
-
     function relayoutSongPageMarginStickies() {
       var innerEl = document.querySelector(".detail-lyrics-scroll-inner");
       if (!innerEl) return;
@@ -260,233 +221,54 @@
       });
     }
 
-    /**
-     * Publisher margin slips beside .lyric-hl spans (paired by order with stickyNotes).
-     * Lyrics modal only; relay out after fonts / resize.
-     */
-    function layoutModalMarginSlips(t) {
-      t = t || {};
-      var $slips = $(".js-modal-margin-slips").empty();
-      var $lyrics = $(".js-modal-lyrics");
-      var $block = $(".song-sheet-modal__lyrics-block");
-      var $orphan = $(".js-modal-orphan-slips").empty();
-      var $orphanHint = $(".js-modal-orphan-hint");
-
-      if (!$block.length || !$lyrics.length) return;
-
-      var notes = (t.stickyNotes || []).filter(function (n) {
-        return n && String(n.text || "").trim();
-      });
-      var hls = $lyrics.find(".lyric-hl").toArray();
-      var blockEl = $block[0];
-      var orphans = [];
-
-      notes.forEach(function (note, orderIdx) {
-        var hasHlIdx = typeof note.highlightIndex === "number" && !isNaN(note.highlightIndex);
-        var hlIdx = hasHlIdx ? note.highlightIndex : orderIdx;
-        var hl = hls[hlIdx];
-        if (!hl) {
-          orphans.push(note);
-          return;
-        }
-        var br = blockEl.getBoundingClientRect();
-        var hr = hl.getBoundingClientRect();
-        var centerY = hr.top - br.top + hr.height / 2;
-        if (typeof note.topPx === "number" && !isNaN(note.topPx)) {
-          centerY = note.topPx;
-        }
-        var rot = 2.8;
-        var sc = note.slipColor;
-        var $slip = $("<div/>")
-          .addClass("song-sheet-modal__modal-slip song-sheet-modal__modal-slip--right")
-          .css({
-            top: Math.round(centerY) + "px",
-            transform: "translateY(-50%) rotate(" + rot + "deg)",
-          })
-          .attr("role", "note")
-          .text(note.text != null ? String(note.text) : "");
-        if (sc && /^(amber|mint|rose|sky)$/.test(String(sc))) {
-          $slip.addClass("song-sheet-modal__modal-slip--" + sc);
-        }
-        $slips.append($slip);
-      });
-
-      if (orphans.length) {
-        $orphanHint.prop("hidden", false);
-        $orphan.prop("hidden", false);
-        orphans.forEach(function (note) {
-          $orphan.append(
-            $("<div/>")
-              .addClass("song-sheet-modal__orphan-slip")
-              .text(note.text != null ? String(note.text) : "")
-          );
-        });
-      } else {
-        $orphanHint.prop("hidden", true);
-        $orphan.prop("hidden", true).empty();
-      }
-
-      $slips.removeAttr("aria-hidden");
-    }
-
-    function scheduleLyricsModalSlipLayout() {
-      var t = tracks[idx] || {};
-      window.requestAnimationFrame(function () {
-        if ($("#song-sheet-modal").prop("hidden") || $("#song-sheet-modal").hasClass("is-meaning-mode")) return;
-        layoutModalMarginSlips(t);
-        window.requestAnimationFrame(function () {
-          if ($("#song-sheet-modal").prop("hidden") || $("#song-sheet-modal").hasClass("is-meaning-mode")) return;
-          layoutModalMarginSlips(t);
-        });
-      });
-    }
-
-    /** Viewer comments — meaning notebook overlay only. */
-    function renderMeaningModalSlips(t) {
-      t = t || {};
-      var $wrap = $(".js-modal-slips").empty();
-      $wrap.removeAttr("aria-hidden");
-
+    function renderPageComments() {
       var session = window.SongShareAuth && window.SongShareAuth.getSession();
       var comments = window.SongShareModalComments ? window.SongShareModalComments.load(id, idx) : [];
+      var $host = $(".js-page-comments").empty();
 
-      var $column = $("<div/>").addClass(
-        "song-sheet-modal__slip-column song-sheet-modal__slip-column--meaning"
-      );
-
-      var $commFeed = $("<div/>").addClass("song-sheet-modal__slip song-sheet-modal__slip--feed");
-      $commFeed.append('<p class="song-sheet-modal__slip-label">Comments</p>');
-      var $commInner = $('<div class="song-sheet-modal__slip-feed-inner" aria-live="polite" />');
-
+      var $feedInner = $('<div class="page-comments__feed-inner" aria-live="polite" />');
       if (!comments.length) {
-        $commInner.append('<p class="song-sheet-modal__comment-empty">No comments yet.</p>');
+        $feedInner.append('<p class="page-comments__empty">No comments yet.</p>');
       }
 
       comments.forEach(function (c) {
         if (!c || !c.body) return;
         var own = session && c.userId === session.userId;
         var delBtn = own
-          ? '<button type="button" class="song-sheet-modal__comment-remove js-modal-comment-remove" data-comment-id="' +
+          ? '<button type="button" class="page-comments__remove js-page-comment-remove" data-comment-id="' +
             escapeHtml(c.id) +
             '" aria-label="Delete your comment">×</button>'
           : "";
-        $commInner.append(
-          '<div class="song-sheet-modal__comment-item">' +
+        $feedInner.append(
+          '<div class="page-comments__item">' +
             delBtn +
-            '<div class="song-sheet-modal__comment-meta">' +
+            '<div class="page-comments__meta">' +
             escapeHtml(c.displayName || "Member") +
             (c.ts ? " · " + escapeHtml(fmtWhen(c.ts)) : "") +
             "</div>" +
-            '<div class="song-sheet-modal__comment-text">' +
+            '<div class="page-comments__text">' +
             escapeHtml(String(c.body)) +
             "</div></div>"
         );
       });
 
-      $commFeed.append($commInner);
-
-      var $compose = $("<div/>").addClass("song-sheet-modal__slip song-sheet-modal__slip--compose");
+      $host.append(
+        $('<h2 class="page-comments__heading" id="page-comments-heading">Comments</h2>'),
+        $feedInner
+      );
 
       if (session) {
-        $compose.append('<p class="song-sheet-modal__slip-label">Your comment</p>');
-        $compose.append(
-          '<textarea class="song-sheet-modal__comment-input js-modal-comment-input" rows="2" maxlength="600" spellcheck="true" placeholder="Write a comment…" aria-label="Comment text"></textarea>'
-        );
-        $compose.append(
-          '<button type="button" class="song-sheet-modal__comment-post js-modal-comment-post">Post</button>'
+        $host.append(
+          '<label class="page-comments__label" for="page-comment-input">Your comment</label>',
+          '<textarea id="page-comment-input" class="page-comments__input js-page-comment-input" rows="2" maxlength="600" spellcheck="true" placeholder="Write a comment…"></textarea>',
+          '<button type="button" class="page-comments__post js-page-comment-post">Post</button>'
         );
       } else {
-        $compose.append('<p class="song-sheet-modal__slip-guest">Sign in to post comments.</p>');
-        $compose.append(
-          '<a class="song-sheet-modal__slip-auth-link" href="home.html">Back to sign in</a>'
+        $host.append(
+          '<p class="page-comments__guest">Sign in to post comments.</p>',
+          '<a class="page-comments__auth-link" href="home.html">Back to sign in</a>'
         );
       }
-
-      $column.append($commFeed, $compose);
-      $wrap.append($column);
-    }
-
-    function closeSheetModal() {
-      var $m = $("#song-sheet-modal");
-      if (!$m.length || $m.prop("hidden")) return;
-      $m.removeClass("is-meaning-mode");
-      $(".js-modal-body-meaning").attr("hidden", "");
-      $(".js-modal-body-song").removeAttr("hidden");
-      clearModalSlips();
-      $m.prop("hidden", true).attr("aria-hidden", "true");
-      $(document.documentElement).removeClass("sheet-modal-open");
-      $("body").removeClass("sheet-modal-open");
-    }
-
-    function openSongSheetModal() {
-      var t = tracks[idx] || {};
-      var $m = $("#song-sheet-modal");
-      $m.prop("hidden", false).attr("aria-hidden", "false").removeClass("is-meaning-mode");
-      $(document.documentElement).addClass("sheet-modal-open");
-      $("body").addClass("sheet-modal-open");
-
-      $(".js-modal-body-meaning").attr("hidden", "");
-      $(".js-modal-body-song").removeAttr("hidden");
-
-      $(".js-modal-script-title").text(t.title || "—");
-      fillModalTrackMeta(t);
-      clearModalSlips();
-
-      var lh = t.lyricsHtml != null ? String(t.lyricsHtml).trim() : "";
-      if (lh) {
-        $(".js-modal-lyrics").html(formatLyricsForDisplay(lh));
-      } else {
-        $(".js-modal-lyrics").html(
-          '<p class="song-sheet-modal__empty">No lyrics on this card yet. Use the toolbar reader icon to look lyrics up.</p>'
-        );
-      }
-
-      scheduleLyricsModalSlipLayout();
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(function () {
-          scheduleLyricsModalSlipLayout();
-        });
-      }
-
-      window.setTimeout(function () {
-        $(".song-sheet-modal__x").trigger("focus");
-      }, 30);
-    }
-
-    function openMeaningSheetModal() {
-      var t = tracks[idx] || {};
-      var $m = $("#song-sheet-modal");
-      $m.prop("hidden", false).attr("aria-hidden", "false").addClass("is-meaning-mode");
-      $(document.documentElement).addClass("sheet-modal-open");
-      $("body").addClass("sheet-modal-open");
-
-      $(".js-modal-margin-slips").empty().attr("aria-hidden", "true");
-      $(".js-modal-orphan-slips").empty().prop("hidden", true);
-      $(".js-modal-orphan-hint").prop("hidden", true);
-
-      $(".js-modal-body-song").attr("hidden", "");
-      $(".js-modal-body-meaning").removeAttr("hidden");
-
-      $(".js-modal-script-title").text(t.title || "—");
-      fillModalTrackMeta(t);
-
-      var mean = t.meaning != null ? String(t.meaning).trim() : "";
-      if (mean) {
-        $(".js-modal-meaning").html(formatMeaningForDisplay(mean));
-      } else {
-        $(".js-modal-meaning").html('<p class="song-sheet-modal__empty">No meaning for this track yet.</p>');
-      }
-      var by = String(t.meaningBy || "").trim();
-      var metaParts = [];
-      if (by) metaParts.push(by);
-      if (t.meaningAt) metaParts.push(fmtWhen(t.meaningAt));
-      $(".js-modal-meaning-meta").text(metaParts.join(" · "));
-
-      renderMeaningModalSlips(t);
-
-      window.setTimeout(function () {
-        $(".song-sheet-modal__x").trigger("focus");
-      }, 30);
     }
 
     function syncNavLinks() {
@@ -546,6 +328,7 @@
 
       document.title = (t.title || "Song") + " — " + g.name + " — Noteion";
       syncNavLinks();
+      renderPageComments();
     }
 
     function clearFlipClasses() {
@@ -553,7 +336,6 @@
     }
 
     function showTrack(animate, direction) {
-      closeSheetModal();
       var t = tracks[idx];
       direction = direction === "prev" ? "prev" : "next";
 
@@ -591,45 +373,10 @@
       }
     });
 
-    $(".js-song-paper").on("click", function (e) {
-      if ($(e.target).closest("a, button").length) return;
-      openSongSheetModal();
-    });
-
-    $(".js-song-paper").on("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openSongSheetModal();
-      }
-    });
-
-    $(".js-meaning-paper").on("click", function (e) {
-      if ($(e.target).closest("a, button").length) return;
-      openMeaningSheetModal();
-    });
-
-    $(".js-meaning-paper").on("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openMeaningSheetModal();
-      }
-    });
-
-    $(".js-sheet-modal-close").on("click", function () {
-      closeSheetModal();
-    });
-
-    $(document).on("keydown", function (e) {
-      if (e.key !== "Escape") return;
-      if (!$("#song-sheet-modal").prop("hidden")) {
-        closeSheetModal();
-      }
-    });
-
-    $("#song-sheet-modal").on("click", ".js-modal-comment-post", function () {
+    $(document).on("click", ".js-page-comment-post", function () {
       var sess = window.SongShareAuth && window.SongShareAuth.getSession();
       if (!sess || !window.SongShareModalComments) return;
-      var body = String($("#song-sheet-modal .js-modal-comment-input").val() || "").trim();
+      var body = String($(".js-page-comments .js-page-comment-input").val() || "").trim();
       if (!body) return;
       window.SongShareModalComments.append(id, idx, {
         id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10),
@@ -638,16 +385,16 @@
         body: body,
         ts: new Date().toISOString(),
       });
-      $("#song-sheet-modal .js-modal-comment-input").val("");
-      renderMeaningModalSlips(tracks[idx] || {});
+      $(".js-page-comments .js-page-comment-input").val("");
+      renderPageComments();
     });
 
-    $("#song-sheet-modal").on("click", ".js-modal-comment-remove", function () {
+    $(document).on("click", ".js-page-comment-remove", function () {
       var cid = $(this).attr("data-comment-id");
       var sess = window.SongShareAuth && window.SongShareAuth.getSession();
       if (!sess || !cid || !window.SongShareModalComments) return;
       window.SongShareModalComments.removeById(id, idx, cid);
-      renderMeaningModalSlips(tracks[idx] || {});
+      renderPageComments();
     });
 
     $(".js-prev").on("click", function (e) {
@@ -673,9 +420,6 @@
       if (lyricsSlipLayoutTimer) window.clearTimeout(lyricsSlipLayoutTimer);
       lyricsSlipLayoutTimer = window.setTimeout(function () {
         lyricsSlipLayoutTimer = null;
-        if (!$("#song-sheet-modal").prop("hidden") && !$("#song-sheet-modal").hasClass("is-meaning-mode")) {
-          layoutModalMarginSlips(tracks[idx] || {});
-        }
         relayoutSongPageMarginStickies();
       }, 120);
     });
