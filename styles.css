@@ -453,24 +453,22 @@ body.is-popup-open {
 /* Community album art on the rearmost scrapbook square; shuffle cycles layouts + cover when multiple */
 .card-inner[data-has-board-cover="1"]::before {
   background:
-    linear-gradient(0deg, rgba(8, 8, 10, 0.16), rgba(8, 8, 10, 0.16)),
-    linear-gradient(0deg, rgb(128, 128, 128), rgb(128, 128, 128)),
     linear-gradient(0deg, var(--genre-overlay, hsl(36, 45%, 55%)), var(--genre-overlay, hsl(36, 45%, 55%))),
     var(--board-cover-next, var(--board-cover)) center / cover no-repeat,
     var(--paper);
-  background-blend-mode: multiply, saturation, color, normal, normal;
+  background-blend-mode: color, normal, normal;
+  filter: grayscale(1) sepia(1) hue-rotate(var(--genre-hue-deg, 0deg)) saturate(6.2) contrast(1.04);
   border: 1px solid rgba(0, 0, 0, 0.07);
   opacity: 0.97;
 }
 
 .card-inner[data-has-board-cover="1"]::after {
   background:
-    linear-gradient(0deg, rgba(8, 8, 10, 0.16), rgba(8, 8, 10, 0.16)),
-    linear-gradient(0deg, rgb(128, 128, 128), rgb(128, 128, 128)),
     linear-gradient(0deg, var(--genre-overlay, hsl(36, 45%, 55%)), var(--genre-overlay, hsl(36, 45%, 55%))),
     var(--board-cover-third, var(--board-cover-next, var(--board-cover))) center / cover no-repeat,
     var(--paper);
-  background-blend-mode: multiply, saturation, color, normal, normal;
+  background-blend-mode: color, normal, normal;
+  filter: grayscale(1) sepia(1) hue-rotate(var(--genre-hue-deg, 0deg)) saturate(6.2) contrast(1.04);
 }
 
 .genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner,
@@ -500,12 +498,11 @@ body.is-popup-open {
 
 .card-face[data-has-face-cover="1"] {
   background:
-    linear-gradient(0deg, rgba(8, 8, 10, 0.14), rgba(8, 8, 10, 0.14)),
-    linear-gradient(0deg, rgb(128, 128, 128), rgb(128, 128, 128)),
     linear-gradient(0deg, var(--genre-overlay, hsl(36, 45%, 55%)), var(--genre-overlay, hsl(36, 45%, 55%))),
     var(--face-cover) center / cover no-repeat,
     var(--paper);
-  background-blend-mode: multiply, saturation, color, normal, normal;
+  background-blend-mode: color, normal, normal;
+  filter: grayscale(1) sepia(1) hue-rotate(var(--genre-hue-deg, 0deg)) saturate(6.8) contrast(1.06);
   color: #f8f6f1;
 }
 

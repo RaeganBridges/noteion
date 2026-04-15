@@ -149,6 +149,14 @@
     return "hsl(" + hue.toFixed(1) + ", 96%, 54%)";
   }
 
+  function genreOverlayHueDeg(rank, total) {
+    var t = total && total > 1 ? (rank - 1) / (total - 1) : 0;
+    var startHue = 330;
+    var endHue = 690;
+    var hue = (startHue + (endHue - startHue) * t) % 360;
+    return hue.toFixed(1) + "deg";
+  }
+
   function buildGenreCard(g, rank, totalGenres) {
     var tilt = hashAngle(rank * 7 + 3).toFixed(2);
     var id = "genre-card-" + rank;
@@ -201,7 +209,10 @@
         "</article>"
     );
     $card.find(".genre-name").text(g.name);
-    $card.css("--genre-overlay", genreOverlayColor(rank, totalGenres));
+    $card.css({
+      "--genre-overlay": genreOverlayColor(rank, totalGenres),
+      "--genre-hue-deg": genreOverlayHueDeg(rank, totalGenres),
+    });
     var $innerNode = $card.find(".card-inner");
     var $faceNode = $card.find(".card-face");
     var covers = collectBoardCovers(g);
