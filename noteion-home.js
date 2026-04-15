@@ -143,11 +143,13 @@
 
   function genreOverlayColor(rank, total) {
     var t = total && total > 1 ? (rank - 1) / (total - 1) : 0;
+    /* Slight red bias: keeps one fewer card in yellow-green and adds another warm red tone. */
+    t = Math.pow(t, 1.18);
     var startHue = 352; /* red-pink */
     var endHue = 428; /* mostly red/orange with only a small yellow/green range */
     var hue = (startHue + (endHue - startHue) * t) % 360;
     /* Keep the rainbow sweep, but pull back saturation so card tints are calmer. */
-    return "hsl(" + hue.toFixed(1) + ", 18%, 50%)";
+    return "hsl(" + hue.toFixed(1) + ", 24%, 50%)";
   }
 
   function buildGenreCard(g, rank, totalGenres) {
