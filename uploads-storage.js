@@ -96,8 +96,46 @@
     }
   }
 
+  function stripUploadHeavyPayload(items) {
+    return (items || []).map(function (it) {
+      if (!it || typeof it !== "object") return it;
+      var next = Object.assign({}, it);
+      if (next.albumCoverDataUrl) next.albumCoverDataUrl = "";
+      if (next.kind === "album" && Array.isArray(next.tracks)) {
+        next.tracks = next.tracks.map(function (tr) {
+          if (!tr || typeof tr !== "object") return tr;
+          var t = Object.assign({}, tr);
+          if (t.audioDataUrl) t.audioDataUrl = "";
+          return t;
+        });
+      }
+      return next;
+    });
+  }
+
   function save(userId, items) {
-    localStorage.setItem(storageKey(userId), JSON.stringify(items));
+    var key = storageKey(userId);
+    var payload = Array.isArray(items) ? items : [];
+    try {
+      localStorage.setItem(key, JSON.stringify(payload));
+      return;
+    } catch (e1) {}
+
+    var compact = stripUploadHeavyPayload(payload);
+    try {
+      localStorage.setItem(key, JSON.stringify(compact));
+      return;
+    } catch (e2) {}
+
+    // Last resort: keep newest cards first and trim until it fits.
+    var trimmed = compact.slice();
+    while (trimmed.length) {
+      trimmed.pop();
+      try {
+        localStorage.setItem(key, JSON.stringify(trimmed));
+        return;
+      } catch (e3) {}
+    }
   }
 
   function add(userId, item) {

@@ -34,8 +34,37 @@
     });
   }
 
+  function stripPublishedCoverPayload(items) {
+    return (items || []).map(function (p) {
+      if (!p || typeof p !== "object") return p;
+      var next = Object.assign({}, p);
+      if (next.albumCoverDataUrl) next.albumCoverDataUrl = "";
+      return next;
+    });
+  }
+
   function saveAll(items) {
-    localStorage.setItem(KEY, JSON.stringify(items));
+    var payload = Array.isArray(items) ? items : [];
+    try {
+      localStorage.setItem(KEY, JSON.stringify(payload));
+      return;
+    } catch (e1) {}
+
+    var compact = stripPublishedCoverPayload(payload);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(compact));
+      return;
+    } catch (e2) {}
+
+    // Last resort: keep newest entries first and trim until it fits.
+    var trimmed = compact.slice();
+    while (trimmed.length) {
+      trimmed.pop();
+      try {
+        localStorage.setItem(KEY, JSON.stringify(trimmed));
+        return;
+      } catch (e3) {}
+    }
   }
 
   function persistRemoteUpsert(entry) {
