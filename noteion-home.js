@@ -146,8 +146,8 @@
     var startHue = 330; /* pink */
     var endHue = 690; /* full rainbow sweep ending near pink/red */
     var hue = (startHue + (endHue - startHue) * t) % 360;
-    /* Muted base for luminosity-blend duotone (greyscale luminance from art + this chroma) */
-    return "hsl(" + hue.toFixed(1) + ", 36%, 54%)";
+    /* Keep the rainbow sweep, but pull back saturation so card tints are calmer. */
+    return "hsl(" + hue.toFixed(1) + ", 24%, 50%)";
   }
 
   function buildGenreCard(g, rank, totalGenres) {
