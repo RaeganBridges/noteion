@@ -6,8 +6,16 @@
 (function ($) {
   "use strict";
 
+  var GLOBAL_GENRE_HOVER_AUDIO = "genre-clips/fassounds-good-night-lofi-cozy-chill-music-160166.mp3";
+
   function getGenres() {
-    return window.SONG_SHARE_GENRES || [];
+    var genres = window.SONG_SHARE_GENRES || [];
+    return genres.map(function (g) {
+      if (!g || typeof g !== "object") return g;
+      var merged = Object.assign({}, g);
+      merged.audio = GLOBAL_GENRE_HOVER_AUDIO;
+      return merged;
+    });
   }
 
   var $openBtn;
