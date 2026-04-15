@@ -720,6 +720,19 @@ body.is-popup-open {
     0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
+/* Match sticker arrows to each genre's album tint color */
+.genre-card .stack-shuffle[data-sticker] .stack-shuffle-btn {
+  border-color: rgba(248, 244, 234, 0.92);
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(180deg, var(--genre-overlay, hsl(36, 36%, 54%)) 0%, var(--genre-overlay, hsl(36, 36%, 54%)) 100%);
+  color: #faf8f4;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 -4px 12px rgba(0, 0, 0, 0.28) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.24);
+}
+
 .stack-shuffle-btn:hover {
   filter: brightness(1.08);
 }
