@@ -1,7 +1,48 @@
-/* ROC Nation distribution fonts — Rajdhani, Roboto, Roc Nation Display (self-hosted from roc nation distro) */
+/* Shared website fonts — Poppins + Special Elite (self-hosted) */
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("./Poppins-Light.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./Poppins-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./Poppins-Medium.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./Poppins-Bold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Special Elite";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./SpecialElite-Regular.ttf") format("truetype");
+}
+
+/* Legacy ROC Nation distribution fonts (kept for compatibility) */
 :root {
-  --font-rajdhani: "Rajdhani", sans-serif;
-  --font-roboto: "Roboto", sans-serif;
+  --font-rajdhani: "Special Elite", "Rajdhani", sans-serif;
+  --font-roboto: "Poppins", "Roboto", sans-serif;
   --font-rocnation: "Roc Nation Display", sans-serif;
 }
 
