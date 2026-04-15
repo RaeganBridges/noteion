@@ -88,19 +88,28 @@
     if (!$inner || !$inner.length) return;
     if (!covers || !covers.length) {
       $inner.removeData("noteionBoardCovers");
-      $inner.removeAttr("data-has-board-cover").css("--board-cover", "");
+      $inner.removeAttr("data-has-board-cover").css({
+        "--board-cover": "",
+        "--board-cover-next": "",
+        "--board-cover-third": "",
+      });
       return;
     }
     var len = covers.length;
     var n = Number(idx);
     if (isNaN(n)) n = 0;
-    var i = ((n % len) + len) % len;
-    var url = covers[i];
+    var i0 = ((n % len) + len) % len;
+    var i1 = ((i0 + 1) % len + len) % len;
+    var i2 = ((i0 + 2) % len + len) % len;
+    var url0 = covers[i0];
+    var url1 = covers[i1];
+    var url2 = covers[i2];
     $inner.data("noteionBoardCovers", covers);
-    $inner.attr("data-has-board-cover", "1").css(
-      "--board-cover",
-      "url(" + JSON.stringify(String(url).trim()) + ")"
-    );
+    $inner.attr("data-has-board-cover", "1").css({
+      "--board-cover": "url(" + JSON.stringify(String(url0).trim()) + ")",
+      "--board-cover-next": "url(" + JSON.stringify(String(url1).trim()) + ")",
+      "--board-cover-third": "url(" + JSON.stringify(String(url2).trim()) + ")",
+    });
   }
 
   function applyFaceBoardCover($face, covers, idx) {
@@ -137,7 +146,7 @@
     var startHue = 330; /* pink */
     var endHue = 690; /* full rainbow sweep ending near pink/red */
     var hue = (startHue + (endHue - startHue) * t) % 360;
-    return "hsl(" + hue.toFixed(1) + ", 78%, 58%)";
+    return "hsl(" + hue.toFixed(1) + ", 96%, 54%)";
   }
 
   function buildGenreCard(g, rank, totalGenres) {
