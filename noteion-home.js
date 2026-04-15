@@ -147,7 +147,7 @@
     var endHue = 690; /* full rainbow sweep ending near pink/red */
     var hue = (startHue + (endHue - startHue) * t) % 360;
     /* Keep the rainbow sweep, but pull back saturation so card tints are calmer. */
-    return "hsl(" + hue.toFixed(1) + ", 20%, 50%)";
+    return "hsl(" + hue.toFixed(1) + ", 20%, 56%)";
   }
 
   function buildGenreCard(g, rank, totalGenres) {
