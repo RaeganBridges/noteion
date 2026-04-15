@@ -149,7 +149,7 @@
       trackIdx = Math.max(0, Math.min(trackIdx, tracks.length - 1));
       var t = tracks[trackIdx];
       showTrack(t);
-      document.title = (t.title || "Song") + " — Lyrics — Noteion";
+      document.title = (t.title || "Song") + " — Lyrics — Cr8Dig";
       $(".reader-header-tagline").text((g && g.name) || "Genre");
 
       if (t.lyricsHtml && String(t.lyricsHtml).trim()) {
@@ -171,7 +171,7 @@
 
     /* Ad-hoc search from home */
     showTrack({ title: qTitle, artist: qArtist });
-    document.title = (qTitle || "Lyrics") + " — Noteion";
+    document.title = (qTitle || "Lyrics") + " — Cr8Dig";
     $back.attr("href", "home.html");
     if (qArtist && qTitle) {
       runFetch(qArtist, qTitle);

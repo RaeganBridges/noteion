@@ -326,7 +326,7 @@
         $(".js-meaning-meta").text("").attr("hidden", "");
       }
 
-      document.title = (t.title || "Song") + " — " + g.name + " — Noteion";
+      document.title = (t.title || "Song") + " — " + g.name + " — Cr8Dig";
       syncNavLinks();
       renderPageComments();
     }
