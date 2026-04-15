@@ -22,9 +22,9 @@
   --shadow: rgba(0, 0, 0, 0.45);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   /* Two-row horizontal strip: large “album” tiles */
-  --album-size: clamp(10.5rem, 32vmin, 17rem);
-  --album-gap-row: clamp(1.75rem, 5.5vmin, 3rem);
-  --album-gap-col: clamp(2rem, 6vmin, 3.5rem);
+  --album-size: clamp(9.9rem, 30vmin, 15.9rem);
+  --album-gap-row: clamp(2.05rem, 6.1vmin, 3.45rem);
+  --album-gap-col: clamp(2.35rem, 6.8vmin, 4.1rem);
   /* Half-step offset so the bottom row sits between top-row albums */
   --album-stagger: calc((var(--album-size) + var(--album-gap-col)) * 0.5);
   --safe-x: env(safe-area-inset-left, 0px);
