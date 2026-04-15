@@ -526,9 +526,20 @@
       window.SongSharePublished && window.SongSharePublished.ALL_GENRES_SLOT_NAME
         ? window.SongSharePublished.ALL_GENRES_SLOT_NAME
         : "All genres";
-    return genres.filter(function (g) {
-      return g && g.name !== skip;
-    });
+    return genres
+      .filter(function (g) {
+        return g && g.name !== skip;
+      })
+      .slice()
+      .sort(function (a, b) {
+        var aName = String(a.name || "");
+        var bName = String(b.name || "");
+        var aIsOther = aName.trim().toLowerCase() === "other";
+        var bIsOther = bName.trim().toLowerCase() === "other";
+        if (aIsOther && !bIsOther) return 1;
+        if (!aIsOther && bIsOther) return -1;
+        return aName.localeCompare(bName, undefined, { sensitivity: "base" });
+      });
   }
 
   function buildAlbumGenreTags() {
