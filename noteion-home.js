@@ -137,7 +137,7 @@
     var startHue = 330; /* pink */
     var endHue = 690; /* full rainbow sweep ending near pink/red */
     var hue = (startHue + (endHue - startHue) * t) % 360;
-    return "hsla(" + hue.toFixed(1) + ", 78%, 58%, 0.44)";
+    return "hsl(" + hue.toFixed(1) + ", 78%, 58%)";
   }
 
   function buildGenreCard(g, rank, totalGenres) {
