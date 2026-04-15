@@ -120,6 +120,52 @@
     }
   }
 
+  function hashToHue(str) {
+    var s = String(str || "");
+    var h = 0;
+    for (var i = 0; i < s.length; i++) {
+      h = (h * 31 + s.charCodeAt(i)) % 360;
+    }
+    return h;
+  }
+
+  function escapeXml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  function makeSongFallbackCoverDataUrl(track, genreName, salt) {
+    var title = String((track && track.title) || "Untitled");
+    var artist = String((track && track.artist) || "");
+    var seed = (track && (track.pubId || track.id)) || title + "|" + artist + "|" + String(salt || "");
+    var hue = hashToHue(seed + "|" + String(genreName || ""));
+    var hueB = (hue + 32) % 360;
+    var initials = (title.trim() ? title.trim().slice(0, 2) : "S").toUpperCase();
+    var svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0%" stop-color="hsl(' + hue + ',78%,52%)"/>' +
+      '<stop offset="100%" stop-color="hsl(' + hueB + ',72%,34%)"/>' +
+      "</linearGradient></defs>" +
+      '<rect width="600" height="600" fill="url(#g)"/>' +
+      '<rect x="24" y="24" width="552" height="552" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>' +
+      '<text x="52" y="86" fill="rgba(255,255,255,0.88)" font-size="30" font-family="sans-serif" font-weight="700">' +
+      escapeXml(String(genreName || "Genre")) +
+      "</text>" +
+      '<text x="52" y="548" fill="rgba(255,255,255,0.94)" font-size="34" font-family="sans-serif" font-weight="700">' +
+      escapeXml(title.slice(0, 28)) +
+      "</text>" +
+      '<text x="300" y="350" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="180" font-family="sans-serif" font-weight="800">' +
+      escapeXml(initials) +
+      "</text>" +
+      "</svg>";
+    return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+  }
+
   function toDisplayTrack(p) {
     var meaningText = p.meaningText != null ? String(p.meaningText).trim() : "";
     var releaseYear =
@@ -184,9 +230,14 @@
       var seenCover = {};
       var maxCovers = 16;
       for (var bi = 0; bi < userTracks.length && boardStackCoverUrls.length < maxCovers; bi++) {
-        var bc = userTracks[bi].albumCoverDataUrl;
-        if (!bc || !String(bc).trim()) continue;
-        var cs = String(bc).trim();
+        var track = userTracks[bi];
+        var bc = track && track.albumCoverDataUrl ? String(track.albumCoverDataUrl).trim() : "";
+        var cs = bc || makeSongFallbackCoverDataUrl(track, g.name, bi);
+        if (!cs) continue;
+        if (seenCover[cs]) {
+          // If two songs share the same cover, force a song-specific fallback for variety.
+          cs = makeSongFallbackCoverDataUrl(track, g.name, bi + "_" + String(track && track.pubId || ""));
+        }
         if (seenCover[cs]) continue;
         seenCover[cs] = true;
         boardStackCoverUrls.push(cs);

@@ -453,11 +453,10 @@ body.is-popup-open {
 /* Community album art on the rearmost scrapbook square; shuffle cycles layouts + cover when multiple */
 .card-inner[data-has-board-cover="1"]::before {
   background:
-    linear-gradient(0deg, rgba(128, 128, 128, 0.96), rgba(128, 128, 128, 0.96)),
     linear-gradient(0deg, var(--genre-overlay, rgba(196, 165, 116, 0.42)), var(--genre-overlay, rgba(196, 165, 116, 0.42))),
     var(--board-cover) center / cover no-repeat,
     var(--paper);
-  background-blend-mode: saturation, color, normal, normal;
+  background-blend-mode: color, normal, normal;
   border: 1px solid rgba(0, 0, 0, 0.07);
   opacity: 0.97;
 }
@@ -489,11 +488,10 @@ body.is-popup-open {
 
 .card-face[data-has-face-cover="1"] {
   background:
-    linear-gradient(0deg, rgba(128, 128, 128, 0.96), rgba(128, 128, 128, 0.96)),
     linear-gradient(0deg, var(--genre-overlay, rgba(196, 165, 116, 0.42)), var(--genre-overlay, rgba(196, 165, 116, 0.42))),
     var(--face-cover) center / cover no-repeat,
     var(--paper);
-  background-blend-mode: saturation, color, normal, normal;
+  background-blend-mode: color, normal, normal;
   color: #f8f6f1;
 }
 
