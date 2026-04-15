@@ -453,27 +453,11 @@ body.is-popup-open {
 /* Community album art on the rearmost scrapbook square; shuffle cycles layouts + cover when multiple */
 .card-inner[data-has-board-cover="1"]::before {
   background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--accent, #c4a574) 52%, transparent) 0%,
-      rgba(22, 18, 32, 0.48) 48%,
-      color-mix(in srgb, var(--accent, #c4a574) 38%, transparent) 100%
-    ),
-    linear-gradient(155deg, rgba(255, 255, 255, 0.2) 0%, transparent 40%),
+    linear-gradient(0deg, var(--genre-overlay, rgba(196, 165, 116, 0.42)), var(--genre-overlay, rgba(196, 165, 116, 0.42))),
     var(--board-cover) center / cover no-repeat,
     var(--paper);
   border: 1px solid rgba(0, 0, 0, 0.07);
   opacity: 0.97;
-}
-
-@supports not (background: color-mix(in srgb, red, blue)) {
-  .card-inner[data-has-board-cover="1"]::before {
-    background:
-      linear-gradient(145deg, rgba(196, 165, 116, 0.5) 0%, rgba(22, 18, 32, 0.5) 48%, rgba(196, 165, 116, 0.38) 100%),
-      linear-gradient(155deg, rgba(255, 255, 255, 0.2) 0%, transparent 40%),
-      var(--board-cover) center / cover no-repeat,
-      var(--paper);
-  }
 }
 
 .genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner,
@@ -503,8 +487,7 @@ body.is-popup-open {
 
 .card-face[data-has-face-cover="1"] {
   background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.16) 0%, transparent 45%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(0deg, var(--genre-overlay, rgba(196, 165, 116, 0.42)), var(--genre-overlay, rgba(196, 165, 116, 0.42))),
     var(--face-cover) center / cover no-repeat,
     var(--paper);
   color: #f8f6f1;

@@ -132,7 +132,15 @@
     return [];
   }
 
-  function buildGenreCard(g, rank) {
+  function genreOverlayColor(rank, total) {
+    var t = total && total > 1 ? (rank - 1) / (total - 1) : 0;
+    var startHue = 330; /* pink */
+    var endHue = 690; /* full rainbow sweep ending near pink/red */
+    var hue = (startHue + (endHue - startHue) * t) % 360;
+    return "hsla(" + hue.toFixed(1) + ", 78%, 58%, 0.44)";
+  }
+
+  function buildGenreCard(g, rank, totalGenres) {
     var tilt = hashAngle(rank * 7 + 3).toFixed(2);
     var id = "genre-card-" + rank;
     var artistsHint = g.inspiredByArtists
@@ -184,6 +192,7 @@
         "</article>"
     );
     $card.find(".genre-name").text(g.name);
+    $card.css("--genre-overlay", genreOverlayColor(rank, totalGenres));
     var $innerNode = $card.find(".card-inner");
     var $faceNode = $card.find(".card-face");
     var covers = collectBoardCovers(g);
@@ -233,7 +242,7 @@
 
     genres.forEach(function (g, i) {
       var rank = i + 1;
-      var $card = buildGenreCard(g, rank);
+      var $card = buildGenreCard(g, rank, genres.length);
       if (i < half) {
         $rowTop.append($card);
       } else {
