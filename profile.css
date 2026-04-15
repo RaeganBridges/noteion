@@ -81,6 +81,50 @@ body.composer-open {
   align-items: center;
 }
 
+.header-compose-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 0.18rem;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 165, 116, 0.5);
+  background: rgba(18, 18, 22, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 20px rgba(0, 0, 0, 0.28);
+}
+
+.header-compose-toggle .header-compose-btn {
+  min-height: 2.9rem;
+  min-width: clamp(8.75rem, 18vw, 13.25rem);
+  border-radius: 999px;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 900;
+  border: 1px solid transparent;
+}
+
+.header-compose-toggle .profile-new-song {
+  color: #0d0d0f;
+  background: linear-gradient(180deg, #d8c29c 0%, #c4a574 100%);
+  border-color: rgba(196, 165, 116, 0.95);
+}
+
+.header-compose-toggle .profile-new-song:hover {
+  filter: brightness(1.04);
+}
+
+.header-compose-toggle .profile-new-album {
+  color: rgba(250, 248, 240, 0.95);
+  background: linear-gradient(180deg, rgba(30, 30, 34, 0.98) 0%, rgba(22, 22, 26, 0.98) 100%);
+  border-color: rgba(196, 165, 116, 0.62);
+}
+
+.header-compose-toggle .profile-new-album:hover {
+  filter: brightness(1.1);
+  border-color: rgba(196, 165, 116, 0.9);
+}
+
 .profile-new-song {
   padding: 0.5rem 1.15rem;
   font: inherit;
@@ -1365,6 +1409,17 @@ body.composer-open {
 }
 
 @media (max-width: 700px) {
+  .header-compose-toggle {
+    width: 100%;
+    max-width: min(30rem, 100%);
+    order: 3;
+  }
+
+  .header-compose-toggle .header-compose-btn {
+    min-width: 0;
+    width: 50%;
+  }
+
   .profile-composer-panel {
     width: 100%;
     max-height: 100vh;
