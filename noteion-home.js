@@ -146,15 +146,8 @@
     var startHue = 330; /* pink */
     var endHue = 690; /* full rainbow sweep ending near pink/red */
     var hue = (startHue + (endHue - startHue) * t) % 360;
-    return "hsl(" + hue.toFixed(1) + ", 96%, 54%)";
-  }
-
-  function genreOverlayHueDeg(rank, total) {
-    var t = total && total > 1 ? (rank - 1) / (total - 1) : 0;
-    var startHue = 330;
-    var endHue = 690;
-    var hue = (startHue + (endHue - startHue) * t) % 360;
-    return hue.toFixed(1) + "deg";
+    /* Muted base for luminosity-blend duotone (greyscale luminance from art + this chroma) */
+    return "hsl(" + hue.toFixed(1) + ", 36%, 54%)";
   }
 
   function buildGenreCard(g, rank, totalGenres) {
@@ -211,7 +204,6 @@
     $card.find(".genre-name").text(g.name);
     $card.css({
       "--genre-overlay": genreOverlayColor(rank, totalGenres),
-      "--genre-hue-deg": genreOverlayHueDeg(rank, totalGenres),
     });
     var $innerNode = $card.find(".card-inner");
     var $faceNode = $card.find(".card-face");
