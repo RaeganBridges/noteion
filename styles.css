@@ -354,8 +354,8 @@ body.is-popup-open {
   justify-content: center;
   align-items: flex-end;
   width: 100%;
-  min-height: 1.85rem;
-  margin-bottom: 0.4rem;
+  min-height: 2.35rem;
+  margin-bottom: 0.5rem;
   z-index: 16;
   pointer-events: none;
 }
@@ -529,7 +529,7 @@ body.is-popup-open {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 0.2rem 0.25rem;
+  padding: 0.28rem 0.38rem;
   overflow: visible;
   pointer-events: auto;
   background: none;
@@ -576,9 +576,9 @@ body.is-popup-open {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
+  width: 2.65rem;
+  height: 2.65rem;
+  min-width: 2.65rem;
   padding: 0;
   margin: 0;
   border-width: 3px;
@@ -610,6 +610,20 @@ body.is-popup-open {
   mix-blend-mode: multiply;
 }
 
+/* Sticker cut line + tiny drop shadow edge */
+.stack-shuffle-btn::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid rgba(248, 244, 234, 0.92);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .stack-shuffle[data-sticker="1"] .stack-shuffle-btn::before {
   mix-blend-mode: normal;
   opacity: 0.42;
@@ -617,7 +631,7 @@ body.is-popup-open {
 
 .stack-shuffle-btn:first-child {
   transform: rotate(-13deg);
-  margin-right: -0.42rem;
+  margin-right: -0.5rem;
   z-index: 1;
 }
 
@@ -630,8 +644,8 @@ body.is-popup-open {
   position: relative;
   z-index: 3;
   display: block;
-  width: 0.78rem;
-  height: 0.78rem;
+  width: 0.94rem;
+  height: 0.94rem;
 }
 
 /* 0 — Navy + warm white ring (bold street sticker) */
@@ -787,8 +801,8 @@ body.is-popup-open {
 
 .genre-card:hover:not(:has(.stack-shuffle:hover)) .stack-shuffle,
 .genre-card:focus-within:not(:has(.stack-shuffle :focus)) .stack-shuffle {
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .vinyl {
