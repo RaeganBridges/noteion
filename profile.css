@@ -82,26 +82,15 @@ body.composer-open {
 }
 
 .header-compose-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  padding: 0.18rem;
-  border-radius: 999px;
-  border: 1px solid rgba(196, 165, 116, 0.5);
-  background: rgba(18, 18, 22, 0.82);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 20px rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .header-compose-toggle .header-compose-btn {
-  min-height: 2.9rem;
-  min-width: clamp(8.75rem, 18vw, 13.25rem);
-  border-radius: 999px;
-  letter-spacing: 0.16em;
-  font-size: 0.72rem;
+  min-height: 2.2rem;
+  min-width: clamp(6.25rem, 14vw, 9rem);
+  letter-spacing: 0.12em;
+  font-size: 0.62rem;
   font-weight: 900;
-  border: 1px solid transparent;
 }
 
 .header-compose-toggle .profile-new-song {
@@ -1411,7 +1400,7 @@ body.composer-open {
 @media (max-width: 700px) {
   .header-compose-toggle {
     width: 100%;
-    max-width: min(30rem, 100%);
+    max-width: min(22rem, 100%);
     order: 3;
   }
 

@@ -2038,12 +2038,50 @@
       applySlipColorClass($(this).closest(".composer-slip"), k);
     });
 
+    function maybeOpenComposerFromQuery() {
+      var search = window.location && window.location.search ? window.location.search : "";
+      if (!search) return;
+      var params;
+      try {
+        params = new URLSearchParams(search);
+      } catch (e) {
+        return;
+      }
+      var compose = String(params.get("compose") || "").toLowerCase();
+      if (compose !== "song" && compose !== "album") return;
+      if (!window.SongShareAuth || !window.SongShareAuth.getSession || !window.SongShareAuth.getSession()) return;
+      if (compose === "album") {
+        closeComposer();
+        resetComposer();
+        resetAlbumComposer();
+        openAlbumComposer();
+      } else {
+        closeAlbumComposer();
+        resetAlbumComposer();
+        resetComposer();
+        openComposer();
+      }
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, "profile.html");
+      }
+    }
+
     function bootProfile() {
       var wr = window.SongShareAuth && window.SongShareAuth.whenReady;
       if (typeof wr === "function") {
-        wr.call(window.SongShareAuth).then(render).catch(render);
+        wr
+          .call(window.SongShareAuth)
+          .then(function () {
+            render();
+            maybeOpenComposerFromQuery();
+          })
+          .catch(function () {
+            render();
+            maybeOpenComposerFromQuery();
+          });
       } else {
         render();
+        maybeOpenComposerFromQuery();
       }
     }
 

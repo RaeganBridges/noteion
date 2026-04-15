@@ -41,9 +41,9 @@
 
 /* Legacy ROC Nation distribution fonts (kept for compatibility) */
 :root {
-  --font-rajdhani: "Special Elite", "Rajdhani", sans-serif;
-  --font-roboto: "Poppins", "Roboto", sans-serif;
-  --font-rocnation: "Roc Nation Display", sans-serif;
+  --font-rajdhani: "Poppins", sans-serif;
+  --font-roboto: "Poppins", sans-serif;
+  --font-rocnation: "Poppins", sans-serif;
 }
 
 @font-face{font-family:"Rajdhani";font-style:normal;font-weight:400;font-display:swap;src:url(./7e5a5c10421db7a0-s.woff2) format("woff2");unicode-range:u+0900-097f,u+1cd0-1cf9,u+200c-200d,u+20a8,u+20b9,u+20f0,u+25cc,u+a830-a839,u+a8e0-a8ff,u+11b00-11b09}

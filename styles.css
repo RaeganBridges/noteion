@@ -121,6 +121,52 @@ body.is-popup-open {
   gap: 0.2rem;
 }
 
+.header-compose-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 0.12rem;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 165, 116, 0.5);
+  background: rgba(18, 18, 22, 0.82);
+}
+
+.header-compose-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  min-width: clamp(6.25rem, 14vw, 9rem);
+  padding: 0.32rem 0.8rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid transparent;
+}
+
+.header-compose-btn.profile-new-song {
+  color: #0d0d0f;
+  background: linear-gradient(180deg, #d8c29c 0%, #c4a574 100%);
+  border-color: rgba(196, 165, 116, 0.95);
+}
+
+.header-compose-btn.profile-new-album {
+  color: rgba(250, 248, 240, 0.95);
+  background: linear-gradient(180deg, rgba(30, 30, 34, 0.98) 0%, rgba(22, 22, 26, 0.98) 100%);
+  border-color: rgba(196, 165, 116, 0.62);
+}
+
+.header-compose-btn:hover {
+  filter: brightness(1.06);
+}
+
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -453,6 +499,26 @@ body.is-popup-open {
   transition:
     opacity 0.3s var(--ease-out),
     transform 0.3s var(--ease-out);
+}
+
+.card-face[data-has-face-cover="1"] {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.16) 0%, transparent 45%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.42) 100%),
+    var(--face-cover) center / cover no-repeat,
+    var(--paper);
+  color: #f8f6f1;
+}
+
+.card-face[data-has-face-cover="1"] .genre-rank {
+  color: rgba(248, 246, 241, 0.82);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.card-face[data-has-face-cover="1"] .genre-name {
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.65),
+    0 0 1px rgba(0, 0, 0, 0.45);
 }
 
 /* Circular sticker-bomb style controls — two overlapping discs per genre */
@@ -1211,6 +1277,17 @@ body.is-popup-open {
   .page-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .header-compose-toggle {
+    width: 100%;
+    max-width: min(22rem, 100%);
+    order: 3;
+  }
+
+  .header-compose-btn {
+    min-width: 0;
+    width: 50%;
   }
 
   .header-actions {

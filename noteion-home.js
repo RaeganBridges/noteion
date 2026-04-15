@@ -103,6 +103,25 @@
     );
   }
 
+  function applyFaceBoardCover($face, covers, idx) {
+    if (!$face || !$face.length) return;
+    if (!covers || !covers.length) {
+      $face.removeData("noteionBoardCovers");
+      $face.removeAttr("data-has-face-cover").css("--face-cover", "");
+      return;
+    }
+    var len = covers.length;
+    var n = Number(idx);
+    if (isNaN(n)) n = 0;
+    var i = ((n % len) + len) % len;
+    var url = covers[i];
+    $face.data("noteionBoardCovers", covers);
+    $face.attr("data-has-face-cover", "1").css(
+      "--face-cover",
+      "url(" + JSON.stringify(String(url).trim()) + ")"
+    );
+  }
+
   function collectBoardCovers(g) {
     if (Array.isArray(g.boardStackCoverUrls) && g.boardStackCoverUrls.length) {
       return g.boardStackCoverUrls.slice();
@@ -166,12 +185,15 @@
     );
     $card.find(".genre-name").text(g.name);
     var $innerNode = $card.find(".card-inner");
+    var $faceNode = $card.find(".card-face");
     var covers = collectBoardCovers(g);
     if (covers.length) {
       var ci = getStoredCoverIdx(rank) % covers.length;
       applyInnerBoardCover($innerNode, covers, ci);
+      applyFaceBoardCover($faceNode, covers, ci);
     } else {
       applyInnerBoardCover($innerNode, [], 0);
+      applyFaceBoardCover($faceNode, [], 0);
     }
     var $au = $card.find("audio");
     if (g.audioHoverPreload) {
@@ -389,6 +411,7 @@
         setStoredStackPreset(rank, next);
         var covers = $inner.data("noteionBoardCovers") || [];
         if (covers.length > 1) {
+          var $face = $card.find(".card-face");
           var curC = getStoredCoverIdx(rank) % covers.length;
           var nextC;
           if ($btn.hasClass("stack-shuffle-btn--prev")) {
@@ -398,6 +421,7 @@
           }
           setStoredCoverIdx(rank, nextC);
           applyInnerBoardCover($inner, covers, nextC);
+          applyFaceBoardCover($face, covers, nextC);
         }
       }
     });
