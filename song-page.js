@@ -1,6 +1,9 @@
 (function ($) {
   "use strict";
 
+  var pageFlipAudioCtx = null;
+  var pageFlipAudioUnlocked = false;
+
   function queryId() {
     var m = /[?&]id=([^&]*)/.exec(window.location.search);
     if (!m) return NaN;
@@ -122,7 +125,118 @@
     );
   }
 
+  function getPageFlipAudioContext() {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!pageFlipAudioCtx) {
+      try {
+        pageFlipAudioCtx = new Ctx();
+      } catch (e) {
+        return null;
+      }
+    }
+    return pageFlipAudioCtx;
+  }
+
+  function unlockPageFlipAudio() {
+    var ctx = getPageFlipAudioContext();
+    if (!ctx || pageFlipAudioUnlocked) return;
+    pageFlipAudioUnlocked = true;
+    if (ctx.state === "suspended" && typeof ctx.resume === "function") {
+      ctx.resume().catch(function () {});
+    }
+  }
+
+  function playPageFlipSound() {
+    var ctx = getPageFlipAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended" && typeof ctx.resume === "function") {
+      ctx.resume().catch(function () {});
+    }
+
+    var dur = 0.16;
+    var frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
+    var buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    var lp = 0;
+    for (var i = 0; i < frames; i++) {
+      var t = i / frames;
+      var env = Math.pow(1 - t, 1.45) * (0.84 + 0.16 * Math.sin(i * 0.19));
+      var white = Math.random() * 2 - 1;
+      lp = lp + 0.32 * (white - lp);
+      data[i] = lp * env * 0.5;
+    }
+
+    var src = ctx.createBufferSource();
+    src.buffer = buffer;
+    var hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 420;
+    var lpFilter = ctx.createBiquadFilter();
+    lpFilter.type = "lowpass";
+    lpFilter.frequency.value = 7200;
+    var gain = ctx.createGain();
+    var now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.34, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+    src.connect(hp);
+    hp.connect(lpFilter);
+    lpFilter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(now);
+    src.stop(now + dur + 0.03);
+  }
+
+  function profileHrefFor(userId, displayName) {
+    if (window.SongSharePublished && typeof window.SongSharePublished.userProfileHref === "function") {
+      return window.SongSharePublished.userProfileHref(userId, displayName);
+    }
+    var uid = String(userId || "").trim();
+    if (uid) return "user.html?uid=" + encodeURIComponent(uid);
+    var dn = String(displayName || "").trim();
+    if (dn) return "user.html?name=" + encodeURIComponent(dn);
+    return "user.html";
+  }
+
+  function renderSongLinks(links) {
+    var l = links || {};
+    var options = [
+      { key: "spotify", label: "Spotify" },
+      { key: "appleMusic", label: "Apple Music" },
+      { key: "youtube", label: "YouTube" },
+    ];
+    var $wrap = $(".js-song-links").empty();
+    var count = 0;
+    options.forEach(function (opt) {
+      var href = String(l[opt.key] || "").trim();
+      if (!href) return;
+      count += 1;
+      $wrap.append(
+        $("<a/>", {
+          class: "detail-song-link",
+          href: href,
+          target: "_blank",
+          rel: "noopener noreferrer",
+          text: opt.label,
+        })
+      );
+    });
+    if (count) {
+      $wrap.removeAttr("hidden");
+    } else {
+      $wrap.attr("hidden", "");
+    }
+  }
+
   $(function () {
+    document.addEventListener("pointerdown", unlockPageFlipAudio, {
+      once: true,
+      capture: true,
+      passive: true,
+    });
+
     function start() {
     var genres = window.SONG_SHARE_GENRES || [];
     var id = queryId();
@@ -234,6 +348,8 @@
       comments.forEach(function (c) {
         if (!c || !c.body) return;
         var own = session && c.userId === session.userId;
+        var commentBy = String(c.displayName || "Member").trim() || "Member";
+        var commentByHref = profileHrefFor(c.userId, commentBy);
         var delBtn = own
           ? '<button type="button" class="page-comments__remove js-page-comment-remove" data-comment-id="' +
             escapeHtml(c.id) +
@@ -243,7 +359,11 @@
           '<div class="page-comments__item">' +
             delBtn +
             '<div class="page-comments__meta">' +
-            escapeHtml(c.displayName || "Member") +
+            '<a class="page-comments__author-link" href="' +
+            escapeHtml(commentByHref) +
+            '">' +
+            escapeHtml(commentBy) +
+            "</a>" +
             (c.ts ? " · " + escapeHtml(fmtWhen(c.ts)) : "") +
             "</div>" +
             '<div class="page-comments__text">' +
@@ -291,13 +411,33 @@
       var annParts = [];
       if (t.userPublished) {
         if (artist) annParts.push("Artist: " + artist);
+        var postedBy = String(t.displayName || "").trim();
+        if (postedBy) {
+          annParts.push(
+            'Posted by <a class="detail-author-link" href="' +
+              escapeHtml(profileHrefFor(t.userId, postedBy)) +
+              '">' +
+              escapeHtml(postedBy) +
+              "</a>"
+          );
+        }
         if (t.songPublishedAt) annParts.push("Published " + fmtWhen(t.songPublishedAt));
       }
       if (annParts.length) {
-        $(".js-annotation-meta").text(annParts.join(" · ")).removeAttr("hidden");
+        $(".js-annotation-meta").html(annParts.join(" · ")).removeAttr("hidden");
       } else {
         $(".js-annotation-meta").text("").attr("hidden", "");
       }
+      renderSongLinks({
+        spotify:
+          (t.streamLinks && t.streamLinks.spotify) || t.spotifyUrl || "",
+        appleMusic:
+          (t.streamLinks && t.streamLinks.appleMusic) ||
+          t.appleMusicUrl ||
+          "",
+        youtube:
+          (t.streamLinks && t.streamLinks.youtube) || t.youtubeUrl || "",
+      });
 
       var lh = t.lyricsHtml != null ? String(t.lyricsHtml).trim() : "";
       $(".js-song-lyrics").empty();
@@ -311,17 +451,27 @@
       renderStickies(t.stickyNotes);
 
       var mean = t.meaning != null ? String(t.meaning).trim() : "";
-      if (mean) {
+      var hasMeaning = !!mean;
+      $(".detail-column--meaning").toggleClass("is-meaning-hidden", !hasMeaning);
+      if (hasMeaning) {
         $(".js-meaning").html(formatMeaningForDisplay(mean));
       } else {
-        $(".js-meaning").text("—");
+        $(".js-meaning").empty();
       }
       var by = String(t.meaningBy || "").trim();
       var metaParts = [];
-      if (by) metaParts.push(by);
-      if (t.meaningAt) metaParts.push(fmtWhen(t.meaningAt));
+      if (hasMeaning && by) {
+        metaParts.push(
+          '<a class="detail-author-link" href="' +
+            escapeHtml(profileHrefFor(t.userId, by)) +
+            '">' +
+            escapeHtml(by) +
+            "</a>"
+        );
+      }
+      if (hasMeaning && t.meaningAt) metaParts.push(fmtWhen(t.meaningAt));
       if (metaParts.length) {
-        $(".js-meaning-meta").text(metaParts.join(" · ")).removeAttr("hidden");
+        $(".js-meaning-meta").html(metaParts.join(" · ")).removeAttr("hidden");
       } else {
         $(".js-meaning-meta").text("").attr("hidden", "");
       }
@@ -400,6 +550,7 @@
     $(".js-prev").on("click", function (e) {
       e.stopPropagation();
       idx = (idx - 1 + tracks.length) % tracks.length;
+      playPageFlipSound();
       showTrack(true, "prev");
       syncSongUrl(id, idx);
     });
@@ -407,6 +558,7 @@
     $(".js-next").on("click", function (e) {
       e.stopPropagation();
       idx = (idx + 1) % tracks.length;
+      playPageFlipSound();
       showTrack(true, "next");
       syncSongUrl(id, idx);
     });

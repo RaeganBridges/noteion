@@ -12,8 +12,99 @@
   var MAX_EMBEDDED_RASTER_BYTES = 450000;
   var MAX_AUDIO_BYTES_FOR_COVER_PARSE = 12000000;
   var albumCoverDataUrl = "";
+  var legacyCoverBackfillInFlight = false;
   var composerHlSeqRef = { n: 0 };
   var albumHlSeqRef = { n: 0 };
+  var paperAudioCtx = null;
+
+  function getPaperAudioContext() {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!paperAudioCtx) {
+      try {
+        paperAudioCtx = new Ctx();
+      } catch (e) {
+        return null;
+      }
+    }
+    return paperAudioCtx;
+  }
+
+  function playPaperPublishSound() {
+    var ctx = getPaperAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended" && typeof ctx.resume === "function") {
+      ctx.resume().catch(function () {});
+    }
+
+    var dur = 0.34;
+    var frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
+    var buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    var lp = 0;
+    for (var i = 0; i < frames; i++) {
+      var t = i / frames;
+      /* Crinkly envelope: quick attack, textured decay. */
+      var env = Math.pow(1 - t, 1.25) * (0.8 + 0.2 * Math.sin(i * 0.21));
+      var white = Math.random() * 2 - 1;
+      lp = lp + 0.34 * (white - lp);
+      data[i] = lp * env * 0.48;
+    }
+
+    var src = ctx.createBufferSource();
+    src.buffer = buffer;
+    var hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 520;
+    var lpFilter = ctx.createBiquadFilter();
+    lpFilter.type = "lowpass";
+    lpFilter.frequency.value = 6900;
+    var notch = ctx.createBiquadFilter();
+    notch.type = "notch";
+    notch.frequency.value = 2350;
+    notch.Q.value = 1.2;
+    var gain = ctx.createGain();
+    var now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.34, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+    src.connect(hp);
+    hp.connect(lpFilter);
+    lpFilter.connect(notch);
+    notch.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(now);
+    src.stop(now + dur + 0.03);
+  }
+
+  function legacyCoverBackfillStampKey(userId) {
+    return "noteion.coverBackfill.v1." + String(userId || "");
+  }
+
+  function markLegacyCoverBackfillAttempted(userId) {
+    if (!userId) return;
+    try {
+      localStorage.setItem(legacyCoverBackfillStampKey(userId), String(Date.now()));
+    } catch (e) {}
+  }
+
+  function hasLegacyCoverBackfillAttempt(userId) {
+    if (!userId) return false;
+    try {
+      return !!localStorage.getItem(legacyCoverBackfillStampKey(userId));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function forceLegacyCoverBackfillForSession(session) {
+    if (!session) return false;
+    var dn = String(session.displayName || "").trim().toLowerCase();
+    var email = String(session.email || "").trim().toLowerCase();
+    var emailLocal = email.indexOf("@") !== -1 ? email.split("@")[0] : email;
+    return dn === "drbridges23" || emailLocal === "drbridges23";
+  }
 
   function applyAlbumCoverFromAutoExtract(dataUrl) {
     if (!dataUrl || albumCoverDataUrl) return;
@@ -186,6 +277,152 @@
       .trim();
   }
 
+  function plainTextFromHtml(html) {
+    var d = document.createElement("div");
+    d.innerHTML = String(html || "");
+    return String(d.textContent || "").trim();
+  }
+
+  function tokenizeLower(str) {
+    return String(str || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function autoGenreTagsForTrack(title, artist, lyricsHtml) {
+    var selectable = genresSelectableForPosts();
+    if (!selectable.length) return [];
+
+    var normTitle = tokenizeLower(title);
+    var normArtist = tokenizeLower(artist);
+    var normLyrics = tokenizeLower(plainTextFromHtml(lyricsHtml));
+    var corpus = (normTitle + " " + normArtist + " " + normLyrics).trim();
+    var scores = {};
+
+    function bump(name, n) {
+      if (!name || !n) return;
+      scores[name] = (scores[name] || 0) + n;
+    }
+
+    selectable.forEach(function (g) {
+      var name = String(g.name || "").trim();
+      if (!name) return;
+      var lowerName = tokenizeLower(name);
+      if (lowerName && corpus.indexOf(lowerName) !== -1) {
+        bump(name, 3);
+      }
+      var inspired = String(g.inspiredByArtists || "");
+      inspired
+        .split(",")
+        .map(function (s) {
+          return tokenizeLower(s);
+        })
+        .filter(Boolean)
+        .forEach(function (artistHint) {
+          if (normArtist && (normArtist.indexOf(artistHint) !== -1 || artistHint.indexOf(normArtist) !== -1)) {
+            bump(name, 6);
+          }
+        });
+    });
+
+    if (/\bhip hop\b|\bhiphop\b|\btrap\b|\bdrill\b|\brap\b/.test(corpus)) {
+      bump("Hip-Hop", 5);
+      bump("Rap", 5);
+    }
+    if (/\bchristmas\b|\bxmas\b|\bholiday\b|\bsanta\b/.test(corpus)) bump("Holidays", 5);
+    if (/\borchestra\b|\bsymphony\b|\bconcerto\b|\bsonata\b/.test(corpus)) bump("Classical", 4);
+    if (/\breggaeton\b|\blatino\b|\blatin\b/.test(corpus)) bump("Latin", 4);
+    if (/\bhouse\b|\btechno\b|\bedm\b|\bsynth\b/.test(corpus)) bump("Electronic", 4);
+
+    var ranked = Object.keys(scores)
+      .map(function (name) {
+        return { name: name, score: scores[name] };
+      })
+      .sort(function (a, b) {
+        return b.score - a.score;
+      })
+      .filter(function (x) {
+        return x.score >= 3;
+      })
+      .slice(0, 2)
+      .map(function (x) {
+        return x.name;
+      });
+
+    if (ranked.length) return ranked;
+    return ["Other"];
+  }
+
+  function normalizeStreamUrl(url) {
+    var raw = String(url || "").trim();
+    if (!raw) return "";
+    if (!/^https?:\/\//i.test(raw)) {
+      raw = "https://" + raw.replace(/^\/+/, "");
+    }
+    return raw;
+  }
+
+  function normalizeStreamLinks(links) {
+    var src = links || {};
+    return {
+      spotify: normalizeStreamUrl(src.spotify),
+      appleMusic: normalizeStreamUrl(src.appleMusic),
+      youtube: normalizeStreamUrl(src.youtube),
+    };
+  }
+
+  function buildAutoStreamLinks(artist, title) {
+    var q = (String(artist || "").trim() + " " + String(title || "").trim()).trim();
+    if (!q) return normalizeStreamLinks({});
+    var enc = encodeURIComponent(q);
+    return normalizeStreamLinks({
+      spotify: "https://open.spotify.com/search/" + enc,
+      appleMusic: "https://music.apple.com/us/search?term=" + enc,
+      youtube: "https://www.youtube.com/results?search_query=" + enc,
+    });
+  }
+
+  function mergeStreamLinks(autoLinks, manualLinks) {
+    var auto = normalizeStreamLinks(autoLinks);
+    var manual = normalizeStreamLinks(manualLinks);
+    return {
+      spotify: manual.spotify || auto.spotify || "",
+      appleMusic: manual.appleMusic || auto.appleMusic || "",
+      youtube: manual.youtube || auto.youtube || "",
+    };
+  }
+
+  function readComposerStreamLinksFromForm() {
+    return normalizeStreamLinks({
+      spotify: $("#composer-link-spotify").val(),
+      appleMusic: $("#composer-link-apple").val(),
+      youtube: $("#composer-link-youtube").val(),
+    });
+  }
+
+  function setComposerStreamLinksToForm(links) {
+    var l = normalizeStreamLinks(links);
+    $("#composer-link-spotify").val(l.spotify || "");
+    $("#composer-link-apple").val(l.appleMusic || "");
+    $("#composer-link-youtube").val(l.youtube || "");
+  }
+
+  function readAlbumStreamLinksFromForm() {
+    return normalizeStreamLinks({
+      spotify: $("#album-link-spotify").val(),
+      appleMusic: $("#album-link-apple").val(),
+      youtube: $("#album-link-youtube").val(),
+    });
+  }
+
+  function setAlbumStreamLinksToForm(links) {
+    var l = normalizeStreamLinks(links);
+    $("#album-link-spotify").val(l.spotify || "");
+    $("#album-link-apple").val(l.appleMusic || "");
+    $("#album-link-youtube").val(l.youtube || "");
+  }
+
   /** Loads Apple’s 100×100 artwork URL at higher resolution and returns a data URL. */
   function artworkUrlToDataUrl(artworkUrl100) {
     if (!artworkUrl100) return Promise.resolve(null);
@@ -307,6 +544,123 @@
       .catch(function () {
         return null;
       });
+  }
+
+  function backfillLegacyMissingCovers(session) {
+    if (!session || !session.userId) return Promise.resolve(false);
+    if (legacyCoverBackfillInFlight) return Promise.resolve(false);
+    if (!window.SongShareUploads || !window.SongSharePublished) return Promise.resolve(false);
+
+    var uploads = window.SongShareUploads.list(session.userId);
+    if (!uploads || !uploads.length) return Promise.resolve(false);
+
+    var songsMissing = uploads.filter(function (item) {
+      return (
+        item &&
+        item.kind !== "album" &&
+        !String(item.albumCoverDataUrl || "").trim() &&
+        String(item.title || "").trim()
+      );
+    });
+    var albumsMissing = uploads.filter(function (item) {
+      return (
+        item &&
+        item.kind === "album" &&
+        !String(item.albumCoverDataUrl || "").trim() &&
+        String(item.albumTitle || "").trim()
+      );
+    });
+    if (!songsMissing.length && !albumsMissing.length) return Promise.resolve(false);
+
+    legacyCoverBackfillInFlight = true;
+    var anyChanged = false;
+
+    function updatePublishedSongCover(pubId, coverDataUrl) {
+      if (!pubId || !coverDataUrl) return;
+      var post = window.SongSharePublished.loadAll().find(function (p) {
+        return p && p.id === pubId;
+      });
+      if (!post) return;
+      if (String(post.albumCoverDataUrl || "").trim()) return;
+      window.SongSharePublished.upsert(
+        Object.assign({}, post, { albumCoverDataUrl: coverDataUrl })
+      );
+      anyChanged = true;
+    }
+
+    var chain = Promise.resolve();
+
+    songsMissing.forEach(function (item) {
+      chain = chain
+        .then(function () {
+          var artist = String(item.artist || "").trim();
+          var title = String(item.title || "").trim();
+          if (!title) return null;
+          return fetchItunesCoverDataUrl(artist, title);
+        })
+        .then(function (coverDataUrl) {
+          if (!coverDataUrl) return;
+          var nextItem = Object.assign({}, item, { albumCoverDataUrl: coverDataUrl });
+          window.SongShareUploads.add(session.userId, nextItem);
+          updatePublishedSongCover(item.pubId, coverDataUrl);
+          anyChanged = true;
+        });
+    });
+
+    albumsMissing.forEach(function (item) {
+      chain = chain
+        .then(function () {
+          var albumArtist = String(item.albumArtist || "").trim();
+          var albumTitle = String(item.albumTitle || "").trim();
+          return fetchItunesAlbumCoverDataUrl(albumArtist, albumTitle);
+        })
+        .then(function (coverDataUrl) {
+          if (!coverDataUrl) {
+            var firstTrack = item.tracks && item.tracks.length ? item.tracks[0] : null;
+            var trackArtist = firstTrack ? String(firstTrack.artist || item.albumArtist || "").trim() : "";
+            var trackTitle = firstTrack ? String(firstTrack.title || "").trim() : "";
+            if (!trackTitle) return null;
+            return fetchItunesCoverDataUrl(trackArtist, trackTitle);
+          }
+          return coverDataUrl;
+        })
+        .then(function (coverDataUrl) {
+          if (!coverDataUrl) return;
+          var nextAlbum = Object.assign({}, item, { albumCoverDataUrl: coverDataUrl });
+          window.SongShareUploads.add(session.userId, nextAlbum);
+          if (Array.isArray(item.tracks)) {
+            item.tracks.forEach(function (tr) {
+              if (tr && tr.pubId) updatePublishedSongCover(tr.pubId, coverDataUrl);
+            });
+          }
+          anyChanged = true;
+        });
+    });
+
+    return chain
+      .then(function () {
+        if (anyChanged) {
+          window.SongSharePublished.applyMerge();
+        }
+        markLegacyCoverBackfillAttempted(session.userId);
+        return anyChanged;
+      })
+      .catch(function () {
+        markLegacyCoverBackfillAttempted(session.userId);
+        return false;
+      })
+      .finally(function () {
+        legacyCoverBackfillInFlight = false;
+      });
+  }
+
+  function maybeRunLegacyCoverBackfill(session) {
+    if (!session || !session.userId) return;
+    var forced = forceLegacyCoverBackfillForSession(session);
+    if (!forced && hasLegacyCoverBackfillAttempt(session.userId)) return;
+    backfillLegacyMissingCovers(session).then(function (changed) {
+      if (changed) render();
+    });
   }
 
   var slipDragState = {
@@ -431,6 +785,7 @@
       stickyNotes: [],
       songPublishedAt: null,
       meaningPublishedAt: null,
+      streamLinks: normalizeStreamLinks({}),
       audioName: "",
       audioDataUrl: "",
     };
@@ -463,6 +818,7 @@
     tr.title = String($("#album-track-title").val() || "").trim();
     tr.artist = String($("#album-track-artist").val() || "").trim();
     tr.meaningText = String($("#album-meaning").val() || "").trim();
+    tr.streamLinks = readAlbumStreamLinksFromForm();
     tr.lyricsHtml = getAlbumLyricsHtml();
     tr.stickyNotes = collectAlbumStickies();
     var tags = [];
@@ -479,6 +835,7 @@
     $("#album-track-title").val(tr.title || "");
     $("#album-track-artist").val(tr.artist || "");
     $("#album-meaning").val(tr.meaningText || "");
+    setAlbumStreamLinksToForm(tr.streamLinks || {});
     setAlbumLyricsHtml(tr.lyricsHtml || "");
     $(".js-album-genre-tags .js-album-genre-tag-input").each(function () {
       var v = String($(this).val());
@@ -711,6 +1068,7 @@
     $("#album-track-title").val("");
     $("#album-track-artist").val("");
     $("#album-meaning").val("");
+    setAlbumStreamLinksToForm({});
     setAlbumLyricsHtml("");
     renderAlbumStickies([]);
     buildAlbumGenreTags();
@@ -821,13 +1179,13 @@
         window.alert("Track " + (i + 1) + " needs lyrics.");
         return;
       }
-      if (!String(tr.meaningText || "").trim()) {
-        window.alert("Track " + (i + 1) + " needs a meaning.");
-        return;
-      }
       if (!(tr.genreTags && tr.genreTags.length)) {
-        window.alert("Track " + (i + 1) + " needs at least one genre tag.");
-        return;
+        var inferredAlbumTags = autoGenreTagsForTrack(
+          tr.title,
+          String(tr.artist || "").trim() || albumArtist,
+          tr.lyricsHtml || ""
+        );
+        tr.genreTags = inferredAlbumTags.length ? inferredAlbumTags : ["Other"];
       }
     }
 
@@ -848,8 +1206,16 @@
           return p.id === tr.pubId;
         });
         var songPublishedAt = existing && existing.songPublishedAt ? existing.songPublishedAt : now;
-        var meaningPublishedAt = existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : now;
+        var trackMeaning = String(tr.meaningText || "").trim();
+        var hasTrackMeaning = !!trackMeaning;
+        var meaningPublishedAt = existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : null;
+        if (hasTrackMeaning && !meaningPublishedAt) {
+          meaningPublishedAt = now;
+        }
         var trackArtist = String(tr.artist || "").trim() || albumArtist;
+        var manualTrackLinks = normalizeStreamLinks(tr.streamLinks || {});
+        var autoTrackLinks = buildAutoStreamLinks(trackArtist, tr.title);
+        var trackStreamLinks = mergeStreamLinks(autoTrackLinks, manualTrackLinks);
         var entry = {
           id: tr.pubId,
           userId: session.userId,
@@ -857,8 +1223,9 @@
           title: tr.title,
           artist: trackArtist,
           lyricsHtml: tr.lyricsHtml || "",
-          meaningText: tr.meaningText || "",
-          meaningAuthor: displayName,
+          streamLinks: trackStreamLinks,
+          meaningText: hasTrackMeaning ? trackMeaning : "",
+          meaningAuthor: hasTrackMeaning ? displayName : "",
           meaningPublishedAt: meaningPublishedAt,
           songPublishedAt: songPublishedAt,
           genreTags: tr.genreTags || [],
@@ -880,6 +1247,11 @@
         albumCoverDataUrl: coverUse,
         tracks: albumState.tracks.map(function (t) {
           var o = Object.assign({}, t);
+          var ta = String(o.artist || "").trim() || albumArtist;
+          o.streamLinks = mergeStreamLinks(
+            buildAutoStreamLinks(ta, o.title),
+            normalizeStreamLinks(o.streamLinks || {})
+          );
           delete o.audioDataUrl;
           return o;
         }),
@@ -902,6 +1274,7 @@
         return;
       }
       window.SongSharePublished.applyMerge();
+      playPaperPublishSound();
 
       editingAlbumPubId = null;
       resetAlbumComposer();
@@ -1230,6 +1603,7 @@
     $("#composer-track-title").val("");
     $("#composer-artist").val("");
     $("#composer-meaning").val("");
+    setComposerStreamLinksToForm({});
     $(".js-genre-tag").prop("checked", false);
     setComposerLyricsHtml("");
     renderComposerStickies([]);
@@ -1259,6 +1633,7 @@
     $("#composer-track-title").val(item.title || "");
     $("#composer-artist").val(item.artist || "");
     $("#composer-meaning").val(item.meaningText || "");
+    setComposerStreamLinksToForm(item.streamLinks || {});
     setComposerLyricsHtml(item.lyricsHtml || "");
     renderComposerStickies(item.stickyNotes);
     $(".js-genre-tag").each(function () {
@@ -1401,6 +1776,9 @@
     var title = String($("#composer-track-title").val() || "").trim();
     var artist = String($("#composer-artist").val() || "").trim();
     var meaningText = String($("#composer-meaning").val() || "").trim();
+    var manualStreamLinks = readComposerStreamLinksFromForm();
+    var autoStreamLinks = buildAutoStreamLinks(artist, title);
+    var streamLinks = mergeStreamLinks(autoStreamLinks, manualStreamLinks);
     var lyricsHtml = getComposerLyricsHtml();
     var lyricsPlain = String($("#composer-lyrics-ed").text() || "").trim();
 
@@ -1412,18 +1790,22 @@
       window.alert("Add lyrics (paste or fetch) before publishing.");
       return;
     }
-    if (!meaningText) {
-      window.alert("Add a short meaning before publishing.");
-      return;
-    }
-
     var genreTags = [];
     $(".js-genre-tag:checked").each(function () {
       genreTags.push(String($(this).val()));
     });
     if (!genreTags.length) {
-      window.alert("Choose at least one genre tag so the track appears on the board.");
-      return;
+      genreTags = autoGenreTagsForTrack(title, artist, lyricsHtml);
+      if (!genreTags.length) genreTags = ["Other"];
+      $(".js-genre-tag").prop("checked", false);
+      genreTags.forEach(function (tag) {
+        $(".js-genre-tag").each(function () {
+          if (String($(this).val()) === tag) {
+            $(this).prop("checked", true);
+          }
+        });
+      });
+      setLyricsStatus("No genre selected — auto-tagged as: " + genreTags.join(", ") + ".");
     }
 
     var $btn = $(".js-publish-desk");
@@ -1438,6 +1820,7 @@
           title,
           artist,
           meaningText,
+          streamLinks,
           lyricsHtml,
           genreTags,
           fetchedCover
@@ -1445,7 +1828,7 @@
       })
       .catch(function () {
         setLyricsStatus("");
-        execPublishSong(session, title, artist, meaningText, lyricsHtml, genreTags, null);
+        execPublishSong(session, title, artist, meaningText, streamLinks, lyricsHtml, genreTags, null);
       })
       .finally(function () {
         $btn.prop("disabled", false);
@@ -1457,6 +1840,7 @@
     title,
     artist,
     meaningText,
+    streamLinks,
     lyricsHtml,
     genreTags,
     fetchedCover
@@ -1469,8 +1853,11 @@
     var existing = editingPubId ? findUpload(session, editingPubId) : null;
     var songPublishedAt =
       existing && existing.songPublishedAt ? existing.songPublishedAt : now;
-    var meaningPublishedAt =
-      existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : now;
+    var hasMeaning = !!meaningText;
+    var meaningPublishedAt = existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : null;
+    if (hasMeaning && !meaningPublishedAt) {
+      meaningPublishedAt = now;
+    }
 
     var cover = fetchedCover && String(fetchedCover).trim();
     if (cover && cover.length > MAX_SONG_COVER_DATA_URL_CHARS) cover = "";
@@ -1485,8 +1872,9 @@
       title: title,
       artist: artist,
       lyricsHtml: lyricsHtml,
-      meaningText: meaningText,
-      meaningAuthor: displayName,
+      streamLinks: normalizeStreamLinks(streamLinks),
+      meaningText: hasMeaning ? meaningText : "",
+      meaningAuthor: hasMeaning ? displayName : "",
       meaningPublishedAt: meaningPublishedAt,
       songPublishedAt: songPublishedAt,
       genreTags: genreTags,
@@ -1501,6 +1889,7 @@
     }
     window.SongShareUploads.add(session.userId, Object.assign({ pubId: pubId }, entry));
     window.SongSharePublished.applyMerge();
+    playPaperPublishSound();
 
     resetComposer();
     closeComposer();
@@ -2084,17 +2473,40 @@
           .call(window.SongShareAuth)
           .then(function () {
             render();
+            var sess = window.SongShareAuth && window.SongShareAuth.getSession
+              ? window.SongShareAuth.getSession()
+              : null;
+            maybeRunLegacyCoverBackfill(sess);
             maybeOpenComposerFromQuery();
           })
           .catch(function () {
             render();
+            var sess = window.SongShareAuth && window.SongShareAuth.getSession
+              ? window.SongShareAuth.getSession()
+              : null;
+            maybeRunLegacyCoverBackfill(sess);
             maybeOpenComposerFromQuery();
           });
       } else {
         render();
+        var sess = window.SongShareAuth && window.SongShareAuth.getSession
+          ? window.SongShareAuth.getSession()
+          : null;
+        maybeRunLegacyCoverBackfill(sess);
         maybeOpenComposerFromQuery();
       }
     }
+
+    window.NoteionRunLegacyCoverBackfill = function () {
+      var sess = window.SongShareAuth && window.SongShareAuth.getSession
+        ? window.SongShareAuth.getSession()
+        : null;
+      if (!sess) return Promise.resolve(false);
+      return backfillLegacyMissingCovers(sess).then(function (changed) {
+        if (changed) render();
+        return changed;
+      });
+    };
 
     window.addEventListener("songshare:authed", render);
     bootProfile();

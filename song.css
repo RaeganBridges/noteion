@@ -23,18 +23,39 @@
   --letter-short: 8.5in;
   --letter-long: 11in;
   --letter-ratio: 8.5 / 11;
+  --song-view-scale: 0.92;
+  /* Keep sheets inside the visible area between fixed header/footer. */
+  --song-vertical-budget: calc(100vh - var(--shell-header-offset) - var(--shell-footer-offset) - 4.25rem);
+  --song-two-up-vertical-budget: calc(
+    100vh - var(--shell-header-offset) - var(--shell-footer-offset) - 5.6rem
+  );
   /* Letter width that fits viewport (single column max) or height budget */
-  --sheet-w: min(
-    var(--letter-short),
-    calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
-    calc(min(var(--letter-long), calc(100dvh - 10rem)) * 8.5 / 11)
+  --sheet-w: calc(
+    min(
+      var(--letter-short),
+      calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      calc(min(var(--letter-long), var(--song-vertical-budget)) * 8.5 / 11)
+    ) * var(--song-view-scale)
   );
   /* When two sheets sit side by side, each column shares row width */
-  --sheet-w-two-up: min(
-    var(--letter-short),
-    calc((100vw - 4rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / 2),
-    calc(min(var(--letter-long), calc(100dvh - 12rem)) * 8.5 / 11)
+  --sheet-w-two-up: calc(
+    min(
+      var(--letter-short),
+      calc((100vw - 4rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / 2),
+      calc(min(var(--letter-long), var(--song-two-up-vertical-budget)) * 8.5 / 11)
+    ) * var(--song-view-scale)
   );
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --song-vertical-budget: calc(
+      100dvh - var(--shell-header-offset) - var(--shell-footer-offset) - 4.25rem
+    );
+    --song-two-up-vertical-budget: calc(
+      100dvh - var(--shell-header-offset) - var(--shell-footer-offset) - 5.6rem
+    );
+  }
 }
 
 .detail-main {
@@ -56,28 +77,21 @@
   margin-bottom: clamp(2.5rem, 7vh, 3.5rem);
 }
 
-.detail-genre-wrap {
-  margin: 0 0 1.25rem;
-  text-align: center;
-  position: relative;
-  z-index: 3;
+.logo-genre {
+  display: inline-block;
+  margin-left: 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 240, 0.72);
+  vertical-align: middle;
 }
 
-.detail-genre-tag {
-  display: inline-block;
-  padding: 0.4rem 1.2rem 0.45rem;
-  background:
-    linear-gradient(145deg, #f2e8d8 0%, #dccfb8 100%);
-  color: #2a2218;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transform: rotate(-3deg);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    2px 3px 8px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(80, 60, 40, 0.2);
+.logo-genre::before {
+  content: "·";
+  margin-right: 0.45rem;
+  color: rgba(250, 248, 240, 0.45);
 }
 
 .detail-panels {
@@ -194,6 +208,17 @@
   margin-bottom: 0.3rem;
 }
 
+.page-comments__author-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(122, 114, 104, 0.6);
+}
+
+.page-comments__author-link:hover {
+  color: #4f473d;
+  border-bottom-color: rgba(79, 71, 61, 0.9);
+}
+
 .page-comments__text {
   font-size: 0.84rem;
   line-height: 1.45;
@@ -211,7 +236,7 @@
   padding: 0;
   font: inherit;
   font-size: 1rem;
-  line-height: 1;
+  line-height: 1.8;
   color: #6a6258;
   cursor: pointer;
   background: transparent;
@@ -596,6 +621,10 @@
   transform: rotate(2.6deg);
 }
 
+.detail-column--meaning.is-meaning-hidden .sheet-stack {
+  display: none;
+}
+
 .detail-column--meaning .sheet.js-meaning-paper:focus-visible {
   outline: 3px solid rgba(196, 165, 116, 0.95);
   outline-offset: 4px;
@@ -637,6 +666,7 @@
   font-size: clamp(1.35rem, 4.5vw, 2rem);
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1;
   font-style: normal;
   color: #0f0f0f;
 }
@@ -656,6 +686,46 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #7a7268;
+}
+
+.detail-author-link {
+  color: #5a4b92;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(90, 75, 146, 0.45);
+}
+
+.detail-author-link:hover {
+  color: #3f2f7f;
+  border-bottom-color: rgba(63, 47, 127, 0.75);
+}
+
+.detail-song-links {
+  margin: 0 0 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.detail-song-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.24rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(45, 40, 35, 0.2);
+  background: rgba(255, 255, 255, 0.62);
+  color: #2f2a25;
+  text-decoration: none;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detail-song-link:hover {
+  border-color: rgba(196, 165, 116, 0.65);
+  color: #1e1a16;
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .detail-lyrics-wrap {
@@ -811,7 +881,7 @@
 
 
 @media (prefers-reduced-motion: reduce) {
-  .detail-genre-tag,
+  .logo-genre,
   .sheet-stack {
     transform: none !important;
   }

@@ -34,7 +34,7 @@
       '<div class="auth-panel">' +
       '<div class="auth-panel-header">' +
       '<h2 id="auth-gate-title" class="auth-panel-title">Cr8Dig</h2>' +
-      '<p class="auth-panel-lede">Sign in or create an account. If this deployment uses Supabase (see supabase-config.js), your session and published posts sync across devices.</p>' +
+      '<p class="auth-panel-lede">Sign in or create an account.</p>' +
       "</div>" +
       '<div class="auth-tabs" role="tablist">' +
       '<button type="button" class="auth-tab" role="tab" aria-selected="true" aria-controls="auth-form-signin" id="auth-tab-signin">Sign in</button>' +
@@ -50,7 +50,7 @@
       '<p class="auth-msg" data-auth-msg-in aria-live="polite"></p>' +
       "</form>" +
       '<form id="auth-form-signup" class="auth-panel-form" hidden role="tabpanel">' +
-      '<div class="auth-field"><label class="auth-label" for="auth-up-name">Display name</label>' +
+      '<div class="auth-field"><label class="auth-label" for="auth-up-name">Username</label>' +
       '<input id="auth-up-name" name="displayName" class="auth-input" type="text" autocomplete="name" spellcheck="true" required placeholder="DJ name or nickname" /></div>' +
       '<div class="auth-field"><label class="auth-label" for="auth-up-email">Email</label>' +
       '<input id="auth-up-email" name="email" class="auth-input" type="email" autocomplete="email" spellcheck="false" required placeholder="you@example.com" /></div>' +

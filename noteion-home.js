@@ -27,6 +27,10 @@
   /** Browsers block audio.play() until there has been a user gesture; hover alone is not enough. */
   var genreAudioPrimed = false;
   var $lastHoveredGenreCard = null;
+  var touchPreviewTimer = null;
+  var touchPreviewCard = null;
+  var touchPreviewMoved = false;
+  var TOUCH_PREVIEW_HOLD_MS = 260;
   /** Tiny silent WAV — primes WebKit audio stack when played once inside a gesture. */
   var SILENT_AUDIO =
     "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
@@ -479,6 +483,22 @@
         stopCard($(this));
       });
 
+    function clearTouchPreviewTimer() {
+      if (touchPreviewTimer) {
+        window.clearTimeout(touchPreviewTimer);
+        touchPreviewTimer = null;
+      }
+    }
+
+    function stopTouchPreview() {
+      clearTouchPreviewTimer();
+      if (touchPreviewCard) {
+        stopCard($(touchPreviewCard));
+      }
+      touchPreviewCard = null;
+      touchPreviewMoved = false;
+    }
+
     document.addEventListener(
       "touchstart",
       function (e) {
@@ -486,20 +506,65 @@
         if (!t || typeof t.closest !== "function") return;
         var card = t.closest(".genre-card");
         if (!card) return;
-        var $c = $(card);
-        $lastHoveredGenreCard = $c;
-        playCard($c);
+        touchPreviewCard = card;
+        touchPreviewMoved = false;
+        clearTouchPreviewTimer();
+        touchPreviewTimer = window.setTimeout(function () {
+          if (!touchPreviewCard || touchPreviewMoved) return;
+          var $c = $(touchPreviewCard);
+          $lastHoveredGenreCard = $c;
+          playCard($c);
+        }, TOUCH_PREVIEW_HOLD_MS);
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "touchmove",
+      function () {
+        touchPreviewMoved = true;
+        clearTouchPreviewTimer();
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "touchend",
+      function () {
+        stopTouchPreview();
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "touchcancel",
+      function () {
+        stopTouchPreview();
       },
       { passive: true }
     );
   }
 
   function bindCardNavigation() {
+    function firstTrackIndexForGenre(g) {
+      if (!g || !g.tracks || !g.tracks.length) return 0;
+      for (var i = 0; i < g.tracks.length; i++) {
+        if (g.tracks[i] && g.tracks[i].userPublished) return i;
+      }
+      return 0;
+    }
+
     $(document).on("click", ".genre-card", function () {
       var raw = (this.id || "").replace(/^genre-card-/, "");
       var n = parseInt(raw, 10);
       if (!n || n < 1) return;
-      window.location.href = "song.html?id=" + encodeURIComponent(String(n));
+      var genre = getGenres()[n - 1] || null;
+      var trackIdx = firstTrackIndexForGenre(genre);
+      window.location.href =
+        "song.html?id=" +
+        encodeURIComponent(String(n)) +
+        "&track=" +
+        encodeURIComponent(String(trackIdx));
     });
 
     $(document).on("keydown", ".genre-card", function (e) {
@@ -610,7 +675,20 @@
       $track.text(trackLine);
       var $bottom = $("<div/>").addClass("lyrics-search-post-bottom");
       var $meta = $("<span/>").addClass("lyrics-search-post-by");
-      $meta.text("By " + who + (loc ? " · " + loc.genreName : ""));
+      var profileHref =
+        window.SongSharePublished && typeof window.SongSharePublished.userProfileHref === "function"
+          ? window.SongSharePublished.userProfileHref(p.userId, who)
+          : "user.html?name=" + encodeURIComponent(String(who || "").trim());
+      $meta
+        .text("By ")
+        .append(
+          $("<a/>", {
+            class: "lyrics-search-post-profile-link",
+            href: profileHref,
+            text: who,
+          })
+        )
+        .append(document.createTextNode(loc ? " · " + loc.genreName : ""));
       $bottom.append($meta);
       if (loc) {
         var href =

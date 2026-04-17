@@ -13,17 +13,20 @@
     <div class="page">
       <header class="page-header">
         <div class="header-brand">
-          <h1 class="logo"><a href="home.html">Cr8Dig</a></h1>
-          <p class="header-tagline">Your desk · publish tracks · sign out anytime</p>
+          <h1 class="logo">
+            <a href="home.html">Cr8Dig</a>
+            <span class="logo-desk-tag">The Desk</span>
+          </h1>
         </div>
         <div class="header-compose-toggle" role="group" aria-label="Create post type">
           <button type="button" class="profile-new-song header-compose-btn js-open-composer">New song</button>
           <button type="button" class="profile-new-album header-compose-btn js-open-album-composer">New album</button>
         </div>
         <nav class="header-actions" aria-label="Toolbar">
-          <a href="home.html" class="icon-btn" aria-label="Back to genre board">
+          <a href="song-reader.html" class="icon-btn" aria-label="Lyrics lookup" title="Lyrics lookup">
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M14 14l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
           </a>
           <a href="home.html" class="icon-btn" aria-label="Home" title="Home">
@@ -60,8 +63,7 @@
             </div>
           </div>
 
-          <section class="profile-desk-section" aria-labelledby="desk-heading">
-            <h2 id="desk-heading" class="profile-desk-heading">The desk</h2>
+          <section class="profile-desk-section" aria-label="The desk">
             <p id="profile-empty" class="profile-empty" hidden>
               Nothing published yet. Use <strong>New song</strong> for a single track or <strong>New album</strong> to add several songs under one release, then publish to the board.
             </p>
@@ -98,7 +100,7 @@
         </header>
         <div class="profile-composer-scroll">
           <p class="profile-composer-lede">
-            Fetch or paste lyrics, select a line, then pick a highlight color — a note card appears for that new line. <strong>Add annotation slip</strong> adds a card beside the line you highlighted most recently. Slips sit on the right; drag <strong>⋮</strong> to move a slip up or down, and use the color dots to match the highlight colors. Each slip has × to remove. Write a meaning; commenters use the meaning overlay. Pick at least one genre so it appears on the board.
+            Fetch or paste lyrics, select a line, then pick a highlight color — a note card appears for that new line. <strong>Add annotation slip</strong> adds a card beside the line you highlighted most recently. Slips sit on the right; drag <strong>⋮</strong> to move a slip up or down, and use the color dots to match the highlight colors. Each slip has × to remove. Meaning is optional; if left blank, the meaning section is hidden on the post. Pick at least one genre so it appears on the board.
           </p>
 
           <div class="composer-workspace">
@@ -124,7 +126,7 @@
               </div>
 
               <div class="composer-field">
-                <label class="profile-label" for="composer-meaning">Meaning</label>
+                <label class="profile-label" for="composer-meaning">Meaning (optional)</label>
                 <textarea
                   id="composer-meaning"
                   class="profile-textarea"
@@ -136,7 +138,46 @@
               </div>
 
               <fieldset class="composer-genres">
-                <legend class="profile-label">Genre tags (at least one)</legend>
+                <legend class="profile-label">Song links (auto-filled, edit if needed)</legend>
+                <div class="composer-grid">
+                  <div class="composer-field">
+                    <label class="profile-label" for="composer-link-spotify">Spotify URL</label>
+                    <input
+                      id="composer-link-spotify"
+                      class="profile-input"
+                      type="url"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="https://open.spotify.com/..."
+                    />
+                  </div>
+                  <div class="composer-field">
+                    <label class="profile-label" for="composer-link-apple">Apple Music URL</label>
+                    <input
+                      id="composer-link-apple"
+                      class="profile-input"
+                      type="url"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="https://music.apple.com/..."
+                    />
+                  </div>
+                  <div class="composer-field">
+                    <label class="profile-label" for="composer-link-youtube">YouTube URL</label>
+                    <input
+                      id="composer-link-youtube"
+                      class="profile-input"
+                      type="url"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="https://www.youtube.com/..."
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="composer-genres">
+                <legend class="profile-label">Genre tags (auto-added if none selected)</legend>
                 <div class="composer-genre-grid js-composer-genre-tags"></div>
               </fieldset>
 
@@ -144,7 +185,7 @@
                 <button type="button" class="profile-slip-btn js-add-slip">Add annotation slip</button>
               </div>
 
-              <p class="composer-publish-hint">When editing, use <strong>Delete</strong> in the footer to remove the post from your desk and the board.</p>
+              <p class="composer-publish-hint">When editing, use <strong>Delete</strong> in the footer to remove the post from your desk and the board. If you skip genre tags, Cr8Dig auto-adds them from title/artist/lyrics.</p>
             </div>
 
             <div class="composer-workspace-lyrics">
@@ -255,7 +296,7 @@
               </div>
 
               <div class="composer-field">
-                <label class="profile-label" for="album-meaning">Meaning</label>
+                <label class="profile-label" for="album-meaning">Meaning (optional)</label>
                 <textarea
                   id="album-meaning"
                   class="profile-textarea"
@@ -267,7 +308,46 @@
               </div>
 
               <fieldset class="composer-genres">
-                <legend class="profile-label">Genre tags (at least one)</legend>
+                <legend class="profile-label">Song links (auto-filled per track, edit if needed)</legend>
+                <div class="composer-grid">
+                  <div class="composer-field">
+                    <label class="profile-label" for="album-link-spotify">Spotify URL</label>
+                    <input
+                      id="album-link-spotify"
+                      class="profile-input"
+                      type="url"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="https://open.spotify.com/..."
+                    />
+                  </div>
+                  <div class="composer-field">
+                    <label class="profile-label" for="album-link-apple">Apple Music URL</label>
+                    <input
+                      id="album-link-apple"
+                      class="profile-input"
+                      type="url"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="https://music.apple.com/..."
+                    />
+                  </div>
+                  <div class="composer-field">
+                    <label class="profile-label" for="album-link-youtube">YouTube URL</label>
+                    <input
+                      id="album-link-youtube"
+                      class="profile-input"
+                      type="url"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="https://www.youtube.com/..."
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="composer-genres">
+                <legend class="profile-label">Genre tags (auto-added if none selected)</legend>
                 <div class="composer-genre-grid js-album-genre-tags"></div>
               </fieldset>
 

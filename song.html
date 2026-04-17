@@ -13,8 +13,10 @@
     <div class="page">
       <header class="page-header">
         <div class="header-brand">
-          <h1 class="logo"><a href="home.html">Cr8Dig</a></h1>
-          <p class="header-tagline">Genre · lyrics &amp; meaning · comments</p>
+          <h1 class="logo">
+            <a href="home.html">Cr8Dig</a>
+            <span class="logo-genre js-genre-label" aria-live="polite"></span>
+          </h1>
         </div>
         <div class="header-compose-toggle" role="group" aria-label="Create post type">
           <a href="profile.html?compose=song" class="profile-new-song header-compose-btn">New song</a>
@@ -25,11 +27,6 @@
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2" />
               <path d="M14 14l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            </svg>
-          </a>
-          <a href="home.html" class="icon-btn" aria-label="Back to genre board">
-            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
           </a>
           <a href="home.html" class="icon-btn" aria-label="Home" title="Home">
@@ -61,10 +58,6 @@
         <div class="subpage-inner">
           <div class="detail-main">
             <div class="papers-stack">
-                <p class="detail-genre-wrap">
-                  <span class="detail-genre-tag js-genre-label">Genre</span>
-                </p>
-
                 <div class="detail-panels">
                   <div class="detail-column detail-column--song">
                     <div class="sheet-stack">
@@ -83,6 +76,7 @@
                             <p class="detail-panel-body detail-song-title js-song-title">—</p>
                             <p class="detail-song-artist js-song-artist" hidden></p>
                             <p class="detail-meta-line detail-annotation-meta js-annotation-meta" hidden></p>
+                            <div class="detail-song-links js-song-links" hidden></div>
                             <div class="detail-lyrics-wrap js-song-lyrics-wrap" hidden>
                               <div class="detail-lyrics-scroll">
                                 <div class="detail-lyrics-scroll-inner">

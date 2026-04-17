@@ -178,6 +178,15 @@
       songPublishedAt: p.songPublishedAt || null,
       songArtist: p.artist || "",
       displayName: p.displayName || "",
+      userId: p.userId || "",
+      streamLinks:
+        p.streamLinks && typeof p.streamLinks === "object"
+          ? {
+              spotify: p.streamLinks.spotify || "",
+              appleMusic: p.streamLinks.appleMusic || "",
+              youtube: p.streamLinks.youtube || "",
+            }
+          : { spotify: "", appleMusic: "", youtube: "" },
       userPublished: true,
       pubId: p.id,
       lyricsHtml: p.lyricsHtml || "",
@@ -399,6 +408,37 @@
     });
   }
 
+  function userProfileHref(userId, displayName) {
+    var uid = String(userId || "").trim();
+    if (uid) {
+      return "user.html?uid=" + encodeURIComponent(uid);
+    }
+    var dn = String(displayName || "").trim();
+    if (dn) {
+      return "user.html?name=" + encodeURIComponent(dn);
+    }
+    return "user.html";
+  }
+
+  function listPostsByUser(userId, displayName) {
+    var uid = String(userId || "").trim();
+    var dn = normalizeSongToken(displayName || "");
+    return loadAll()
+      .filter(function (p) {
+        if (!p) return false;
+        var pUid = String(p.userId || "").trim();
+        if (uid && pUid) return pUid === uid;
+        if (uid && !pUid) return false;
+        if (!dn) return false;
+        return normalizeSongToken(p.displayName || "") === dn;
+      })
+      .sort(function (a, b) {
+        var ta = a.songPublishedAt || a.createdAt || 0;
+        var tb = b.songPublishedAt || b.createdAt || 0;
+        return tb - ta;
+      });
+  }
+
   /** First genre board slot for a published id after merge (for deep links). */
   function resolvePostBoardLocation(pubId) {
     if (!pubId) return null;
@@ -436,6 +476,8 @@
     findPostsBySong: findPostsBySong,
     findPostsByProfile: findPostsByProfile,
     filterPostsByProfile: filterPostsByProfile,
+    userProfileHref: userProfileHref,
+    listPostsByUser: listPostsByUser,
     resolvePostBoardLocation: resolvePostBoardLocation,
   };
 

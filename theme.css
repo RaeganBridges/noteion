@@ -7,6 +7,8 @@
 }
 
 :root {
+  --shell-header-offset: 5.35rem;
+  --shell-footer-offset: 3.25rem;
   --void: #050506;
   --ink: #0c0c0e;
   --panel: #101014;
@@ -55,12 +57,14 @@ samp {
 }
 
 .page-header {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
   gap: 1rem;
   padding:
     max(1.1rem, var(--safe-y-top)) max(1.25rem, var(--safe-x-right)) 0.85rem max(1.25rem, var(--safe-x));
@@ -71,6 +75,7 @@ samp {
 
 .header-brand {
   min-width: 0;
+  justify-self: start;
 }
 
 .logo {
@@ -107,19 +112,32 @@ samp {
   display: flex;
   align-items: center;
   gap: 0.2rem;
+  justify-self: end;
 }
 
 .header-compose-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0;
-  padding: 0.12rem;
+  justify-self: center;
+  padding: 0.16rem;
   border-radius: 999px;
-  border: 1px solid rgba(196, 165, 116, 0.5);
-  background: rgba(18, 18, 22, 0.82);
+  border: 2px solid rgba(196, 165, 116, 0.62);
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 246, 230, 0.045) 0 2px,
+      rgba(12, 12, 15, 0.08) 2px 4px
+    ),
+    linear-gradient(180deg, rgba(28, 24, 20, 0.94) 0%, rgba(12, 12, 16, 0.95) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 224, 0.2),
+    0 0 0 1px rgba(58, 44, 24, 0.7);
 }
 
 .header-compose-btn {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -127,28 +145,43 @@ samp {
   min-width: clamp(6.25rem, 14vw, 9rem);
   padding: 0.32rem 0.8rem;
   border-radius: 999px;
-  font: inherit;
-  font-size: 0.62rem;
+  font-family: var(--font-rajdhani);
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  border: 1px solid transparent;
+  border: 1px solid rgba(40, 30, 20, 0.45);
+}
+
+.header-compose-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -20deg,
+    rgba(255, 255, 255, 0.08) 0 1px,
+    rgba(255, 255, 255, 0) 1px 3px
+  );
+  mix-blend-mode: soft-light;
+  pointer-events: none;
 }
 
 .header-compose-btn.profile-new-song {
-  color: #0d0d0f;
-  background: linear-gradient(180deg, #d8c29c 0%, #c4a574 100%);
-  border-color: rgba(196, 165, 116, 0.95);
+  color: #1f1710;
+  text-shadow: 0 1px 0 rgba(255, 246, 226, 0.5);
+  background: linear-gradient(180deg, #dbc79e 0%, #c8ad7a 52%, #b59462 100%);
+  border-color: rgba(106, 74, 34, 0.62);
 }
 
 .header-compose-btn.profile-new-album {
   color: rgba(250, 248, 240, 0.95);
-  background: linear-gradient(180deg, rgba(30, 30, 34, 0.98) 0%, rgba(22, 22, 26, 0.98) 100%);
-  border-color: rgba(196, 165, 116, 0.62);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  background: linear-gradient(180deg, rgba(34, 35, 48, 0.98) 0%, rgba(18, 20, 32, 0.98) 100%);
+  border-color: rgba(165, 140, 100, 0.55);
 }
 
 .header-compose-btn:hover {
@@ -181,7 +214,8 @@ samp {
   border-color: var(--line);
 }
 
-.icon-btn[aria-expanded="true"] {
+.icon-btn[aria-expanded="true"],
+.icon-btn[aria-current="page"] {
   background: rgba(196, 165, 116, 0.15);
   border-color: rgba(196, 165, 116, 0.35);
   color: var(--accent);
@@ -197,6 +231,8 @@ samp {
   position: relative;
   flex: 1;
   min-height: 0;
+  padding-top: var(--shell-header-offset);
+  padding-bottom: var(--shell-footer-offset);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -253,9 +289,12 @@ samp {
 }
 
 .page-footer {
-  position: relative;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 50;
-  padding: 1.5rem max(1.25rem, var(--safe-x-right)) max(2rem, calc(1rem + var(--safe-y-bottom))) max(
+  padding: 0.95rem max(1.25rem, var(--safe-x-right)) max(1.35rem, calc(0.7rem + var(--safe-y-bottom))) max(
     1.25rem,
     var(--safe-x)
   );
@@ -266,8 +305,8 @@ samp {
 .footer-sns {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.35rem 0.5rem;
+  margin-bottom: 0.45rem;
 }
 
 .sns-chip {
@@ -276,7 +315,7 @@ samp {
   text-transform: uppercase;
   text-decoration: none;
   color: var(--muted);
-  padding: 0.2rem 0;
+  padding: 0.12rem 0;
   border-bottom: 1px solid transparent;
   transition:
     color 0.2s ease,
@@ -296,15 +335,19 @@ samp {
 }
 
 @media (max-width: 480px) {
+  :root {
+    --shell-header-offset: 7.3rem;
+  }
+
   .page-header {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .header-compose-toggle {
     width: 100%;
     max-width: min(22rem, 100%);
-    order: 3;
+    justify-self: center;
   }
 
   .header-compose-btn {
@@ -314,6 +357,7 @@ samp {
 
   .header-actions {
     align-self: flex-end;
-    margin-top: -0.25rem;
+    justify-self: end;
+    margin-top: 0;
   }
 }

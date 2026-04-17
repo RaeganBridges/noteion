@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Lyrics — Cr8Dig</title>
+    <title>User Profile — Cr8Dig</title>
     <link rel="stylesheet" href="typefaces/fonts.css" />
     <link rel="stylesheet" href="theme.css" />
-    <link rel="stylesheet" href="song-reader.css" />
+    <link rel="stylesheet" href="user.css" />
     <link rel="stylesheet" href="auth.css" />
   </head>
   <body>
@@ -14,14 +14,14 @@
       <header class="page-header">
         <div class="header-brand">
           <h1 class="logo"><a href="home.html">Cr8Dig</a></h1>
-          <p class="header-tagline reader-header-tagline">Lyrics reader</p>
+          <p class="header-tagline">User profile · published tracks</p>
         </div>
         <div class="header-compose-toggle" role="group" aria-label="Create post type">
           <a href="profile.html?compose=song" class="profile-new-song header-compose-btn">New song</a>
           <a href="profile.html?compose=album" class="profile-new-album header-compose-btn">New album</a>
         </div>
         <nav class="header-actions" aria-label="Toolbar">
-          <a href="song-reader.html" class="icon-btn" aria-label="Lyrics lookup" aria-current="page" title="Lyrics lookup">
+          <a href="song-reader.html" class="icon-btn" aria-label="Lyrics lookup" title="Lyrics lookup">
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2" />
               <path d="M14 14l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -39,7 +39,7 @@
               />
             </svg>
           </a>
-          <a href="profile.html" class="icon-btn" aria-label="Profile">
+          <a href="profile.html" class="icon-btn" aria-label="My profile" title="My profile">
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2" />
               <path d="M4 20c2-4 6-6 8-6s6 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -48,34 +48,26 @@
         </nav>
       </header>
 
-      <main class="page-main">
+      <main class="page-main user-page-main">
         <div class="main-back" aria-hidden="true"></div>
         <div class="main-book" aria-hidden="true"></div>
         <div class="main-fore" aria-hidden="true"></div>
 
         <div class="subpage-inner">
-          <div class="reader-main">
-            <p id="reader-status" class="reader-status" role="status" aria-live="polite"></p>
-            <article class="reader-card">
-              <header class="reader-head">
-                <h2 id="reader-title" class="reader-title">—</h2>
-                <p id="reader-artist" class="reader-artist" hidden></p>
-                <p id="reader-meta" class="reader-meta"></p>
-              </header>
-              <div id="reader-lyrics" class="reader-lyrics" role="text"></div>
-              <div class="reader-actions">
-                <a id="reader-back-song" class="reader-link reader-link--ghost" href="home.html">Song sheet</a>
-              </div>
-            </article>
-          </div>
+          <section class="user-wrap" aria-labelledby="user-heading">
+            <p class="user-kicker">Publisher</p>
+            <h2 id="user-heading" class="user-name js-user-name">User</h2>
+            <p class="user-meta js-user-meta">Loading posts…</p>
+            <div class="user-posts js-user-posts" role="list"></div>
+          </section>
         </div>
       </main>
 
       <footer class="page-footer">
         <div class="footer-sns" aria-label="Listen on streaming apps">
-          <a class="sns-chip" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">Spotify</a>
-          <a class="sns-chip" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer">Apple Music</a>
-          <a class="sns-chip" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a>
+          <a class="sns-chip" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Open Spotify">Spotify</a>
+          <a class="sns-chip" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open Apple Music">Apple Music</a>
+          <a class="sns-chip" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="Open YouTube">YouTube</a>
         </div>
       </footer>
     </div>
@@ -88,7 +80,6 @@
     <script defer src="genres-data.js"></script>
     <script defer src="published-feed.js"></script>
     <script defer src="songshare-remote-sync.js"></script>
-    <script defer src="lyrics-api.js"></script>
-    <script defer src="song-reader.js"></script>
+    <script defer src="user.js"></script>
   </body>
 </html>

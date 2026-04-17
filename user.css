@@ -1,0 +1,99 @@
+/* User profile page — published songs by one publisher */
+
+.user-page-main.page-main {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.user-wrap {
+  position: relative;
+  z-index: 10;
+  width: min(54rem, 100%);
+  margin: 0 auto;
+  padding: 1.2rem max(1rem, env(safe-area-inset-right)) max(2.5rem, calc(1rem + env(safe-area-inset-bottom)))
+    max(1rem, env(safe-area-inset-left));
+}
+
+.user-kicker {
+  margin: 0;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 240, 0.45);
+}
+
+.user-name {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.25rem, 3.2vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--cream, #f6f3ea);
+}
+
+.user-meta {
+  margin: 0 0 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(250, 248, 240, 0.68);
+}
+
+.user-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.user-post {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(17, 17, 22, 0.82);
+  border: 1px solid rgba(250, 248, 240, 0.12);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 8px 18px rgba(0, 0, 0, 0.22);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.user-post:hover {
+  transform: translateY(-1px);
+  border-color: rgba(196, 165, 116, 0.58);
+  background: rgba(22, 22, 28, 0.9);
+}
+
+.user-post[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.82;
+}
+
+.user-post[aria-disabled="true"]:hover {
+  transform: none;
+  border-color: rgba(250, 248, 240, 0.12);
+  background: rgba(17, 17, 22, 0.82);
+}
+
+.user-post-title {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--cream, #f6f3ea);
+}
+
+.user-post-line {
+  margin: 0.3rem 0 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  color: rgba(250, 248, 240, 0.68);
+}
+
+.user-post-line--accent {
+  color: rgba(196, 165, 116, 0.9);
+}
