@@ -6,6 +6,45 @@
 
   var SESSION_KEY = "songShareSession";
   var USERS_KEY = "songShareUsers";
+  var USERNAME_MAP_KEY = "songShareUsernameMapV1";
+
+  function normalizeUsername(str) {
+    return String(str || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function getUsernameMap() {
+    try {
+      var raw = global.localStorage.getItem(USERNAME_MAP_KEY);
+      var map = raw ? JSON.parse(raw) : {};
+      return map && typeof map === "object" ? map : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveUsernameMap(map) {
+    try {
+      global.localStorage.setItem(USERNAME_MAP_KEY, JSON.stringify(map || {}));
+    } catch (e) {}
+  }
+
+  function registerUsernameEmail(displayName, email) {
+    var uname = normalizeUsername(displayName);
+    var mail = String(email || "").trim().toLowerCase();
+    if (!uname || !mail) return;
+    var map = getUsernameMap();
+    map[uname] = mail;
+    saveUsernameMap(map);
+  }
+
+  function resolveEmailFromIdentifier(identifier) {
+    var raw = String(identifier || "").trim();
+    if (!raw) return "";
+    if (raw.indexOf("@") !== -1) return raw.toLowerCase();
+    return getUsernameMap()[normalizeUsername(raw)] || "";
+  }
 
   var cfg = global.SONGSHARE_SUPABASE || {};
   var anonKey = String(
@@ -119,26 +158,35 @@
         displayName: displayName,
       });
       saveUsers(users);
+      registerUsernameEmail(displayName, email);
       setSession({ userId: id, email: email, displayName: displayName });
       return Promise.resolve({ ok: true });
     }
 
-    function signIn(email, password) {
-      email = (email || "").trim();
-      if (!email || !password) return Promise.resolve({ error: "Email and password are required." });
+    function signIn(identifier, password) {
+      identifier = (identifier || "").trim();
+      if (!identifier || !password) return Promise.resolve({ error: "Email/username and password are required." });
 
       var users = getUsers();
-      var lower = email.toLowerCase();
+      var lower = resolveEmailFromIdentifier(identifier);
+      if (!lower) {
+        var normalizedIdentifier = normalizeUsername(identifier);
+        var byName = users.find(function (x) {
+          return normalizeUsername(x.displayName || "") === normalizedIdentifier;
+        });
+        if (byName) lower = String(byName.email || "").toLowerCase();
+      }
       var u = users.find(function (x) {
         return String(x.email).toLowerCase() === lower && x.password === password;
       });
-      if (!u) return Promise.resolve({ error: "Invalid email or password." });
+      if (!u) return Promise.resolve({ error: "Invalid email/username or password." });
 
       setSession({
         userId: u.id,
         email: u.email,
         displayName: u.displayName || u.email.split("@")[0],
       });
+      registerUsernameEmail(u.displayName || "", u.email || "");
       return Promise.resolve({ ok: true });
     }
 
@@ -173,6 +221,9 @@
 
   function setCache(sbSession) {
     sessionCache = mapSession(sbSession);
+    if (sessionCache && sessionCache.displayName && sessionCache.email) {
+      registerUsernameEmail(sessionCache.displayName, sessionCache.email);
+    }
   }
 
   readyPromise = sb.auth.getSession().then(function (res) {
@@ -223,6 +274,7 @@
       if (redirect) {
         signUpOpts.options.emailRedirectTo = redirect;
       }
+      registerUsernameEmail(displayName, email);
       return sb.auth.signUp(signUpOpts).then(function (res) {
         if (res.error) return { error: res.error.message };
         if (!res.data.session) {
@@ -249,11 +301,23 @@
         return { ok: true };
       });
     },
-    signIn: function (email, password) {
-      email = (email || "").trim();
-      if (!email || !password) return Promise.resolve({ error: "Email and password are required." });
+    signIn: function (identifier, password) {
+      identifier = (identifier || "").trim();
+      if (!identifier || !password) return Promise.resolve({ error: "Email/username and password are required." });
+      var email = resolveEmailFromIdentifier(identifier);
+      if (!email && identifier.indexOf("@") === -1) {
+        return Promise.resolve({
+          error:
+            "Unknown username on this device. Sign in once with email, then username sign-in will work here.",
+        });
+      }
+      if (!email) email = identifier.toLowerCase();
       return sb.auth.signInWithPassword({ email: email, password: password }).then(function (res) {
         if (res.error) return { error: res.error.message };
+        var sess = res.data && res.data.session ? mapSession(res.data.session) : null;
+        if (sess && sess.displayName && sess.email) {
+          registerUsernameEmail(sess.displayName, sess.email);
+        }
         return { ok: true };
       });
     },

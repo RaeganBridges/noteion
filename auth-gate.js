@@ -42,8 +42,8 @@
       "</div>" +
       '<div class="auth-form-wrap">' +
       '<form id="auth-form-signin" class="auth-panel-form" role="tabpanel">' +
-      '<div class="auth-field"><label class="auth-label" for="auth-in-email">Email</label>' +
-      '<input id="auth-in-email" name="email" class="auth-input" type="email" autocomplete="username" spellcheck="false" required placeholder="you@example.com" /></div>' +
+      '<div class="auth-field"><label class="auth-label" for="auth-in-email">Email or username</label>' +
+      '<input id="auth-in-email" name="email" class="auth-input" type="text" autocomplete="username" spellcheck="false" required placeholder="you@example.com or username" /></div>' +
       '<div class="auth-field"><label class="auth-label" for="auth-in-pass">Password</label>' +
       '<input id="auth-in-pass" name="password" class="auth-input" type="password" autocomplete="current-password" spellcheck="false" required /></div>' +
       '<button type="submit" class="auth-submit">Sign in</button>' +
