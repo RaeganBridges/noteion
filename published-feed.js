@@ -330,12 +330,87 @@
       .trim();
   }
 
+  function tokenizeNormalized(str) {
+    return String(str || "")
+      .split(" ")
+      .map(function (x) {
+        return x.trim();
+      })
+      .filter(Boolean);
+  }
+
+  function levenshteinDistanceWithin(a, b, limit) {
+    var al = a.length;
+    var bl = b.length;
+    if (!al) return bl <= limit ? bl : limit + 1;
+    if (!bl) return al <= limit ? al : limit + 1;
+    if (Math.abs(al - bl) > limit) return limit + 1;
+
+    var prev = new Array(bl + 1);
+    var i;
+    var j;
+    for (j = 0; j <= bl; j++) prev[j] = j;
+
+    for (i = 1; i <= al; i++) {
+      var cur = new Array(bl + 1);
+      cur[0] = i;
+      var rowMin = cur[0];
+      for (j = 1; j <= bl; j++) {
+        var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+        var del = prev[j] + 1;
+        var ins = cur[j - 1] + 1;
+        var sub = prev[j - 1] + cost;
+        var next = Math.min(del, ins, sub);
+        cur[j] = next;
+        if (next < rowMin) rowMin = next;
+      }
+      if (rowMin > limit) return limit + 1;
+      prev = cur;
+    }
+    return prev[bl];
+  }
+
+  function typoBudget(a, b) {
+    var n = Math.max(a.length, b.length);
+    if (n <= 4) return 1;
+    if (n <= 8) return 2;
+    if (n <= 12) return 3;
+    return 4;
+  }
+
+  function fuzzyTokenMatch(queryToken, candidateToken) {
+    if (!queryToken || !candidateToken) return false;
+    if (queryToken === candidateToken) return true;
+    if (
+      queryToken.length >= 3 &&
+      (candidateToken.indexOf(queryToken) !== -1 || queryToken.indexOf(candidateToken) !== -1)
+    ) {
+      return true;
+    }
+    if (queryToken.length < 4 || candidateToken.length < 4) return false;
+    var limit = typoBudget(queryToken, candidateToken);
+    return levenshteinDistanceWithin(queryToken, candidateToken, limit) <= limit;
+  }
+
+  function fuzzyPhraseMatches(normQuery, normCandidate) {
+    if (!normQuery || !normCandidate) return false;
+    var qTokens = tokenizeNormalized(normQuery);
+    var cTokens = tokenizeNormalized(normCandidate);
+    if (!qTokens.length || !cTokens.length) return false;
+    return qTokens.every(function (qt) {
+      return cTokens.some(function (ct) {
+        return fuzzyTokenMatch(qt, ct);
+      });
+    });
+  }
+
   function titleMatchesQuery(normQuery, postTitle) {
     var t = normalizeSongToken(postTitle);
     if (!normQuery || !t) return false;
     if (t === normQuery) return true;
     if (normQuery.length >= 3 && t.indexOf(normQuery) !== -1) return true;
     if (t.length >= 3 && normQuery.indexOf(t) !== -1) return true;
+    if (fuzzyPhraseMatches(normQuery, t)) return true;
     return false;
   }
 
@@ -347,6 +422,7 @@
     if (normArtist.length >= 2 && (a.indexOf(normArtist) !== -1 || normArtist.indexOf(a) !== -1)) {
       return true;
     }
+    if (fuzzyPhraseMatches(normArtist, a)) return true;
     return false;
   }
 
@@ -355,11 +431,13 @@
    * Artist filter is ignored when empty.
    */
   function postMatchesSongSearch(tq, aq, p) {
-    var trackTitle = p.title || "";
-    var albumTitle = p.albumTitle || "";
-    var titleOk =
-      titleMatchesQuery(tq, trackTitle) || (albumTitle && titleMatchesQuery(tq, albumTitle));
-    if (!titleOk) return false;
+    if (tq) {
+      var trackTitle = p.title || "";
+      var albumTitle = p.albumTitle || "";
+      var titleOk =
+        titleMatchesQuery(tq, trackTitle) || (albumTitle && titleMatchesQuery(tq, albumTitle));
+      if (!titleOk) return false;
+    }
     if (!aq) return true;
     var byTrack = artistMatchesQuery(aq, p.artist || "");
     var byAlbum =
@@ -372,7 +450,7 @@
   function findPostsBySong(title, artist) {
     var tq = normalizeSongToken(title);
     var aq = normalizeSongToken(artist);
-    if (!tq) return [];
+    if (!tq && !aq) return [];
     return loadAll().filter(function (p) {
       return postMatchesSongSearch(tq, aq, p);
     });
@@ -388,6 +466,7 @@
     ) {
       return true;
     }
+    if (fuzzyPhraseMatches(normProfile, d)) return true;
     return false;
   }
 

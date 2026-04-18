@@ -1,6 +1,10 @@
 (function ($) {
   "use strict";
 
+  var PAGE_FLIP_SOUND_SRC = "genre-clips/makigai_maimai-paper-245786.mp3";
+  var DELETE_SOUND_SRC = "genre-clips/oxidvideos-crumpling-paper-wrapping-478933.mp3";
+  var pageFlipAudioEl = null;
+  var deleteSoundEl = null;
   var pageFlipAudioCtx = null;
   var pageFlipAudioUnlocked = false;
 
@@ -138,16 +142,75 @@
     return pageFlipAudioCtx;
   }
 
+  function getPageFlipAudioElement() {
+    if (!pageFlipAudioEl) {
+      try {
+        pageFlipAudioEl = new Audio(PAGE_FLIP_SOUND_SRC);
+        pageFlipAudioEl.preload = "auto";
+        pageFlipAudioEl.volume = 0.78;
+      } catch (e) {
+        pageFlipAudioEl = null;
+      }
+    }
+    return pageFlipAudioEl;
+  }
+
+  function getDeleteSoundElement() {
+    if (!deleteSoundEl) {
+      try {
+        deleteSoundEl = new Audio(DELETE_SOUND_SRC);
+        deleteSoundEl.preload = "auto";
+        deleteSoundEl.volume = 0.86;
+      } catch (e) {
+        deleteSoundEl = null;
+      }
+    }
+    return deleteSoundEl;
+  }
+
+  function playDeleteSound() {
+    var el = getDeleteSoundElement();
+    if (!el || typeof el.play !== "function") return;
+    try {
+      el.pause();
+      el.currentTime = 0;
+    } catch (e) {}
+    var p = el.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(function () {});
+    }
+  }
+
   function unlockPageFlipAudio() {
-    var ctx = getPageFlipAudioContext();
-    if (!ctx || pageFlipAudioUnlocked) return;
+    if (pageFlipAudioUnlocked) return;
     pageFlipAudioUnlocked = true;
+    var el = getPageFlipAudioElement();
+    if (el && typeof el.play === "function") {
+      var wasMuted = el.muted;
+      el.muted = true;
+      var p = el.play();
+      if (p && typeof p.then === "function") {
+        p.then(function () {
+          el.pause();
+          try {
+            el.currentTime = 0;
+          } catch (e) {}
+          el.muted = wasMuted;
+        }).catch(function () {
+          el.muted = wasMuted;
+        });
+      } else {
+        el.muted = wasMuted;
+      }
+    }
+    var ctx = getPageFlipAudioContext();
+    if (!ctx) return;
     if (ctx.state === "suspended" && typeof ctx.resume === "function") {
       ctx.resume().catch(function () {});
     }
   }
 
-  function playPageFlipSound() {
+  function playPageFlipSynthFallback() {
     var ctx = getPageFlipAudioContext();
     if (!ctx) return;
     if (ctx.state === "suspended" && typeof ctx.resume === "function") {
@@ -187,6 +250,24 @@
     gain.connect(ctx.destination);
     src.start(now);
     src.stop(now + dur + 0.03);
+  }
+
+  function playPageFlipSound() {
+    var el = getPageFlipAudioElement();
+    if (el && typeof el.play === "function") {
+      try {
+        el.pause();
+        el.currentTime = 0;
+      } catch (e) {}
+      var p = el.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(function () {
+          playPageFlipSynthFallback();
+        });
+      }
+      return;
+    }
+    playPageFlipSynthFallback();
   }
 
   function profileHrefFor(userId, displayName) {
@@ -410,7 +491,6 @@
       }
       var annParts = [];
       if (t.userPublished) {
-        if (artist) annParts.push("Artist: " + artist);
         var postedBy = String(t.displayName || "").trim();
         if (postedBy) {
           annParts.push(
@@ -544,6 +624,7 @@
       var sess = window.SongShareAuth && window.SongShareAuth.getSession();
       if (!sess || !cid || !window.SongShareModalComments) return;
       window.SongShareModalComments.removeById(id, idx, cid);
+      playDeleteSound();
       renderPageComments();
     });
 

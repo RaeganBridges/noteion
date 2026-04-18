@@ -611,12 +611,12 @@
     if (!SP || typeof SP.findPostsBySong !== "function") {
       return;
     }
-    if (!title && !profile) {
-      window.alert("Add a song or album title, or a profile display name to search.");
+    if (!title && !artist && !profile) {
+      window.alert("Add a song/album title, artist, or a profile display name to search.");
       return;
     }
     var posts;
-    var profileOnly = !title && !!profile;
+    var profileOnly = !title && !artist && !!profile;
     if (profileOnly) {
       posts =
         typeof SP.findPostsByProfile === "function"
@@ -636,7 +636,10 @@
     if (profileOnly) {
       $songLine.text('Profile: "' + profile + '"');
     } else {
-      var head = artist ? title + " · " + artist : title;
+      var headParts = [];
+      if (title) headParts.push(title);
+      if (artist) headParts.push("artist: " + artist);
+      var head = headParts.join(" · ");
       $songLine.text(profile ? head + " · profile: " + profile : head);
     }
     $block.removeAttr("hidden");
@@ -646,7 +649,7 @@
         $count.text('No community posts from publishers matching that display name.');
       } else if (profile) {
         $count.text(
-          "No community posts match this song and profile (try a different spelling or profile)."
+          "No community posts match this search and profile (try a different spelling or profile)."
         );
       } else {
         $count.text("No community posts match (try a track title, album title, or artist).");
@@ -757,6 +760,21 @@
       e.preventDefault();
       runLyricsCommunitySearch();
     });
+  }
+
+  function maybeOpenLyricsSearchFromUrl() {
+    var search = window.location && window.location.search ? window.location.search : "";
+    if (!search) return;
+    var params;
+    try {
+      params = new URLSearchParams(search);
+    } catch (_ignore) {
+      return;
+    }
+    if (params.get("openSearch") !== "1") return;
+    window.setTimeout(function () {
+      openLyricsSearch();
+    }, 0);
   }
 
   function bindSetlist() {
@@ -870,6 +888,7 @@
     bindCardNavigation();
     bindSetlist();
     bindLyricsSearch();
+    maybeOpenLyricsSearchFromUrl();
     bindLoading();
     bindParallax();
     bindBoardScrollWheel();

@@ -60,8 +60,8 @@ window.SONG_SHARE_GENRES = [
     name: "Rap",
     inspiredByArtists: "J. Cole, Nas, Eminem, Lil Wayne",
     clipSlug: "rap",
-    /* Hover: reuse hip-hop clip so Rap has immediate preview coverage. */
-    audio: "genre-clips/hip-hop.mp3",
+    /* Hover: local rap clip from artissizm-freaky-trap-224662.mp3. */
+    audio: "genre-clips/artissizm-freaky-trap-224662.mp3",
     audioFallback:
       "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Digya.mp3",
     tracks: [
