@@ -10,7 +10,7 @@
   --shell-header-offset: 5.35rem;
   --shell-footer-offset: 3.25rem;
   /* Space above each album tile for per-genre stack arrows */
-  --genre-stack-controls-gap: 2.2rem;
+  --genre-stack-controls-gap: 2.65rem;
   --void: #050506;
   --ink: #0c0c0e;
   --panel: #101014;
@@ -24,7 +24,7 @@
   --shadow: rgba(0, 0, 0, 0.45);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   /* Two-row horizontal strip: large “album” tiles */
-  --album-size: clamp(9.45rem, 28.3vmin, 15rem);
+  --album-size: clamp(9.9rem, 30vmin, 15.9rem);
   --album-gap-row: clamp(2.05rem, 6.1vmin, 3.45rem);
   --album-gap-col: clamp(2.35rem, 6.8vmin, 4.1rem);
   /* Half-step offset so the bottom row sits between top-row albums */
@@ -43,12 +43,10 @@ html {
 html,
 body {
   margin: 0;
-  height: 100%;
   min-height: 100%;
   font-family: var(--font-roboto);
   color: var(--cream);
   background: var(--void);
-  overflow: hidden;
 }
 
 body.is-popup-open {
@@ -56,14 +54,11 @@ body.is-popup-open {
 }
 
 .page {
-  height: 100vh;
-  height: 100dvh;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
 }
 
 /* —— Loading (fade like promo sites) —— */
@@ -248,11 +243,6 @@ body.is-popup-open {
   /* Flex item + wide inner board: allow shrinking so .board-scroll can overflow-x */
   min-width: 0;
   overflow: hidden;
-  background-color: #0c0c10;
-  background-image:
-    radial-gradient(ellipse 78% 52% at 50% 20%, rgba(196, 165, 116, 0.07) 0%, transparent 58%),
-    radial-gradient(ellipse 62% 44% at 80% 88%, rgba(120, 140, 200, 0.05) 0%, transparent 55%),
-    linear-gradient(180deg, #111217 0%, #0c0c10 100%);
 }
 
 .main-back,
@@ -288,21 +278,19 @@ body.is-popup-open {
 }
 
 .main-fore {
-  background: none;
+  background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(0, 0, 0, 0.5) 0%, transparent 65%);
   transition: transform 0.55s ease-out;
 }
 
 .board-wrap {
   position: relative;
   z-index: 10;
-  padding: 0.4rem 0 0.6rem;
+  padding: 2.25rem 0 2.75rem;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: transparent;
+  min-height: calc(100vh - 12rem);
 }
 
 .board-scroll-hint {
@@ -328,7 +316,7 @@ body.is-popup-open {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.04;
+  opacity: 0.07;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -336,11 +324,9 @@ body.is-popup-open {
 .board-scroll {
   position: relative;
   z-index: 11;
-  display: flex;
-  align-items: center;
   flex: 1 1 auto;
   min-width: 0;
-  padding: 0.2rem max(0.8rem, env(safe-area-inset-right)) 0.35rem max(0.8rem, env(safe-area-inset-left));
+  padding: 1.25rem max(1rem, env(safe-area-inset-right)) 1.25rem max(1rem, env(safe-area-inset-left));
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -366,8 +352,7 @@ body.is-popup-open {
   width: max-content;
   min-height: calc(2 * (var(--album-size) + var(--genre-stack-controls-gap)) + var(--album-gap-row));
   padding: 0.35rem var(--album-stagger) 1rem 0.5rem;
-  margin-block: auto;
-  margin-inline: max(1.2rem, env(safe-area-inset-left)) max(1.2rem, env(safe-area-inset-right));
+  margin: 0;
 }
 
 .scrapbook-row {
