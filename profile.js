@@ -2065,60 +2065,6 @@
       else openComposerForEdit(item);
     }
 
-    function bindDeskRailWheelScroll() {
-      var desk = document.getElementById("profile-desk");
-      if (!desk || desk.__deskWheelBound) return;
-      desk.__deskWheelBound = true;
-      function deskVisualMaxScrollLeft() {
-        var cards = desk.querySelectorAll(".desk-card");
-        if (!cards.length) return 0;
-        var last = cards[cards.length - 1];
-        var style = window.getComputedStyle(desk);
-        var padRight = parseFloat(style.paddingRight || "0") || 0;
-        var visualRight = last.offsetLeft + last.offsetWidth + padRight;
-        return Math.max(0, visualRight - desk.clientWidth);
-      }
-
-      function clampDeskScroll() {
-        var visualMax = deskVisualMaxScrollLeft();
-        if (desk.scrollLeft > visualMax) {
-          desk.scrollLeft = visualMax;
-        } else if (desk.scrollLeft < 0) {
-          desk.scrollLeft = 0;
-        }
-      }
-
-      desk.addEventListener(
-        "wheel",
-        function (e) {
-          var target = e.target;
-          if (target && target.nodeType === 3) {
-            target = target.parentElement;
-          }
-          var overCard = target && target.closest ? target.closest(".desk-card") : null;
-          if (!overCard) {
-            e.preventDefault();
-            return;
-          }
-          var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-          if (!delta) return;
-          var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
-          var next = desk.scrollLeft + delta * unit;
-          var visualMax = deskVisualMaxScrollLeft();
-          if (next < 0) next = 0;
-          if (next > visualMax) next = visualMax;
-          desk.scrollLeft = next;
-          e.preventDefault();
-        },
-        { passive: false }
-      );
-      desk.addEventListener("scroll", clampDeskScroll, { passive: true });
-      window.addEventListener("resize", clampDeskScroll);
-      window.setTimeout(clampDeskScroll, 0);
-    }
-
-    bindDeskRailWheelScroll();
-
     $("#profile-desk").on("click", ".desk-card", function () {
       activateDeskCard($(this));
     });

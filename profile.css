@@ -36,13 +36,13 @@ body.composer-open {
 
 /* Let desk cards (tilted) extend without clipping; vertical scroll still works */
 .profile-page-main.page-main {
-  overflow-x: visible;
-  overflow-y: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .profile-page-main .subpage-inner {
-  overflow-x: visible;
-  overflow-y: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -208,6 +208,7 @@ body.composer-open {
   max-width: none;
   /* Flex min-width:auto would otherwise follow the sum of desk cards and block horizontal scroll on the rail */
   min-width: 0;
+  overflow-x: hidden;
   margin: 0;
   padding: 0.45rem max(1rem, env(safe-area-inset-right)) max(3rem, calc(1.5rem + env(safe-area-inset-bottom)))
     max(1rem, env(safe-area-inset-left));
@@ -224,36 +225,28 @@ body.composer-open {
 }
 
 .profile-desk-rail {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 0;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  align-items: start;
+  gap: 1rem;
+  overflow-x: hidden;
   overflow-y: visible;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   margin: 0;
-  padding: 1.85rem max(0.35rem, env(safe-area-inset-right)) 2rem max(0.35rem, env(safe-area-inset-left));
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline-start: max(0.35rem, env(safe-area-inset-left));
-  scroll-padding-inline-end: max(0.35rem, env(safe-area-inset-right));
-  scroll-behavior: smooth;
+  padding: 0.75rem max(0.35rem, env(safe-area-inset-right)) 2rem max(0.35rem, env(safe-area-inset-left));
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y;
+  touch-action: pan-y;
 }
 
 .desk-card {
   position: relative;
-  flex: 0 0 var(--sheet-w);
-  width: var(--sheet-w);
-  max-width: min(var(--sheet-w), calc(100vw - var(--desk-safe-x)));
+  width: 100%;
+  max-width: none;
   aspect-ratio: 8.5 / 11;
-  margin-right: calc(-1 * var(--desk-overlap));
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  margin-right: 0;
   padding: 0;
   background: #fbf9f4;
   color: #2c2824;
@@ -263,9 +256,9 @@ body.composer-open {
     0 1px 0 rgba(255, 255, 255, 0.85) inset,
     3px 5px 0 rgba(230, 225, 215, 0.75),
     8px 16px 28px rgba(0, 0, 0, 0.35);
-  transform: rotate(var(--desk-rot, -2deg));
+  transform: none;
   cursor: pointer;
-  touch-action: pan-x pan-y;
+  touch-action: pan-y;
 }
 
 .desk-card:focus-visible {
@@ -275,7 +268,6 @@ body.composer-open {
 
 .desk-card:last-child {
   margin-right: 0;
-  scroll-snap-align: end;
 }
 
 /* Album desk: same letter tile; inside = stacked mini song sheets like singles on the desk */
@@ -1455,7 +1447,7 @@ body.composer-open {
   }
 
   .desk-card {
-    transform: rotate(var(--desk-rot, -1deg));
+    transform: none;
   }
 }
 
