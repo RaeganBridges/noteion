@@ -163,6 +163,16 @@ body.crate-page {
   background: transparent !important;
 }
 
+/* Increase spacing for stacked artist/title labels in the record overlay */
+.crate-page-root #cratedigger-record-artist {
+  line-height: 1.6;
+  margin-bottom: 0.45em;
+}
+
+.crate-page-root #cratedigger-record-title {
+  line-height: 1.45;
+}
+
 .crate-page-root #bottom-bar {
   z-index: 90;
   background: linear-gradient(
