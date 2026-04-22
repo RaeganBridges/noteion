@@ -9,8 +9,8 @@
 :root {
   --shell-header-offset: 5.35rem;
   --shell-footer-offset: 3.25rem;
-  /* Space above each album tile for per-genre stack arrows */
-  --genre-stack-controls-gap: 2.65rem;
+  /* Space above each album tile for corner tab controls */
+  --genre-stack-controls-gap: 1.1rem;
   --void: #050506;
   --ink: #0c0c0e;
   --panel: #101014;
@@ -25,14 +25,15 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   /* Two-row horizontal strip: large “album” tiles */
   --album-size: clamp(9.9rem, 30vmin, 15.9rem);
-  --album-gap-row: clamp(2.05rem, 6.1vmin, 3.45rem);
-  --album-gap-col: clamp(2.35rem, 6.8vmin, 4.1rem);
+  --album-gap-row: clamp(3.7rem, 9vmin, 5.7rem);
+  --album-gap-col: clamp(4.5rem, 10vmin, 7.2rem);
   /* Half-step offset so the bottom row sits between top-row albums */
   --album-stagger: calc((var(--album-size) + var(--album-gap-col)) * 0.5);
   --safe-x: env(safe-area-inset-left, 0px);
   --safe-x-right: env(safe-area-inset-right, 0px);
   --safe-y-top: env(safe-area-inset-top, 0px);
   --safe-y-bottom: env(safe-area-inset-bottom, 0px);
+  --album-tab-left-inset: 0.72rem;
 }
 
 html {
@@ -107,6 +108,17 @@ body.is-popup-open {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1.1;
+}
+
+.logo a,
+.logo a:visited {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.logo a:hover,
+.logo a:focus-visible {
+  color: var(--accent);
 }
 
 .header-tagline {
@@ -255,37 +267,28 @@ body.is-popup-open {
 }
 
 .main-back {
-  background:
-    radial-gradient(ellipse 80% 55% at 50% 20%, rgba(196, 165, 116, 0.09) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(120, 140, 200, 0.06) 0%, transparent 50%),
-    var(--ink);
+  /* Wood over void — low opacity so the page background reads through */
+  background: url("assets/homepage-wood-bg.jpg") center / cover no-repeat, var(--ink);
+  opacity: 0.18;
   transition: transform 0.35s ease-out;
 }
 
 .main-book {
-  background:
-    linear-gradient(105deg, rgba(250, 248, 240, 0.03) 0%, transparent 42%),
-    repeating-linear-gradient(
-      -12deg,
-      transparent,
-      transparent 3px,
-      rgba(250, 248, 240, 0.02) 3px,
-      rgba(250, 248, 240, 0.02) 4px
-    );
-  mix-blend-mode: soft-light;
-  opacity: 0.5;
+  background: none;
+  mix-blend-mode: normal;
+  opacity: 0;
   transition: transform 0.45s ease-out;
 }
 
 .main-fore {
-  background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(0, 0, 0, 0.5) 0%, transparent 65%);
+  background: transparent;
   transition: transform 0.55s ease-out;
 }
 
 .board-wrap {
   position: relative;
   z-index: 10;
-  padding: 2.25rem 0 2.75rem;
+  padding: 3.45rem 0 2.75rem;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -326,7 +329,7 @@ body.is-popup-open {
   z-index: 11;
   flex: 1 1 auto;
   min-width: 0;
-  padding: 1.25rem max(1rem, env(safe-area-inset-right)) 1.25rem max(1rem, env(safe-area-inset-left));
+  padding: 2.7rem max(1rem, env(safe-area-inset-right)) 1.25rem max(1rem, env(safe-area-inset-left));
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -351,7 +354,7 @@ body.is-popup-open {
   gap: var(--album-gap-row);
   width: max-content;
   min-height: calc(2 * (var(--album-size) + var(--genre-stack-controls-gap)) + var(--album-gap-row));
-  padding: 0.35rem var(--album-stagger) 1rem 0.5rem;
+  padding: 0.35rem var(--album-stagger) 1rem 3.4rem;
   margin: 0;
 }
 
@@ -373,7 +376,8 @@ body.is-popup-open {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: var(--album-size);
+  width: fit-content;
+  max-width: 100%;
   height: auto;
   flex-shrink: 0;
   perspective: 500px;
@@ -384,15 +388,117 @@ body.is-popup-open {
   scroll-margin: 5rem max(1rem, env(safe-area-inset-left)) 3rem max(1rem, env(safe-area-inset-right));
 }
 
-.genre-card-controls {
+/* Frame around stack; bottom “wood crate” front matches icon: 3 slats + posts + nails */
+.genre-crate {
+  position: relative;
   flex-shrink: 0;
+  z-index: 1;
+  isolation: isolate;
+  padding: 0.35rem 0.48rem 0.52rem;
+  border-radius: 0.16rem;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.genre-crate-feet {
+  position: absolute;
+  z-index: 12;
+  left: 0.38rem;
+  right: 0.38rem;
+  bottom: 0.3rem;
   display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  width: 100%;
-  min-height: 2.35rem;
-  margin-bottom: 0.5rem;
-  z-index: 16;
+  flex-direction: row;
+  align-items: stretch;
+  height: clamp(6.25rem, 52%, 8.75rem);
+  max-height: calc(var(--album-size) * 0.78);
+  pointer-events: none;
+}
+
+.genre-crate-post {
+  flex: 0 0 0.48rem;
+  align-self: stretch;
+  background: #0c0c0e;
+  border-radius: 0.05rem;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.genre-crate-post--left {
+  margin-right: 0.06rem;
+}
+
+.genre-crate-post--right {
+  margin-left: 0.06rem;
+}
+
+.genre-crate-slats {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.genre-crate-slat {
+  flex: 1 1 0;
+  min-height: 1.45rem;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.32rem;
+  background: #0a0a0c;
+  border-radius: 0.08rem;
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(58, 60, 66, 0.45),
+    0 0 0 1px rgba(72, 76, 84, 0.35);
+}
+
+.genre-crate-nail {
+  flex-shrink: 0;
+  width: 0.56rem;
+  height: 0.56rem;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #4a4e56 0%, #2a2c32 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(72, 76, 84, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.55);
+  position: relative;
+}
+
+.genre-crate-nail::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.16rem;
+  height: 0.16rem;
+  margin: -0.08rem 0 0 -0.08rem;
+  border-radius: 50%;
+  background: #0c0c0e;
+}
+
+/* Home board only: hide the decorative dark “crate front” (slats + posts). Cratedigger 3D crates stay as-is. */
+#genre-board .genre-crate-feet {
+  display: none !important;
+}
+
+.genre-card-controls {
+  position: absolute;
+  top: -1.52rem;
+  left: 50%;
+  width: var(--album-size);
+  min-height: 0;
+  margin: 0;
+  z-index: 18;
+  transform: translateX(-50%) rotate(var(--tilt, 0deg));
+  transform-origin: center bottom;
   pointer-events: none;
 }
 
@@ -563,49 +669,53 @@ body.is-popup-open {
     0 0 1px rgba(0, 0, 0, 0.45);
 }
 
-/* Circular sticker-bomb style controls — two overlapping discs per genre */
+/* Album-corner tab controls */
 .stack-shuffle {
   position: relative;
+  --stack-rise-offset: 0rem;
   z-index: 6;
   display: flex;
-  flex-direction: row;
+  width: auto;
   align-items: center;
-  justify-content: center;
-  padding: 0.28rem 0.38rem;
+  justify-content: flex-start;
+  gap: 0.22rem;
+  padding: 0 0 0 var(--album-tab-left-inset);
   overflow: visible;
   pointer-events: auto;
   background: none;
   border: none;
-  filter: drop-shadow(2px 5px 10px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
+  transform: translateY(var(--stack-rise-offset));
   transition:
+    transform 0.22s var(--ease-out),
     filter 0.22s var(--ease-out),
     opacity 0.3s var(--ease-out);
 }
 
-/* Slight vertical stagger so sticker rows don’t line up perfectly */
+/* Keep data-driven variation but subtle for tabs */
 .stack-shuffle[data-stack-rise="0"] {
-  transform: translateY(0);
+  --stack-rise-offset: 0rem;
 }
 .stack-shuffle[data-stack-rise="1"] {
-  transform: translateY(0.1rem);
+  --stack-rise-offset: 0.02rem;
 }
 .stack-shuffle[data-stack-rise="2"] {
-  transform: translateY(-0.09rem);
+  --stack-rise-offset: -0.01rem;
 }
 .stack-shuffle[data-stack-rise="3"] {
-  transform: translateY(0.14rem);
+  --stack-rise-offset: 0.03rem;
 }
 .stack-shuffle[data-stack-rise="4"] {
-  transform: translateY(-0.12rem);
+  --stack-rise-offset: 0.01rem;
 }
 .stack-shuffle[data-stack-rise="5"] {
-  transform: translateY(0.07rem);
+  --stack-rise-offset: 0.04rem;
 }
 .stack-shuffle[data-stack-rise="6"] {
-  transform: translateY(-0.06rem);
+  --stack-rise-offset: 0.02rem;
 }
 .stack-shuffle[data-stack-rise="7"] {
-  transform: translateY(0.11rem);
+  --stack-rise-offset: 0.03rem;
 }
 
 .stack-shuffle:hover {
@@ -618,14 +728,22 @@ body.is-popup-open {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 2.65rem;
-  height: 2.65rem;
-  min-width: 2.65rem;
+  width: 1.9rem;
+  height: 1.55rem;
+  min-width: 1.9rem;
   padding: 0;
   margin: 0;
-  border-width: 3px;
+  border-width: 1px;
   border-style: solid;
-  border-radius: 50%;
+  border-color: rgba(248, 244, 234, 0.86);
+  border-radius: 0.52rem 0.52rem 0.12rem 0.12rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.08) 100%),
+    linear-gradient(180deg, var(--genre-overlay, hsl(36, 36%, 54%)) 0%, color-mix(in oklab, var(--genre-overlay, hsl(36, 36%, 54%)), black 14%) 100%);
+  color: rgba(250, 248, 240, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 1px 0 rgba(0, 0, 0, 0.2);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -635,35 +753,12 @@ body.is-popup-open {
     filter 0.2s ease;
 }
 
-/* Slight scuff / print grain */
 .stack-shuffle-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: repeating-conic-gradient(
-    from 0deg,
-    transparent 0 11deg,
-    rgba(0, 0, 0, 0.04) 11deg 12deg
-  );
-  pointer-events: none;
-  opacity: 0.55;
-  z-index: 1;
-  mix-blend-mode: multiply;
+  display: none;
 }
 
-/* Sticker cut line + tiny drop shadow edge */
 .stack-shuffle-btn::after {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 2px solid rgba(248, 244, 234, 0.92);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.35),
-    0 3px 8px rgba(0, 0, 0, 0.25);
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 .stack-shuffle[data-sticker="1"] .stack-shuffle-btn::before {
@@ -672,13 +767,12 @@ body.is-popup-open {
 }
 
 .stack-shuffle-btn:first-child {
-  transform: rotate(-13deg);
-  margin-right: -0.5rem;
+  transform: rotate(-1.4deg);
   z-index: 1;
 }
 
 .stack-shuffle-btn:last-child {
-  transform: rotate(11deg);
+  transform: rotate(1.4deg);
   z-index: 2;
 }
 
@@ -686,8 +780,8 @@ body.is-popup-open {
   position: relative;
   z-index: 3;
   display: block;
-  width: 0.94rem;
-  height: 0.94rem;
+  width: 0.78rem;
+  height: 0.78rem;
 }
 
 /* 0 — Navy + warm white ring (bold street sticker) */
@@ -758,15 +852,14 @@ body.is-popup-open {
 
 /* Match sticker arrows to each genre's album tint color */
 .genre-card .stack-shuffle[data-sticker] .stack-shuffle-btn {
-  border-color: rgba(248, 244, 234, 0.92);
+  border-color: rgba(248, 244, 234, 0.86);
   background:
-    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 58%),
-    linear-gradient(180deg, var(--genre-overlay, hsl(36, 36%, 54%)) 0%, var(--genre-overlay, hsl(36, 36%, 54%)) 100%);
-  color: #faf8f4;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.07) 100%),
+    linear-gradient(180deg, var(--genre-overlay, hsl(36, 36%, 54%)) 0%, color-mix(in oklab, var(--genre-overlay, hsl(36, 36%, 54%)), black 14%) 100%);
+  color: rgba(250, 248, 240, 0.98);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.22) inset,
-    0 -4px 12px rgba(0, 0, 0, 0.28) inset,
-    0 0 0 1px rgba(0, 0, 0, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .stack-shuffle-btn:hover {
@@ -774,11 +867,11 @@ body.is-popup-open {
 }
 
 .stack-shuffle-btn:first-child:hover {
-  transform: rotate(-13deg) scale(1.04);
+  transform: rotate(-1.4deg) translateY(0.06rem) scale(1.02);
 }
 
 .stack-shuffle-btn:last-child:hover {
-  transform: rotate(11deg) scale(1.04);
+  transform: rotate(1.4deg) translateY(0.06rem) scale(1.02);
 }
 
 .stack-shuffle-btn:focus-visible {
@@ -793,11 +886,11 @@ body.is-popup-open {
 }
 
 .stack-shuffle-btn:first-child:active {
-  transform: rotate(-13deg) scale(0.965);
+  transform: rotate(-1.4deg) translateY(0.14rem) scale(0.985);
 }
 
 .stack-shuffle-btn:last-child:active {
-  transform: rotate(11deg) scale(0.965);
+  transform: rotate(1.4deg) translateY(0.14rem) scale(0.985);
 }
 
 .genre-rank {
@@ -866,18 +959,22 @@ body.is-popup-open {
   border-radius: 50%;
   /* Label on top; then specular arcs + radial “catch” lines (rotate with the disc); then groove rings */
   background:
-    radial-gradient(circle at 50% 50%, #f0ebe3 0 11%, transparent 11.5% 100%),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklab, var(--genre-overlay, hsl(36, 36%, 54%)), white 74%) 0 11%,
+      transparent 11.5% 100%
+    ),
     conic-gradient(
       from 205deg,
       transparent 0deg 26deg,
-      rgba(250, 248, 240, 0.052) 32deg,
-      rgba(250, 248, 240, 0.025) 42deg,
+      rgba(214, 232, 255, 0.08) 32deg,
+      rgba(214, 232, 255, 0.038) 42deg,
       transparent 50deg 151deg,
-      rgba(250, 248, 240, 0.048) 161deg,
-      rgba(250, 248, 240, 0.022) 171deg,
+      rgba(214, 232, 255, 0.072) 161deg,
+      rgba(214, 232, 255, 0.03) 171deg,
       transparent 176deg 250deg,
-      rgba(250, 248, 240, 0.045) 255deg,
-      rgba(250, 248, 240, 0.02) 265deg,
+      rgba(214, 232, 255, 0.068) 255deg,
+      rgba(214, 232, 255, 0.028) 265deg,
       transparent 270deg 360deg
     ),
     repeating-conic-gradient(
@@ -889,6 +986,12 @@ body.is-popup-open {
       circle at 50% 50%,
       #0e0e10 0 2px,
       #3a3a42 2px 3px
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklab, var(--genre-overlay, hsl(36, 36%, 54%)), black 62%) 0%,
+      color-mix(in oklab, var(--genre-overlay, hsl(36, 36%, 54%)), black 74%) 60%,
+      color-mix(in oklab, var(--genre-overlay, hsl(36, 36%, 54%)), black 86%) 100%
     );
   box-shadow:
     inset 0 0 0 3px #0a0a0c,
@@ -1418,13 +1521,13 @@ body.is-popup-open {
 
   .stack-shuffle-btn:first-child:hover,
   .stack-shuffle-btn:first-child:active {
-    transform: rotate(-13deg);
+    transform: rotate(-3deg);
     filter: none;
   }
 
   .stack-shuffle-btn:last-child:hover,
   .stack-shuffle-btn:last-child:active {
-    transform: rotate(11deg);
+    transform: rotate(3deg);
     filter: none;
   }
 

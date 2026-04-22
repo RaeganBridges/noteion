@@ -200,6 +200,7 @@
         "</button>" +
         "</div>" +
         "</div>" +
+        '<div class="genre-crate" aria-hidden="true">' +
         '<div class="card-inner" style="--tilt:' +
         tilt +
         'deg" data-stack-arr="' +
@@ -214,11 +215,22 @@
         '<div class="vinyl-wrap"><div class="vinyl" aria-hidden="true"></div></div>' +
         '<audio preload="metadata" playsinline></audio>' +
         "</div>" +
+        '<div class="genre-crate-feet" aria-hidden="true">' +
+        '<div class="genre-crate-post genre-crate-post--left"></div>' +
+        '<div class="genre-crate-slats">' +
+        '<div class="genre-crate-slat"><span class="genre-crate-nail"></span><span class="genre-crate-nail"></span></div>' +
+        '<div class="genre-crate-slat"><span class="genre-crate-nail"></span><span class="genre-crate-nail"></span></div>' +
+        '<div class="genre-crate-slat"><span class="genre-crate-nail"></span><span class="genre-crate-nail"></span></div>' +
+        "</div>" +
+        '<div class="genre-crate-post genre-crate-post--right"></div>' +
+        "</div>" +
+        "</div>" +
         "</article>"
     );
     $card.find(".genre-name").text(g.name);
     $card.css({
       "--genre-overlay": genreOverlayColor(rank, totalGenres),
+      "--tilt": tilt + "deg",
     });
     var $innerNode = $card.find(".card-inner");
     var $faceNode = $card.find(".card-face");
@@ -546,25 +558,14 @@
   }
 
   function bindCardNavigation() {
-    function firstTrackIndexForGenre(g) {
-      if (!g || !g.tracks || !g.tracks.length) return 0;
-      for (var i = 0; i < g.tracks.length; i++) {
-        if (g.tracks[i] && g.tracks[i].userPublished) return i;
+    $(document).on("click", ".genre-card", function (e) {
+      if (e.target && e.target.closest && e.target.closest(".stack-shuffle-btn")) {
+        return;
       }
-      return 0;
-    }
-
-    $(document).on("click", ".genre-card", function () {
       var raw = (this.id || "").replace(/^genre-card-/, "");
       var n = parseInt(raw, 10);
       if (!n || n < 1) return;
-      var genre = getGenres()[n - 1] || null;
-      var trackIdx = firstTrackIndexForGenre(genre);
-      window.location.href =
-        "song.html?id=" +
-        encodeURIComponent(String(n)) +
-        "&track=" +
-        encodeURIComponent(String(trackIdx));
+      window.location.href = "crate.html?genre=" + encodeURIComponent(String(n));
     });
 
     $(document).on("keydown", ".genre-card", function (e) {

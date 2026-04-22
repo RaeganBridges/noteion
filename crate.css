@@ -1,0 +1,360 @@
+/* 3D crate — layout must give #cratedigger a non-zero height or WebGL renders at 0×0 */
+
+/* Cratedigger’s index.css sets html/body height:100% + overflow:hidden — override for our shell */
+html.crate-page-root {
+  /* crate-page.js sets --crate-genre-overlay to match homepage genre card tint */
+  --crate-genre-overlay: hsl(36, 20%, 56%);
+}
+
+html.crate-page-root,
+body.crate-page {
+  height: auto !important;
+  min-height: 100%;
+  overflow-x: hidden !important;
+}
+
+body.crate-page {
+  margin: 0;
+  font-family: var(--font-roboto), system-ui, sans-serif;
+  /* Layered gradients — very light genre wash (matches homepage hue) */
+  background:
+    radial-gradient(
+      ellipse 130% 90% at 50% -15%,
+      color-mix(in oklab, var(--crate-genre-overlay) 12%, transparent) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 100% 60%,
+      color-mix(in oklab, var(--crate-genre-overlay) 8%, transparent) 0%,
+      transparent 48%
+    ),
+    linear-gradient(
+      168deg,
+      color-mix(in oklab, var(--crate-genre-overlay) 7%, var(--void)) 0%,
+      var(--void) 42%,
+      color-mix(in oklab, var(--crate-genre-overlay) 5%, var(--void)) 100%
+    );
+}
+
+/* Fixed header/footer don’t consume flex height — lock shell to the viewport */
+.crate-page-root .crate-page__shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.crate-page-root .page-main.crate-page-main {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+/* Filter bar + 3D stage: column flex so controls sit above the canvas (not under absolute #cratedigger) */
+.crate-page-root .crate-stage-wrap {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: calc(100vh - var(--shell-header-offset) - var(--shell-footer-offset) - 0.5rem);
+  min-height: calc(100dvh - var(--shell-header-offset) - var(--shell-footer-offset) - 0.5rem);
+  background:
+    linear-gradient(
+      185deg,
+      color-mix(in oklab, var(--crate-genre-overlay) 9%, transparent) 0%,
+      transparent 38%,
+      color-mix(in oklab, var(--crate-genre-overlay) 6%, var(--void)) 100%
+    ),
+    radial-gradient(
+      ellipse 95% 70% at 50% 100%,
+      color-mix(in oklab, var(--crate-genre-overlay) 7%, var(--void)) 0%,
+      var(--void) 62%
+    );
+}
+
+.crate-page-root .crate-filter-bar {
+  flex: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem 1rem;
+  padding: 0.65rem 0.85rem 0.5rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--crate-genre-overlay) 22%, transparent);
+  background: color-mix(in oklab, var(--void) 88%, transparent);
+}
+
+.crate-page-root .crate-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.crate-page-root .crate-filter-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 240, 0.55);
+}
+
+.crate-page-root .crate-filter-select {
+  font: inherit;
+  font-size: 0.8125rem;
+  color: rgba(250, 248, 240, 0.92);
+  background: rgba(12, 12, 14, 0.85);
+  border: 1px solid color-mix(in oklab, var(--crate-genre-overlay) 28%, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  max-width: 100%;
+  min-width: 10.5rem;
+}
+
+/* Library expects a full-size host — flex child fills space below the filter bar */
+.crate-page-root #cratedigger {
+  position: relative !important;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100% !important;
+  height: auto !important;
+  overflow: hidden;
+}
+
+.crate-page-root #cratedigger-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  /* Same gradient language as body / stage — visible through WebGL when alpha clear is 0 */
+  background:
+    radial-gradient(
+      ellipse 115% 85% at 50% 18%,
+      color-mix(in oklab, var(--crate-genre-overlay) 14%, transparent) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 65% 50% at 95% 55%,
+      color-mix(in oklab, var(--crate-genre-overlay) 9%, transparent) 0%,
+      transparent 48%
+    ),
+    linear-gradient(
+      188deg,
+      color-mix(in oklab, var(--crate-genre-overlay) 10%, #0a0a0c) 0%,
+      #08090a 42%,
+      color-mix(in oklab, var(--crate-genre-overlay) 7%, #070708) 100%
+    );
+}
+
+.crate-page-root #cratedigger-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+}
+
+.crate-page-root #bottom-bar {
+  z-index: 90;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--crate-genre-overlay) 11%, rgba(10, 10, 12, 0.35)) 0%,
+    rgba(8, 8, 10, 0.82) 55%,
+    rgba(6, 6, 8, 0.92) 100%
+  ) !important;
+}
+
+/* Loading: spinning vinyl (replaces “Loading records…” text); tint follows genre via --crate-genre-overlay */
+.crate-page-root #cratedigger-loading {
+  --crate-genre-overlay: hsl(36, 20%, 56%);
+  position: absolute !important;
+  inset: 0;
+  z-index: 10;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Overrides cratedigger index.css #111 — airy genre glow + deep base */
+  background:
+    radial-gradient(
+      ellipse 85% 70% at 50% 40%,
+      color-mix(in oklab, var(--crate-genre-overlay) 18%, transparent) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      195deg,
+      color-mix(in oklab, var(--crate-genre-overlay) 14%, #0b0b0d) 0%,
+      #0a0a0c 48%,
+      color-mix(in oklab, var(--crate-genre-overlay) 10%, #080809) 100%
+    ) !important;
+}
+
+.crate-page-root #cratedigger-loading .info-container {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.crate-page-root #cratedigger-loading .vertical-center {
+  display: flex !important;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.crate-page-root .crate-loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.crate-page-root .crate-loading-vinyl-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(4px 18px 28px rgba(0, 0, 0, 0.45));
+}
+
+.crate-page-root .crate-loading-vinyl {
+  position: relative;
+  width: min(58vmin, 340px);
+  height: min(58vmin, 340px);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklab, var(--crate-genre-overlay, hsl(36, 36%, 54%)), white 74%) 0 11%,
+      transparent 11.5% 100%
+    ),
+    conic-gradient(
+      from 205deg,
+      transparent 0deg 26deg,
+      rgba(214, 232, 255, 0.08) 32deg,
+      rgba(214, 232, 255, 0.038) 42deg,
+      transparent 50deg 151deg,
+      rgba(214, 232, 255, 0.072) 161deg,
+      rgba(214, 232, 255, 0.03) 171deg,
+      transparent 176deg 250deg,
+      rgba(214, 232, 255, 0.068) 255deg,
+      rgba(214, 232, 255, 0.028) 265deg,
+      transparent 270deg 360deg
+    ),
+    repeating-conic-gradient(from 12deg, transparent 0 12.5deg, rgba(250, 248, 240, 0.02) 12.5deg 13.15deg),
+    repeating-radial-gradient(circle at 50% 50%, #0e0e10 0 2px, #3a3a42 2px 3px),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklab, var(--crate-genre-overlay, hsl(36, 36%, 54%)), black 62%) 0%,
+      color-mix(in oklab, var(--crate-genre-overlay, hsl(36, 36%, 54%)), black 74%) 60%,
+      color-mix(in oklab, var(--crate-genre-overlay, hsl(36, 36%, 54%)), black 86%) 100%
+    );
+  box-shadow:
+    inset 0 0 0 3px #0a0a0c,
+    0 0 0 1px rgba(250, 248, 240, 0.08);
+  animation: crate-vinyl-spin 2.8s linear infinite;
+}
+
+.crate-page-root .crate-loading-vinyl::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12%;
+  height: 12%;
+  margin: -6% 0 0 -6%;
+  border-radius: 50%;
+  background: #0c0c0e;
+  box-shadow: inset 0 0 0 2px #050506;
+}
+
+@keyframes crate-vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crate-page-root .crate-loading-vinyl {
+    animation-duration: 12s;
+  }
+}
+
+.crate-page-root .crate-loading-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* If the loading layer never fades (texture hang), don’t block the scene forever */
+.crate-page-root #cratedigger-loading.is-noteion-dismissed {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden;
+  transition: opacity 0.4s ease;
+}
+
+/* Genre subtitle next to logo (same idea as song page) */
+.crate-page-root .logo .logo-genre {
+  display: inline-block;
+  margin-left: 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 240, 0.72);
+  vertical-align: middle;
+}
+
+.crate-page-root .logo .logo-genre::before {
+  content: "·";
+  margin-right: 0.45rem;
+  color: rgba(250, 248, 240, 0.45);
+}
+
+/* After opening a record: wait, then slow fade before navigating to the song post (see crate-page.js) */
+.crate-post-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 100050;
+  background:
+    radial-gradient(
+      ellipse 110% 80% at 50% 0%,
+      color-mix(in oklab, var(--crate-genre-overlay, hsl(36, 20%, 56%)) 14%, transparent) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      175deg,
+      color-mix(in oklab, var(--crate-genre-overlay, hsl(36, 20%, 56%)) 9%, var(--void, #0a0a0c)) 0%,
+      var(--void, #0a0a0c) 55%,
+      color-mix(in oklab, var(--crate-genre-overlay, hsl(36, 20%, 56%)) 7%, var(--void, #0a0a0c)) 100%
+    );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 3.2s ease-in-out;
+}
+
+.crate-post-transition--active {
+  opacity: 1;
+  pointer-events: auto;
+}

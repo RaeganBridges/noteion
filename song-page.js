@@ -1,12 +1,8 @@
 (function ($) {
   "use strict";
 
-  var PAGE_FLIP_SOUND_SRC = "genre-clips/makigai_maimai-paper-245786.mp3";
   var DELETE_SOUND_SRC = "genre-clips/oxidvideos-crumpling-paper-wrapping-478933.mp3";
-  var pageFlipAudioEl = null;
   var deleteSoundEl = null;
-  var pageFlipAudioCtx = null;
-  var pageFlipAudioUnlocked = false;
 
   function queryId() {
     var m = /[?&]id=([^&]*)/.exec(window.location.search);
@@ -129,32 +125,6 @@
     );
   }
 
-  function getPageFlipAudioContext() {
-    var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return null;
-    if (!pageFlipAudioCtx) {
-      try {
-        pageFlipAudioCtx = new Ctx();
-      } catch (e) {
-        return null;
-      }
-    }
-    return pageFlipAudioCtx;
-  }
-
-  function getPageFlipAudioElement() {
-    if (!pageFlipAudioEl) {
-      try {
-        pageFlipAudioEl = new Audio(PAGE_FLIP_SOUND_SRC);
-        pageFlipAudioEl.preload = "auto";
-        pageFlipAudioEl.volume = 0.78;
-      } catch (e) {
-        pageFlipAudioEl = null;
-      }
-    }
-    return pageFlipAudioEl;
-  }
-
   function getDeleteSoundElement() {
     if (!deleteSoundEl) {
       try {
@@ -179,95 +149,6 @@
     if (p && typeof p.catch === "function") {
       p.catch(function () {});
     }
-  }
-
-  function unlockPageFlipAudio() {
-    if (pageFlipAudioUnlocked) return;
-    pageFlipAudioUnlocked = true;
-    var el = getPageFlipAudioElement();
-    if (el && typeof el.play === "function") {
-      var wasMuted = el.muted;
-      el.muted = true;
-      var p = el.play();
-      if (p && typeof p.then === "function") {
-        p.then(function () {
-          el.pause();
-          try {
-            el.currentTime = 0;
-          } catch (e) {}
-          el.muted = wasMuted;
-        }).catch(function () {
-          el.muted = wasMuted;
-        });
-      } else {
-        el.muted = wasMuted;
-      }
-    }
-    var ctx = getPageFlipAudioContext();
-    if (!ctx) return;
-    if (ctx.state === "suspended" && typeof ctx.resume === "function") {
-      ctx.resume().catch(function () {});
-    }
-  }
-
-  function playPageFlipSynthFallback() {
-    var ctx = getPageFlipAudioContext();
-    if (!ctx) return;
-    if (ctx.state === "suspended" && typeof ctx.resume === "function") {
-      ctx.resume().catch(function () {});
-    }
-
-    var dur = 0.16;
-    var frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
-    var buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
-    var data = buffer.getChannelData(0);
-    var lp = 0;
-    for (var i = 0; i < frames; i++) {
-      var t = i / frames;
-      var env = Math.pow(1 - t, 1.45) * (0.84 + 0.16 * Math.sin(i * 0.19));
-      var white = Math.random() * 2 - 1;
-      lp = lp + 0.32 * (white - lp);
-      data[i] = lp * env * 0.5;
-    }
-
-    var src = ctx.createBufferSource();
-    src.buffer = buffer;
-    var hp = ctx.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.value = 420;
-    var lpFilter = ctx.createBiquadFilter();
-    lpFilter.type = "lowpass";
-    lpFilter.frequency.value = 7200;
-    var gain = ctx.createGain();
-    var now = ctx.currentTime;
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.34, now + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-
-    src.connect(hp);
-    hp.connect(lpFilter);
-    lpFilter.connect(gain);
-    gain.connect(ctx.destination);
-    src.start(now);
-    src.stop(now + dur + 0.03);
-  }
-
-  function playPageFlipSound() {
-    var el = getPageFlipAudioElement();
-    if (el && typeof el.play === "function") {
-      try {
-        el.pause();
-        el.currentTime = 0;
-      } catch (e) {}
-      var p = el.play();
-      if (p && typeof p.catch === "function") {
-        p.catch(function () {
-          playPageFlipSynthFallback();
-        });
-      }
-      return;
-    }
-    playPageFlipSynthFallback();
   }
 
   function profileHrefFor(userId, displayName) {
@@ -312,12 +193,6 @@
   }
 
   $(function () {
-    document.addEventListener("pointerdown", unlockPageFlipAudio, {
-      once: true,
-      capture: true,
-      passive: true,
-    });
-
     function start() {
     var genres = window.SONG_SHARE_GENRES || [];
     var id = queryId();
@@ -330,13 +205,6 @@
     var tracks = getTracks(g);
     var idx = queryTrack();
     idx = Math.max(0, Math.min(idx, tracks.length - 1));
-    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var FLIP_MS = 900;
-    var FLIP_SWAP_AT = Math.round(FLIP_MS * 0.5);
-    var isFlipping = false;
-
-    var $meaningTurn = $(".js-sheet-turn-meaning");
-
     $(".js-genre-label").text(g.name);
 
     function fmtWhen(ts) {
@@ -561,38 +429,11 @@
       renderPageComments();
     }
 
-    function clearFlipClasses() {
-      $meaningTurn.removeClass("is-page-next is-page-prev");
+    function showTrack() {
+      applyTrack(tracks[idx]);
     }
 
-    function showTrack(animate, direction) {
-      var t = tracks[idx];
-      direction = direction === "prev" ? "prev" : "next";
-
-      if (!animate || reduceMotion) {
-        applyTrack(t);
-        clearFlipClasses();
-        return;
-      }
-
-      if (isFlipping) return;
-      isFlipping = true;
-
-      clearFlipClasses();
-      var cls = direction === "next" ? "is-page-next" : "is-page-prev";
-      $meaningTurn.addClass(cls);
-
-      window.setTimeout(function () {
-        applyTrack(t);
-      }, FLIP_SWAP_AT);
-
-      window.setTimeout(function () {
-        clearFlipClasses();
-        isFlipping = false;
-      }, FLIP_MS);
-    }
-
-    showTrack(false);
+    showTrack();
     syncSongUrl(id, idx);
 
     $(".js-open-reader").on("click", function (e) {
@@ -631,16 +472,14 @@
     $(".js-prev").on("click", function (e) {
       e.stopPropagation();
       idx = (idx - 1 + tracks.length) % tracks.length;
-      playPageFlipSound();
-      showTrack(true, "prev");
+      showTrack();
       syncSongUrl(id, idx);
     });
 
     $(".js-next").on("click", function (e) {
       e.stopPropagation();
       idx = (idx + 1) % tracks.length;
-      playPageFlipSound();
-      showTrack(true, "next");
+      showTrack();
       syncSongUrl(id, idx);
     });
 

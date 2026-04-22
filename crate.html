@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" class="crate-page-root">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Crate — Cr8Dig</title>
+    <link rel="stylesheet" href="typefaces/fonts.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="auth.css" />
+    <link rel="stylesheet" href="cratedigger-lib/vendor.css" />
+    <link rel="stylesheet" href="cratedigger-lib/index.css" />
+    <link rel="stylesheet" href="crate.css" />
+  </head>
+  <body class="crate-page">
+    <div class="page crate-page__shell">
+      <header class="page-header">
+        <div class="header-brand">
+          <h1 class="logo">
+            <a href="home.html">Cr8Dig</a>
+            <span class="logo-genre js-crate-genre-label" aria-live="polite">Genre</span>
+          </h1>
+        </div>
+        <div class="header-compose-toggle" role="group" aria-label="Create post type">
+          <a href="profile.html?compose=song" class="profile-new-song header-compose-btn">New song</a>
+          <a href="profile.html?compose=album" class="profile-new-album header-compose-btn">New album</a>
+        </div>
+        <nav class="header-actions" aria-label="Toolbar">
+          <button
+            type="button"
+            class="icon-btn js-open-lyrics-search"
+            aria-label="Search lyrics"
+            aria-expanded="false"
+            aria-controls="lyrics-search-panel"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M14 14l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+          <a href="home.html" class="icon-btn" aria-label="Home" title="Home">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm12-5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+          <a href="profile.html" class="icon-btn" aria-label="Profile">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M4 20c2-4 6-6 8-6s6 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </a>
+        </nav>
+      </header>
+
+      <main class="page-main crate-page-main">
+        <div class="crate-stage-wrap">
+          <div class="crate-filter-bar" role="region" aria-label="Sort records">
+            <label class="crate-filter-field">
+              <span class="crate-filter-label">Sort</span>
+              <select id="crate-filter-sort" class="crate-filter-select">
+                <option value="date-desc" selected>Newest first</option>
+                <option value="date-asc">Oldest first</option>
+                <option value="title-asc">Title A–Z</option>
+                <option value="title-desc">Title Z–A</option>
+                <option value="artist-asc">Artist A–Z</option>
+                <option value="artist-desc">Artist Z–A</option>
+              </select>
+            </label>
+          </div>
+          <div id="cratedigger">
+            <div id="cratedigger-canvas"></div>
+            <div id="cratedigger-loading" aria-busy="true" aria-live="polite">
+              <div class="info-container">
+                <div class="vertical-center crate-loading-center">
+                  <div class="crate-loading-vinyl-wrap">
+                    <div class="crate-loading-vinyl" aria-hidden="true"></div>
+                  </div>
+                  <span class="loading-label crate-loading-sr-only">Loading records</span>
+                </div>
+              </div>
+            </div>
+            <div id="cratedigger-info">
+              <div class="info-container">
+                <div class="vertical-center">
+                  <div id="cratedigger-record-artist"></div>
+                  <div id="cratedigger-record-title"></div>
+                  <div id="cratedigger-record-cover"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="bottom-bar" class="noselect">
+            <div id="button-prev" class="bottom-bar-item">PREVIOUS</div>
+            <div id="button-show" class="bottom-bar-item">SHOW</div>
+            <div id="button-next" class="bottom-bar-item">NEXT</div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-sns" aria-label="Listen on streaming apps">
+          <a class="sns-chip" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Open Spotify">Spotify</a>
+          <a class="sns-chip" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open Apple Music">Apple Music</a>
+          <a class="sns-chip" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="Open YouTube">YouTube</a>
+        </div>
+      </footer>
+
+      <div class="page-setlist" id="genre-setlist" data-popup aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="setlist-title">
+        <div class="setlist-backdrop js-close-setlist" tabindex="-1"></div>
+        <div class="setlist-panel">
+          <div class="setlist-scroll">
+            <h2 id="setlist-title" class="setlist-heading">Setlist</h2>
+            <p class="setlist-lede">Twenty-three genres — <strong>All genres</strong> lists every post; the rest are by tag. Tap a row to jump and center it in the horizontal strip.</p>
+            <ol class="setlist-list js-setlist-list"></ol>
+          </div>
+          <button type="button" class="setlist-close js-close-setlist" aria-label="Close">
+            <span class="setlist-close-text">Close</span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="page-lyrics-search"
+        id="lyrics-search-panel"
+        data-popup
+        aria-hidden="true"
+        aria-modal="true"
+        role="dialog"
+        aria-labelledby="lyrics-search-title"
+      >
+        <div class="lyrics-search-backdrop js-close-lyrics-search" tabindex="-1"></div>
+        <div class="lyrics-search-panel">
+          <div class="lyrics-search-scroll">
+            <h2 id="lyrics-search-title" class="setlist-heading">Lyrics search</h2>
+            <p class="setlist-lede">
+              Search by song (title + optional artist), by publisher profile alone, or combine title with profile to narrow results.
+            </p>
+            <label class="lyrics-search-label" for="lyrics-q-title">Title</label>
+            <input id="lyrics-q-title" class="lyrics-search-input" type="search" autocomplete="off" spellcheck="true" placeholder="Song or album title" />
+            <label class="lyrics-search-label" for="lyrics-q-artist">Artist</label>
+            <input id="lyrics-q-artist" class="lyrics-search-input" type="search" autocomplete="off" spellcheck="true" placeholder="Track or album artist" />
+            <label class="lyrics-search-label" for="lyrics-q-profile">Profile</label>
+            <input
+              id="lyrics-q-profile"
+              class="lyrics-search-input"
+              type="search"
+              autocomplete="off"
+              spellcheck="true"
+              placeholder="Publisher display name"
+            />
+            <div class="lyrics-search-actions">
+              <button type="button" class="lyrics-search-submit js-search-lyrics-community">Search posts</button>
+            </div>
+            <div class="lyrics-search-results js-lyrics-search-results" hidden>
+              <p class="lyrics-search-results-song js-lyrics-search-song-line"></p>
+              <p class="lyrics-search-results-count js-lyrics-search-count" role="status" aria-live="polite"></p>
+              <ul class="lyrics-search-posts js-lyrics-search-posts"></ul>
+            </div>
+          </div>
+          <button type="button" class="setlist-close js-close-lyrics-search" aria-label="Close">
+            <span class="setlist-close-text">Close</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="auth-storage.js"></script>
+    <script defer src="auth-gate.js"></script>
+    <script defer src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script defer src="genres-data.js"></script>
+    <script defer src="published-feed.js"></script>
+    <script defer src="songshare-remote-sync.js"></script>
+    <script defer src="noteion-home.js"></script>
+    <script defer src="cratedigger-lib/crate-wood-inline.js"></script>
+    <script defer src="crate-page.js"></script>
+  </body>
+</html>

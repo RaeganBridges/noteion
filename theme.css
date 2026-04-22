@@ -88,12 +88,14 @@ samp {
   line-height: 1.1;
 }
 
-.logo a {
-  color: inherit;
+.logo a,
+.logo a:visited {
+  color: #ffffff;
   text-decoration: none;
 }
 
-.logo a:hover {
+.logo a:hover,
+.logo a:focus-visible {
   color: var(--accent);
 }
 
@@ -247,31 +249,22 @@ samp {
   will-change: transform;
 }
 
+/* Same wood stack as home (styles.css .main-back) — profile, song post, user, reader */
 .main-back {
-  background:
-    radial-gradient(ellipse 80% 55% at 50% 20%, rgba(196, 165, 116, 0.09) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(120, 140, 200, 0.06) 0%, transparent 50%),
-    var(--ink);
+  background: url("assets/homepage-wood-bg.jpg") center / cover no-repeat, var(--ink);
+  opacity: 0.18;
   transition: transform 0.35s ease-out;
 }
 
 .main-book {
-  background:
-    linear-gradient(105deg, rgba(250, 248, 240, 0.03) 0%, transparent 42%),
-    repeating-linear-gradient(
-      -12deg,
-      transparent,
-      transparent 3px,
-      rgba(250, 248, 240, 0.02) 3px,
-      rgba(250, 248, 240, 0.02) 4px
-    );
-  mix-blend-mode: soft-light;
-  opacity: 0.5;
+  background: none;
+  mix-blend-mode: normal;
+  opacity: 0;
   transition: transform 0.45s ease-out;
 }
 
 .main-fore {
-  background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(0, 0, 0, 0.5) 0%, transparent 65%);
+  background: transparent;
   transition: transform 0.55s ease-out;
 }
 

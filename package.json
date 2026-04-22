@@ -3,9 +3,14 @@
   "private": true,
   "scripts": {
     "sup": "node scripts/sync-supabase-config.mjs",
-    "config": "node scripts/sync-supabase-config.mjs"
+    "config": "node scripts/sync-supabase-config.mjs",
+    "vendor-cratedigger": "rm -rf cratedigger-lib && mkdir -p cratedigger-lib && cp -R node_modules/cratedigger/lib/* cratedigger-lib/ && node scripts/patch-cratedigger.mjs",
+    "postinstall": "npm run vendor-cratedigger"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "cratedigger": "^0.2.0"
   }
 }

@@ -234,6 +234,18 @@
           })
           .map(toDisplayTrack);
       }
+      /** One cover URL per circulating user track (crate + deep links); not deduped like the home stack. */
+      var boardTrackCoverUrls = [];
+      if (userTracks.length) {
+        for (var tj = 0; tj < userTracks.length; tj++) {
+          var tjTr = userTracks[tj];
+          var tjBc = tjTr && tjTr.albumCoverDataUrl ? String(tjTr.albumCoverDataUrl).trim() : "";
+          boardTrackCoverUrls.push(
+            tjBc || makeSongFallbackCoverDataUrl(tjTr, g.name, tj)
+          );
+        }
+      }
+
       var boardStackCoverUrl = "";
       var boardStackCoverUrls = [];
       var seenCover = {};
@@ -283,6 +295,7 @@
         boardAlbums: (baseG && baseG.boardAlbums) || (g && g.boardAlbums),
         boardStackCoverUrl: boardStackCoverUrl,
         boardStackCoverUrls: boardStackCoverUrls,
+        boardTrackCoverUrls: boardTrackCoverUrls,
       };
     });
   }
@@ -551,6 +564,8 @@
     removeById: removeById,
     setRemoteEntries: setRemoteEntries,
     mergeGenres: mergeGenres,
+    /** Same SVG covers as the home genre board when no uploaded/iTunes art is stored. */
+    makeSongFallbackCoverDataUrl: makeSongFallbackCoverDataUrl,
     applyMerge: applyMerge,
     findPostsBySong: findPostsBySong,
     findPostsByProfile: findPostsByProfile,
