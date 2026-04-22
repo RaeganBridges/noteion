@@ -347,6 +347,23 @@
     return raw;
   }
 
+  function parseDateInputToMs(v) {
+    var s = String(v || "").trim();
+    if (!s) return null;
+    var ms = Date.parse(s + "T00:00:00");
+    return isNaN(ms) ? null : ms;
+  }
+
+  function msToDateInputValue(ts) {
+    if (ts == null || ts === "") return "";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "";
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
   function normalizeStreamLinks(links) {
     var src = links || {};
     return {
@@ -455,9 +472,9 @@
       });
   }
 
-  function fetchItunesCoverDataUrl(artist, title) {
+  function fetchItunesSongMeta(artist, title) {
     var q = (String(artist || "").trim() + " " + String(title || "").trim()).trim();
-    if (!q) return Promise.resolve(null);
+    if (!q) return Promise.resolve({ coverDataUrl: null, songPublishedAt: null });
     return fetch(
       "https://itunes.apple.com/search?term=" + encodeURIComponent(q) + "&entity=song&limit=12"
     )
@@ -467,7 +484,7 @@
       })
       .then(function (data) {
         var results = (data && data.results) || [];
-        if (!results.length) return null;
+        if (!results.length) return { coverDataUrl: null, songPublishedAt: null };
         var nt = normMatchToken(title);
         var na = normMatchToken(artist);
         var best = null;
@@ -485,13 +502,39 @@
             break;
           }
         }
-        if (!best) best = results[0];
-        if (!best || !best.artworkUrl100) return null;
-        return artworkUrlToDataUrl(best.artworkUrl100);
+        if (!best) best = results[0] || null;
+        var releaseMs = null;
+        if (best && best.releaseDate) {
+          var parsed = Date.parse(best.releaseDate);
+          if (!isNaN(parsed)) releaseMs = parsed;
+        }
+        if (!best || !best.artworkUrl100) {
+          return { coverDataUrl: null, songPublishedAt: releaseMs };
+        }
+        return artworkUrlToDataUrl(best.artworkUrl100).then(function (coverDataUrl) {
+          return { coverDataUrl: coverDataUrl || null, songPublishedAt: releaseMs };
+        });
       })
       .catch(function () {
-        return null;
+        return { coverDataUrl: null, songPublishedAt: null };
       });
+  }
+
+  function fetchItunesCoverDataUrl(artist, title) {
+    return fetchItunesSongMeta(artist, title).then(function (meta) {
+      return meta && meta.coverDataUrl ? meta.coverDataUrl : null;
+    });
+  }
+
+  function autoFillReleaseDateInput(selector, artist, title) {
+    var $input = $(selector);
+    if (!$input.length) return Promise.resolve(null);
+    if (String($input.val() || "").trim()) return Promise.resolve(null);
+    return fetchItunesSongMeta(artist, title).then(function (meta) {
+      if (!meta || !meta.songPublishedAt) return null;
+      $input.val(msToDateInputValue(meta.songPublishedAt));
+      return meta.songPublishedAt;
+    });
   }
 
   /** Album artwork from iTunes Search (entity=album). */
@@ -821,6 +864,7 @@
     if (!tr) return;
     tr.title = String($("#album-track-title").val() || "").trim();
     tr.artist = String($("#album-track-artist").val() || "").trim();
+    tr.songPublishedAt = parseDateInputToMs($("#album-track-release-date").val());
     tr.meaningText = String($("#album-meaning").val() || "").trim();
     tr.streamLinks = readAlbumStreamLinksFromForm();
     tr.lyricsHtml = getAlbumLyricsHtml();
@@ -838,6 +882,7 @@
     if (!tr) return;
     $("#album-track-title").val(tr.title || "");
     $("#album-track-artist").val(tr.artist || "");
+    $("#album-track-release-date").val(msToDateInputValue(tr.songPublishedAt));
     $("#album-meaning").val(tr.meaningText || "");
     setAlbumStreamLinksToForm(tr.streamLinks || {});
     setAlbumLyricsHtml(tr.lyricsHtml || "");
@@ -1071,6 +1116,7 @@
     $("#album-album-artist").val("");
     $("#album-track-title").val("");
     $("#album-track-artist").val("");
+    $("#album-track-release-date").val("");
     $("#album-meaning").val("");
     setAlbumStreamLinksToForm({});
     setAlbumLyricsHtml("");
@@ -1205,7 +1251,7 @@
         var existing = window.SongSharePublished.loadAll().find(function (p) {
           return p.id === tr.pubId;
         });
-        var songPublishedAt = existing && existing.songPublishedAt ? existing.songPublishedAt : now;
+        var songPublishedAt = tr.songPublishedAt || (existing && existing.songPublishedAt ? existing.songPublishedAt : now);
         var trackMeaning = String(tr.meaningText || "").trim();
         var hasTrackMeaning = !!trackMeaning;
         var meaningPublishedAt = existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : null;
@@ -1602,6 +1648,7 @@
     $(".js-publish-desk").text("Publish to desk");
     $("#composer-track-title").val("");
     $("#composer-artist").val("");
+    $("#composer-release-date").val("");
     $("#composer-meaning").val("");
     setComposerStreamLinksToForm({});
     $(".js-genre-tag").prop("checked", false);
@@ -1632,6 +1679,7 @@
     $(".js-publish-desk").text("Save changes");
     $("#composer-track-title").val(item.title || "");
     $("#composer-artist").val(item.artist || "");
+    $("#composer-release-date").val(msToDateInputValue(item.songPublishedAt));
     $("#composer-meaning").val(item.meaningText || "");
     setComposerStreamLinksToForm(item.streamLinks || {});
     setComposerLyricsHtml(item.lyricsHtml || "");
@@ -1662,6 +1710,15 @@
   function deskRot(i) {
     var s = (i * 11) % 5;
     return s - 2;
+  }
+
+  function fmtPostDay(ts) {
+    if (ts == null || ts === "") return "";
+    try {
+      return new Date(ts).toLocaleDateString(undefined, { dateStyle: "medium" });
+    } catch (e) {
+      return "";
+    }
   }
 
   function render() {
@@ -1720,6 +1777,7 @@
           tracks.forEach(function (tr) {
             var tTitle = String(tr.title || "Untitled").trim() || "Untitled";
             var tArtist = String(tr.artist || alArtist || "").trim();
+            var tPublished = fmtPostDay(tr.songPublishedAt || tr.createdAt);
             var lyricsBlock = buildDeskLyricsHtml(tr.lyricsHtml || "");
             var tags = (tr.genreTags || []).join(" · ");
             var $song = $('<article class="desk-mini-song" role="listitem" />');
@@ -1727,6 +1785,9 @@
             $miniHead.append($("<h4/>", { class: "desk-mini-song-title", text: tTitle }));
             if (tArtist) {
               $miniHead.append($("<p/>", { class: "desk-mini-song-artist", text: tArtist }));
+            }
+            if (tPublished) {
+              $miniHead.append($("<p/>", { class: "desk-mini-song-date", text: "Released " + tPublished }));
             }
             $song.append($miniHead);
             if (lyricsBlock) {
@@ -1743,6 +1804,7 @@
       } else {
         var tags = (item.genreTags || []).join(" · ");
         var lyricsBlock = buildDeskLyricsHtml(item.lyricsHtml);
+        var published = fmtPostDay(item.songPublishedAt || item.createdAt);
         $card = $(
           '<article class="desk-card" role="button" tabindex="0" data-pub-id="' +
             escapeHtml(item.pubId) +
@@ -1755,6 +1817,7 @@
             escapeHtml(item.title) +
             "</h3>" +
             (item.artist ? '<p class="desk-card-artist">' + escapeHtml(item.artist) + "</p>" : "") +
+            (published ? '<p class="desk-card-date">Released ' + escapeHtml(published) + "</p>" : "") +
             "</header>" +
             (lyricsBlock ? '<div class="desk-card-lyrics">' + lyricsBlock + "</div>" : "") +
             (tags ? '<p class="desk-card-tags">' + escapeHtml(tags) + "</p>" : "") +
@@ -1775,6 +1838,7 @@
 
     var title = String($("#composer-track-title").val() || "").trim();
     var artist = String($("#composer-artist").val() || "").trim();
+    var manualReleaseMs = parseDateInputToMs($("#composer-release-date").val());
     var meaningText = String($("#composer-meaning").val() || "").trim();
     var manualStreamLinks = readComposerStreamLinksFromForm();
     var autoStreamLinks = buildAutoStreamLinks(artist, title);
@@ -1803,23 +1867,41 @@
     $btn.prop("disabled", true);
     setLyricsStatus("Looking up cover art…");
 
-    fetchItunesCoverDataUrl(artist, title)
-      .then(function (fetchedCover) {
+    fetchItunesSongMeta(artist, title)
+      .then(function (meta) {
+        setLyricsStatus("");
+        var fetchedCover = meta && meta.coverDataUrl ? meta.coverDataUrl : null;
+        var fetchedReleaseMs = meta && meta.songPublishedAt ? meta.songPublishedAt : null;
+        if (!manualReleaseMs && fetchedReleaseMs) {
+          $("#composer-release-date").val(msToDateInputValue(fetchedReleaseMs));
+        }
+        execPublishSong(
+          session,
+          title,
+          artist,
+          manualReleaseMs,
+          meaningText,
+          streamLinks,
+          lyricsHtml,
+          genreTags,
+          fetchedCover,
+          fetchedReleaseMs
+        );
+      })
+      .catch(function () {
         setLyricsStatus("");
         execPublishSong(
           session,
           title,
           artist,
+          manualReleaseMs,
           meaningText,
           streamLinks,
           lyricsHtml,
           genreTags,
-          fetchedCover
+          null,
+          null
         );
-      })
-      .catch(function () {
-        setLyricsStatus("");
-        execPublishSong(session, title, artist, meaningText, streamLinks, lyricsHtml, genreTags, null);
       })
       .finally(function () {
         $btn.prop("disabled", false);
@@ -1830,11 +1912,13 @@
     session,
     title,
     artist,
+    manualReleaseMs,
     meaningText,
     streamLinks,
     lyricsHtml,
     genreTags,
-    fetchedCover
+    fetchedCover,
+    fetchedReleaseMs
   ) {
     var now = Date.now();
     var pubId =
@@ -1843,7 +1927,7 @@
     var displayName = session.displayName || session.email || "Member";
     var existing = editingPubId ? findUpload(session, editingPubId) : null;
     var songPublishedAt =
-      existing && existing.songPublishedAt ? existing.songPublishedAt : now;
+      manualReleaseMs || fetchedReleaseMs || (existing && existing.songPublishedAt ? existing.songPublishedAt : now);
     var hasMeaning = !!meaningText;
     var meaningPublishedAt = existing && existing.meaningPublishedAt ? existing.meaningPublishedAt : null;
     if (hasMeaning && !meaningPublishedAt) {
@@ -1906,6 +1990,7 @@
         setComposerLyricsHtml(plainLyricsToEdHtml(raw));
         refreshComposerLinkFieldsFromTrack(artist, title);
         setLyricsStatus("Lyrics loaded.");
+        autoFillReleaseDateInput("#composer-release-date", artist, title);
       })
       .catch(function () {
         setLyricsStatus("Could not load lyrics. Check artist and title spelling.");
@@ -2232,6 +2317,7 @@
           setAlbumLyricsHtml(plainLyricsToEdHtml(raw));
           refreshAlbumLinkFieldsFromTrack(artist, title);
           setAlbumLyricsStatus("Lyrics loaded.");
+          autoFillReleaseDateInput("#album-track-release-date", artist, title);
         })
         .catch(function () {
           setAlbumLyricsStatus("Could not load lyrics. Check artist and title spelling.");

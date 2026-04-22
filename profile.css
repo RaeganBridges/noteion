@@ -352,6 +352,16 @@ body.composer-open {
   color: #5b4dc9;
 }
 
+.desk-mini-song-date {
+  margin: 0.22rem 0 0;
+  font-family: var(--font-roboto);
+  font-size: clamp(0.52rem, 1.35vw, 0.62rem);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8b847a;
+}
+
 /* Full lyrics like single-song cards — not clipped; outer column scrolls */
 .desk-mini-song-lyrics {
   margin: 0;
@@ -453,6 +463,16 @@ body.composer-open {
   font-size: clamp(0.82rem, 2.1vw, 0.95rem);
   font-weight: 500;
   color: #5b4dc9;
+}
+
+.desk-card-date {
+  margin: 0.28rem 0 0;
+  font-family: var(--font-roboto);
+  font-size: clamp(0.6rem, 1.55vw, 0.7rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8b847a;
 }
 
 .desk-card-lyrics {
