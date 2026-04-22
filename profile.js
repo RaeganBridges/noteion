@@ -141,7 +141,7 @@
   }
 
   function legacyCoverBackfillStampKey(userId) {
-    return "noteion.coverBackfill.v1." + String(userId || "");
+    return "noteion.coverBackfill.v2." + String(userId || "");
   }
 
   function markLegacyCoverBackfillAttempted(userId) {
@@ -634,6 +634,19 @@
 
     legacyCoverBackfillInFlight = true;
     var anyChanged = false;
+    var makeFallback =
+      window.SongSharePublished && typeof window.SongSharePublished.makeSongFallbackCoverDataUrl === "function"
+        ? window.SongSharePublished.makeSongFallbackCoverDataUrl
+        : function () {
+            return "";
+          };
+
+    function fallbackGenreNameForItem(item) {
+      if (!item || typeof item !== "object") return "Other";
+      var tags = Array.isArray(item.genreTags) ? item.genreTags : [];
+      var first = tags.length ? String(tags[0] || "").trim() : "";
+      return first || "Other";
+    }
 
     function updatePublishedSongCover(pubId, coverDataUrl) {
       if (!pubId || !coverDataUrl) return;
@@ -659,10 +672,18 @@
           return fetchItunesCoverDataUrl(artist, title);
         })
         .then(function (coverDataUrl) {
-          if (!coverDataUrl) return;
-          var nextItem = Object.assign({}, item, { albumCoverDataUrl: coverDataUrl });
+          var coverUse = String(coverDataUrl || "").trim();
+          if (!coverUse) {
+            coverUse = makeFallback(
+              { title: item.title || "Untitled", artist: item.artist || "" },
+              fallbackGenreNameForItem(item),
+              item.pubId || item.title || "song"
+            );
+          }
+          if (!coverUse) return;
+          var nextItem = Object.assign({}, item, { albumCoverDataUrl: coverUse });
           window.SongShareUploads.add(session.userId, nextItem);
-          updatePublishedSongCover(item.pubId, coverDataUrl);
+          updatePublishedSongCover(item.pubId, coverUse);
           anyChanged = true;
         });
     });
@@ -675,22 +696,43 @@
           return fetchItunesAlbumCoverDataUrl(albumArtist, albumTitle);
         })
         .then(function (coverDataUrl) {
-          if (!coverDataUrl) {
+          var coverUse = String(coverDataUrl || "").trim();
+          if (!coverUse) {
             var firstTrack = item.tracks && item.tracks.length ? item.tracks[0] : null;
             var trackArtist = firstTrack ? String(firstTrack.artist || item.albumArtist || "").trim() : "";
             var trackTitle = firstTrack ? String(firstTrack.title || "").trim() : "";
-            if (!trackTitle) return null;
-            return fetchItunesCoverDataUrl(trackArtist, trackTitle);
+            if (trackTitle) {
+              return fetchItunesCoverDataUrl(trackArtist, trackTitle);
+            }
+            return null;
           }
-          return coverDataUrl;
+          return coverUse;
         })
         .then(function (coverDataUrl) {
-          if (!coverDataUrl) return;
-          var nextAlbum = Object.assign({}, item, { albumCoverDataUrl: coverDataUrl });
+          var coverUse = String(coverDataUrl || "").trim();
+          if (!coverUse) {
+            var firstTrack = item.tracks && item.tracks.length ? item.tracks[0] : null;
+            coverUse = makeFallback(
+              {
+                title:
+                  (firstTrack && firstTrack.title) ||
+                  item.albumTitle ||
+                  "Untitled album",
+                artist:
+                  (firstTrack && firstTrack.artist) ||
+                  item.albumArtist ||
+                  "",
+              },
+              fallbackGenreNameForItem(firstTrack || item),
+              item.pubId || item.albumTitle || "album"
+            );
+          }
+          if (!coverUse) return;
+          var nextAlbum = Object.assign({}, item, { albumCoverDataUrl: coverUse });
           window.SongShareUploads.add(session.userId, nextAlbum);
           if (Array.isArray(item.tracks)) {
             item.tracks.forEach(function (tr) {
-              if (tr && tr.pubId) updatePublishedSongCover(tr.pubId, coverDataUrl);
+              if (tr && tr.pubId) updatePublishedSongCover(tr.pubId, coverUse);
             });
           }
           anyChanged = true;
