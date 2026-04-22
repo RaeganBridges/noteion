@@ -176,6 +176,8 @@
       title: p.title || "Untitled",
       artist: p.artist || "",
       songPublishedAt: p.songPublishedAt || null,
+      createdAt: p.createdAt || null,
+      updatedAt: p.updatedAt || null,
       songArtist: p.artist || "",
       displayName: p.displayName || "",
       userId: p.userId || "",

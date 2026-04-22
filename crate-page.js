@@ -447,13 +447,20 @@
   }
 
   /** Milliseconds for date sorts; track index in noteionHref stays the board index. */
-  function trackPublishedMs(t) {
+  function trackSongPublishedMs(t) {
     if (!t) return 0;
     var sp = toPublishedMs(t.songPublishedAt);
     if (!isNaN(sp)) return sp;
+    return 0;
+  }
+
+  function trackUserPostedMs(t) {
+    if (!t) return 0;
     var ca = toPublishedMs(t.createdAt);
     if (!isNaN(ca)) return ca;
-    return 0;
+    var up = toPublishedMs(t.updatedAt);
+    if (!isNaN(up)) return up;
+    return trackSongPublishedMs(t);
   }
 
   function buildRecords(genre) {
@@ -485,7 +492,9 @@
         artist: (t && (t.artist || t.displayName)) || "",
         cover: cover,
         hasSleeve: false,
-        publishedAt: trackPublishedMs(t),
+        songPublishedAt: trackSongPublishedMs(t),
+        postPublishedAt: trackUserPostedMs(t),
+        publishedAt: trackUserPostedMs(t),
         noteionHref:
           "song.html?id=" + encodeURIComponent(String(gid)) + "&track=" + encodeURIComponent(String(i)),
       });
@@ -497,6 +506,8 @@
         artist: genre.name,
         cover: makeFallback({ title: "—" }, genre.name, "empty"),
         hasSleeve: false,
+        songPublishedAt: 0,
+        postPublishedAt: 0,
         publishedAt: 0,
         noteionHref: "profile.html",
       });
@@ -518,8 +529,20 @@
     list.sort(function (a, b) {
       var c;
       switch (sortKey) {
+        case "song-date-asc":
+          c = (a.songPublishedAt || 0) - (b.songPublishedAt || 0);
+          break;
+        case "song-date-desc":
+          c = (b.songPublishedAt || 0) - (a.songPublishedAt || 0);
+          break;
+        case "post-date-asc":
+          c = (a.postPublishedAt || 0) - (b.postPublishedAt || 0);
+          break;
+        case "post-date-desc":
+          c = (b.postPublishedAt || 0) - (a.postPublishedAt || 0);
+          break;
         case "date-asc":
-          c = (a.publishedAt || 0) - (b.publishedAt || 0);
+          c = (a.postPublishedAt || a.publishedAt || 0) - (b.postPublishedAt || b.publishedAt || 0);
           break;
         case "title-desc":
           c = -cmpStr(a.title || "", b.title || "");
@@ -534,10 +557,10 @@
           c = cmpStr(a.artist || "", b.artist || "");
           break;
         case "date-desc":
-          c = (b.publishedAt || 0) - (a.publishedAt || 0);
+          c = (b.postPublishedAt || b.publishedAt || 0) - (a.postPublishedAt || a.publishedAt || 0);
           break;
         default:
-          c = (b.publishedAt || 0) - (a.publishedAt || 0);
+          c = (b.postPublishedAt || b.publishedAt || 0) - (a.postPublishedAt || a.publishedAt || 0);
       }
       if (c !== 0) return c;
       return (a.boardOrder || 0) - (b.boardOrder || 0);
@@ -604,6 +627,8 @@
             cover: r.cover,
             hasSleeve: !!r.hasSleeve,
             noteionHref: r.noteionHref,
+            songPublishedAt: typeof r.songPublishedAt === "number" ? r.songPublishedAt : 0,
+            postPublishedAt: typeof r.postPublishedAt === "number" ? r.postPublishedAt : 0,
             publishedAt: typeof r.publishedAt === "number" ? r.publishedAt : 0,
             boardOrder: idx,
           };
