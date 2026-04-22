@@ -5,6 +5,23 @@
   overflow-y: auto;
 }
 
+.logo-user-tag {
+  display: inline-block;
+  margin-left: 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 240, 0.72);
+  vertical-align: middle;
+}
+
+.logo-user-tag::before {
+  content: "·";
+  margin-right: 0.45rem;
+  color: rgba(250, 248, 240, 0.45);
+}
+
 .user-wrap {
   position: relative;
   z-index: 10;
