@@ -13,6 +13,7 @@
   var MAX_AUDIO_BYTES_FOR_COVER_PARSE = 12000000;
   var albumCoverDataUrl = "";
   var legacyCoverBackfillInFlight = false;
+  var releaseDateBackfillInFlight = false;
   var composerHlSeqRef = { n: 0 };
   var albumHlSeqRef = { n: 0 };
   var PUBLISH_SOUND_SRC = "genre-clips/freesound_community-paper-01-87018.mp3";
@@ -165,6 +166,26 @@
     var email = String(session.email || "").trim().toLowerCase();
     var emailLocal = email.indexOf("@") !== -1 ? email.split("@")[0] : email;
     return dn === "drbridges23" || emailLocal === "drbridges23";
+  }
+
+  function releaseDateBackfillStampKey(userId) {
+    return "noteion.releaseDateBackfill.v1." + String(userId || "");
+  }
+
+  function markReleaseDateBackfillAttempted(userId) {
+    if (!userId) return;
+    try {
+      localStorage.setItem(releaseDateBackfillStampKey(userId), String(Date.now()));
+    } catch (e) {}
+  }
+
+  function hasReleaseDateBackfillAttempt(userId) {
+    if (!userId) return false;
+    try {
+      return !!localStorage.getItem(releaseDateBackfillStampKey(userId));
+    } catch (e) {
+      return false;
+    }
   }
 
   function applyAlbumCoverFromAutoExtract(dataUrl) {
@@ -698,6 +719,116 @@
     var forced = forceLegacyCoverBackfillForSession(session);
     if (!forced && hasLegacyCoverBackfillAttempt(session.userId)) return;
     backfillLegacyMissingCovers(session).then(function (changed) {
+      if (changed) render();
+    });
+  }
+
+  function shouldBackfillReleaseDate(songPublishedAt, createdAt, force) {
+    if (force) return true;
+    if (!songPublishedAt) return true;
+    if (!createdAt) return false;
+    return Number(songPublishedAt) === Number(createdAt);
+  }
+
+  function backfillPostedReleaseDates(session, force) {
+    if (!session || !session.userId) return Promise.resolve(false);
+    if (releaseDateBackfillInFlight) return Promise.resolve(false);
+    if (!window.SongShareUploads || !window.SongSharePublished) return Promise.resolve(false);
+
+    var uploads = window.SongShareUploads.list(session.userId);
+    if (!uploads || !uploads.length) return Promise.resolve(false);
+
+    releaseDateBackfillInFlight = true;
+    var anyChanged = false;
+    var changedPublishedById = {};
+    var chain = Promise.resolve();
+
+    uploads.forEach(function (item, itemIdx) {
+      if (!item || item.kind === "album") return;
+      var title = String(item.title || "").trim();
+      var artist = String(item.artist || "").trim();
+      if (!title) return;
+      if (!shouldBackfillReleaseDate(item.songPublishedAt, item.createdAt, !!force)) return;
+
+      chain = chain.then(function () {
+        return fetchItunesSongMeta(artist, title).then(function (meta) {
+          if (!meta || !meta.songPublishedAt) return;
+          uploads[itemIdx] = Object.assign({}, item, { songPublishedAt: meta.songPublishedAt });
+          changedPublishedById[item.pubId] = meta.songPublishedAt;
+          anyChanged = true;
+        });
+      });
+    });
+
+    uploads.forEach(function (item, itemIdx) {
+      if (!item || item.kind !== "album" || !Array.isArray(item.tracks) || !item.tracks.length) return;
+      var tracks = item.tracks.slice();
+      var albumChanged = false;
+
+      tracks.forEach(function (tr, trIdx) {
+        var title = String((tr && tr.title) || "").trim();
+        var artist = String((tr && (tr.artist || item.albumArtist)) || "").trim();
+        if (!title) return;
+        if (!shouldBackfillReleaseDate(tr.songPublishedAt, item.createdAt, !!force)) return;
+
+        chain = chain.then(function () {
+          return fetchItunesSongMeta(artist, title).then(function (meta) {
+            if (!meta || !meta.songPublishedAt) return;
+            tracks[trIdx] = Object.assign({}, tr, { songPublishedAt: meta.songPublishedAt });
+            if (tr && tr.pubId) changedPublishedById[tr.pubId] = meta.songPublishedAt;
+            albumChanged = true;
+            anyChanged = true;
+          });
+        });
+      });
+
+      chain = chain.then(function () {
+        if (!albumChanged) return;
+        uploads[itemIdx] = Object.assign({}, item, { tracks: tracks });
+      });
+    });
+
+    return chain
+      .then(function () {
+        if (!anyChanged) {
+          markReleaseDateBackfillAttempted(session.userId);
+          return false;
+        }
+
+        for (var i = uploads.length - 1; i >= 0; i--) {
+          window.SongShareUploads.add(session.userId, uploads[i]);
+        }
+
+        var allPosts = window.SongSharePublished.loadAll();
+        Object.keys(changedPublishedById).forEach(function (pubId) {
+          var post = allPosts.find(function (p) {
+            return p && p.id === pubId;
+          });
+          if (!post) return;
+          window.SongSharePublished.upsert(
+            Object.assign({}, post, {
+              songPublishedAt: changedPublishedById[pubId],
+            })
+          );
+        });
+
+        window.SongSharePublished.applyMerge();
+        markReleaseDateBackfillAttempted(session.userId);
+        return true;
+      })
+      .catch(function () {
+        markReleaseDateBackfillAttempted(session.userId);
+        return false;
+      })
+      .finally(function () {
+        releaseDateBackfillInFlight = false;
+      });
+  }
+
+  function maybeRunReleaseDateBackfill(session) {
+    if (!session || !session.userId) return;
+    if (hasReleaseDateBackfillAttempt(session.userId)) return;
+    backfillPostedReleaseDates(session, false).then(function (changed) {
       if (changed) render();
     });
   }
@@ -2567,6 +2698,7 @@
               ? window.SongShareAuth.getSession()
               : null;
             maybeRunLegacyCoverBackfill(sess);
+            maybeRunReleaseDateBackfill(sess);
             maybeOpenComposerFromQuery();
           })
           .catch(function () {
@@ -2575,6 +2707,7 @@
               ? window.SongShareAuth.getSession()
               : null;
             maybeRunLegacyCoverBackfill(sess);
+            maybeRunReleaseDateBackfill(sess);
             maybeOpenComposerFromQuery();
           });
       } else {
@@ -2583,6 +2716,7 @@
           ? window.SongShareAuth.getSession()
           : null;
         maybeRunLegacyCoverBackfill(sess);
+        maybeRunReleaseDateBackfill(sess);
         maybeOpenComposerFromQuery();
       }
     }
@@ -2593,6 +2727,17 @@
         : null;
       if (!sess) return Promise.resolve(false);
       return backfillLegacyMissingCovers(sess).then(function (changed) {
+        if (changed) render();
+        return changed;
+      });
+    };
+
+    window.NoteionRunReleaseDateBackfill = function (force) {
+      var sess = window.SongShareAuth && window.SongShareAuth.getSession
+        ? window.SongShareAuth.getSession()
+        : null;
+      if (!sess) return Promise.resolve(false);
+      return backfillPostedReleaseDates(sess, !!force).then(function (changed) {
         if (changed) render();
         return changed;
       });
