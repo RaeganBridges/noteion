@@ -339,13 +339,13 @@ body.composer-open {
   font-family: var(--font-roboto);
   font-size: clamp(0.68rem, 1.85vw, 0.82rem);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.45;
   letter-spacing: -0.02em;
   color: #0f0f0f;
 }
 
 .desk-mini-song-artist {
-  margin: 0.2rem 0 0;
+  margin: 0.42rem 0 0;
   font-family: var(--font-roboto);
   font-size: clamp(0.58rem, 1.5vw, 0.68rem);
   font-weight: 500;
@@ -442,13 +442,13 @@ body.composer-open {
   font-size: clamp(1.05rem, 2.8vw, 1.35rem);
   font-weight: 700;
   font-style: normal;
-  line-height: 0.4;
+  line-height: 1.28;
   letter-spacing: -0.02em;
   color: #0f0f0f;
 }
 
 .desk-card-artist {
-  margin: 0.3rem 0 0;
+  margin: 0.62rem 0 0;
   font-family: var(--font-roboto);
   font-size: clamp(0.82rem, 2.1vw, 0.95rem);
   font-weight: 500;
