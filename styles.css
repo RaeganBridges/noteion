@@ -1560,7 +1560,7 @@ body.is-popup-open {
    back inside each cubby. Inspired by a real record-store display. */
 
 :root {
-  --shelf-album-size: clamp(5.4rem, 15vmin, 8.6rem);
+  --shelf-album-size: clamp(5.9rem, 16.5vmin, 9.4rem);
   --shelf-bin-pad-x: 0.35rem;
   --shelf-wall-thickness: 0.55rem;
   --shelf-bin-width: calc(var(--shelf-album-size) + var(--shelf-bin-pad-x) * 2 + var(--shelf-wall-thickness));
@@ -2084,16 +2084,44 @@ body.is-popup-open {
 }
 
 
-/* Responsive: tighten on small screens. */
+/* Responsive: on mobile the shelf reflows into a tall 2-column × 12-row
+   layout so each album is large enough to tap. The page gains vertical
+   scrolling because 12 rows are taller than the viewport. */
 @media (max-width: 700px) {
   :root {
-    --shelf-album-size: clamp(5rem, 22vmin, 7rem);
+    --shelf-album-size: clamp(7rem, 36vw, 12rem);
     --shelf-lip-height: 3.25rem;
     --shelf-top-height: 0.5rem;
     --shelf-base-height: 0.6rem;
     --shelf-wall-thickness: 0.45rem;
   }
+
+  .scrapbook-row--shelf {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    aspect-ratio: 2 / 12;
+    max-width: min(
+      100%,
+      calc((var(--shelf-album-size) + var(--shelf-top-height) + 0.6rem) * 2)
+    );
+    max-height: none;
+  }
+
+  /* Let the page grow taller than the viewport so all 12 rows are
+     reachable. Override the desktop "fit in viewport" chain. */
+  .page-main {
+    overflow: visible;
+  }
   .board-wrap {
-    padding: 3.1rem 0 2.5rem;
+    padding: 1.5rem 0 2.5rem;
+    min-height: 0;
+  }
+  .board-scroll {
+    overflow: visible;
+    flex: 0 0 auto;
+  }
+  #genre-board.scrapbook-board {
+    flex: 0 0 auto;
+    align-items: flex-start;
   }
 }
