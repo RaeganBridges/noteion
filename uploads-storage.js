@@ -16,7 +16,21 @@
       .replace(/\n/g, "<br>");
   }
 
-  function normalizeAlbumTrack(raw, fallbackPubId) {
+  function coerceTrackSongPublishedAt(raw, publishedById) {
+    var v = raw && raw.songPublishedAt;
+    if (v != null && v !== "") {
+      var n = typeof v === "number" ? v : parseFloat(String(v));
+      if (!isNaN(n) && n > 0) return n;
+    }
+    var pid = raw && (raw.pubId || raw.id);
+    if (pid && publishedById && publishedById[pid] != null && publishedById[pid] !== "") {
+      var m = typeof publishedById[pid] === "number" ? publishedById[pid] : parseFloat(String(publishedById[pid]));
+      if (!isNaN(m) && m > 0) return m;
+    }
+    return null;
+  }
+
+  function normalizeAlbumTrack(raw, fallbackPubId, publishedById) {
     if (!raw || typeof raw !== "object") return null;
     var tid = raw.pubId || raw.id || fallbackPubId;
     if (!tid) return null;
@@ -32,7 +46,7 @@
       meaningText: raw.meaningText || "",
       meaningAuthor: raw.meaningAuthor || "",
       meaningPublishedAt: raw.meaningPublishedAt || null,
-      songPublishedAt: raw.songPublishedAt || raw.createdAt || Date.now(),
+      songPublishedAt: coerceTrackSongPublishedAt(raw, publishedById),
       genreTags: Array.isArray(raw.genreTags) ? raw.genreTags : [],
       stickyNotes: Array.isArray(raw.stickyNotes) ? raw.stickyNotes : [],
       audioName: raw.audioName || "",
@@ -45,10 +59,18 @@
     var pubId = raw.pubId || raw.id;
     if (!pubId) return null;
     if (raw.kind === "album") {
+      var publishedById = {};
+      if (global.SongSharePublished && typeof global.SongSharePublished.loadAll === "function") {
+        global.SongSharePublished.loadAll().forEach(function (p) {
+          if (p && p.id && p.songPublishedAt != null && p.songPublishedAt !== "") {
+            publishedById[p.id] = p.songPublishedAt;
+          }
+        });
+      }
       var tracksIn = Array.isArray(raw.tracks) ? raw.tracks : [];
       var tracks = tracksIn
         .map(function (t, i) {
-          return normalizeAlbumTrack(t, pubId + "_tr_" + i);
+          return normalizeAlbumTrack(t, pubId + "_tr_" + i, publishedById);
         })
         .filter(Boolean);
       return {

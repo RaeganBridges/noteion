@@ -49,6 +49,17 @@
   color: rgba(196, 165, 116, 0.95);
 }
 
+.reader-artist-link {
+  color: var(--accent, #c4a574);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.reader-artist-link:hover {
+  color: color-mix(in oklab, var(--accent, #c4a574) 78%, var(--cream, #f6f3ea) 22%);
+  text-decoration: none;
+}
+
 .reader-meta {
   margin: 0.5rem 0 0;
   font-size: 0.65rem;
@@ -56,6 +67,28 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(250, 248, 240, 0.4);
+}
+
+.reader-meta-line {
+  color: rgba(250, 248, 240, 0.42);
+}
+
+.reader-genre-tags {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.reader-genre-chip {
+  text-decoration: none;
+}
+
+.reader-genre-chip:hover {
+  text-decoration: none;
+  color: rgba(250, 248, 240, 0.78);
+}
+
+.reader-genre-chip--fallback {
+  color: rgba(196, 165, 116, 0.9) !important;
 }
 
 .reader-lyrics {
@@ -73,6 +106,28 @@
 
 .reader-lyrics p:last-child {
   margin-bottom: 0;
+}
+
+.reader-lyrics .lyric-hl {
+  border-radius: 2px;
+  padding: 0 0.06em;
+  background: rgba(255, 214, 120, 0.42);
+}
+
+.reader-lyrics .lyric-hl--amber {
+  background: rgba(255, 214, 120, 0.62);
+}
+
+.reader-lyrics .lyric-hl--mint {
+  background: rgba(150, 230, 190, 0.55);
+}
+
+.reader-lyrics .lyric-hl--rose {
+  background: rgba(255, 180, 190, 0.55);
+}
+
+.reader-lyrics .lyric-hl--sky {
+  background: rgba(160, 210, 255, 0.5);
 }
 
 .reader-actions {

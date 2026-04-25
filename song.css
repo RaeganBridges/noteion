@@ -209,14 +209,14 @@
 }
 
 .page-comments__author-link {
-  color: inherit;
+  color: var(--accent, #c4a574);
   text-decoration: none;
-  border-bottom: 1px dotted rgba(122, 114, 104, 0.6);
+  border-bottom: none;
+  text-transform: none;
 }
 
 .page-comments__author-link:hover {
-  color: #4f473d;
-  border-bottom-color: rgba(79, 71, 61, 0.9);
+  color: #e2d2a8;
 }
 
 .page-comments__text {
@@ -314,7 +314,8 @@
 }
 
 .page-comments__auth-link:hover {
-  text-decoration: underline;
+  color: #e2d2a8;
+  text-decoration: none;
 }
 
 @media (max-width: 1100px) {
@@ -331,6 +332,44 @@
   align-items: stretch;
   width: 100%;
   transform-style: preserve-3d;
+}
+
+/* One row: nav tabs left, poster name tab right */
+.sheet-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.35rem 0.65rem;
+  width: 100%;
+  position: relative;
+  z-index: 5;
+  margin-bottom: -1px;
+  padding: 0 0.5rem 0 max(0.5rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.sheet-tabs-row .sheet-tabs {
+  margin-bottom: 0;
+}
+
+.sheet-tabs-row .sheet-tabs--left {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  align-self: flex-end;
+  justify-content: flex-start;
+  padding-left: 0.15rem;
+  padding-right: 0.15rem;
+}
+
+.sheet-tabs-row .sheet-tabs--right {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
+  align-self: flex-end;
+  justify-content: flex-end;
+  padding-right: max(0.15rem, env(safe-area-inset-right, 0px));
 }
 
 .sheet-tabs {
@@ -401,12 +440,99 @@
   border-radius: 9px 9px 0 0;
 }
 
-.tab-btn:hover {
+/* Prev / next / close — genre tint (same --song-genre-color as sheet); poster tab stays gold */
+.sheet-tabs-row .sheet-tabs--left .tab-btn {
+  color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #0c0c0c 48%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)) 28%, #f4f0e8 72%) 86%, transparent 14%) 0%,
+    color-mix(in oklab, color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)) 42%, #e4dfd4 58%) 86%, transparent 14%) 100%
+  );
+  border: 1px solid color-mix(in oklab, color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #2a2218 36%) 72%, transparent 28%);
+  border-bottom: none;
+  box-shadow:
+    0 1px 0 color-mix(in oklab, color-mix(in oklab, #fff 85%, var(--song-genre-color, hsl(330, 20%, 56%)) 15%) 75%, transparent 25%) inset,
+    1px 0 0 rgba(255, 255, 255, 0.18) inset;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Match .detail-song-link:hover (streaming chips under lyrics) */
+.sheet-tabs-row .sheet-tabs--left .tab-btn:hover {
+  border-color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #0f0c08 28%);
+  color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #050506 58%);
+  background: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)) 38%, #fff 62%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, #fff 70%, var(--song-genre-color, hsl(330, 20%, 56%)) 30%) inset,
+    1px 0 0 rgba(255, 255, 255, 0.22) inset;
+}
+
+.sheet-tabs-row .sheet-tabs--left .tab-btn:active {
+  color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #050506 58%);
+  background: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)) 38%, #fff 62%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, #fff 70%, var(--song-genre-color, hsl(330, 20%, 56%)) 30%) inset,
+    1px 0 0 rgba(255, 255, 255, 0.22) inset;
+}
+
+/* Poster display name — gold accent tab, black type */
+a.tab-btn.tab-btn--poster {
+  text-decoration: none;
+  color: #0a0a0a;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, color-mix(in oklab, var(--accent, #c4a574) 88%, #fff 12%) 86%, transparent 14%) 0%,
+    color-mix(in oklab, var(--accent, #c4a574) 86%, transparent 14%) 42%,
+    color-mix(in oklab, color-mix(in oklab, var(--accent, #c4a574) 82%, #000 18%) 86%, transparent 14%) 100%
+  );
+  border: 1px solid color-mix(in oklab, color-mix(in oklab, var(--accent, #c4a574) 65%, #1a1408 35%) 72%, transparent 28%);
+  border-bottom: none;
+  box-shadow:
+    0 1px 0 rgba(255, 250, 235, 0.38) inset,
+    1px 0 0 rgba(255, 255, 255, 0.16) inset;
+  max-width: min(48vw, 14rem);
+  padding: 0.48rem 0.82rem 0.58rem;
+  border-radius: 9px 9px 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Same recipe as streaming chips but richer gold on hover (less wash-out than 38%/62%) */
+a.tab-btn.tab-btn--poster:hover {
+  border-color: color-mix(in oklab, var(--accent, #c4a574), #0f0c08 32%);
+  color: #050506;
+  background: color-mix(in oklab, var(--accent, #c4a574) 52%, #f2ebe0 48%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, #fff 52%, var(--accent, #c4a574) 48%) inset,
+    1px 0 0 rgba(255, 255, 255, 0.12) inset;
+}
+
+a.tab-btn.tab-btn--poster:active {
+  border-color: color-mix(in oklab, var(--accent, #c4a574), #0f0c08 32%);
+  color: #050506;
+  background: color-mix(in oklab, var(--accent, #c4a574) 52%, #f2ebe0 48%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, #fff 52%, var(--accent, #c4a574) 48%) inset,
+    1px 0 0 rgba(255, 255, 255, 0.12) inset;
+}
+
+/* Default manila tabs (elsewhere); song sheet row uses more specific :hover above */
+.tab-btn:hover:not(.tab-btn--poster) {
   background: linear-gradient(180deg, #f2ebe2 0%, #e0d5c8 100%);
   color: #221c15;
 }
 
-.tab-btn:active {
+.tab-btn:active:not(.tab-btn--poster) {
   background: linear-gradient(180deg, #dcd3c6 0%, #cec4b6 100%);
 }
 
@@ -543,22 +669,58 @@
   color: #2c2824;
 }
 
+/* Song sheet header: title → byline → poster credit */
+.detail-song-head {
+  margin: 0 0 0.15rem;
+}
+
 .detail-song-title {
+  margin: 0 0 0.2rem;
   font-family: var(--font-roboto);
   font-size: clamp(1.35rem, 3.6vw, 1.7rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  line-height: 1;
+  line-height: 1.12;
   font-style: normal;
   color: #0f0f0f;
 }
 
 .detail-song-artist {
-  margin: 0.35rem 0 0.5rem;
+  margin: 0 0 0.35rem;
   font-family: var(--font-roboto);
   font-size: clamp(0.88rem, 1.9vw, 0.95rem);
+  line-height: 1.35;
+}
+
+.detail-song-byline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.22rem;
   font-weight: 500;
-  color: #5b4dc9;
+}
+
+/* Recording artist — gold accent like publisher name on posts (not board genre hue). */
+.detail-song-byline .detail-song-artist-name {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent, #c4a574);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.detail-song-byline .detail-song-artist-name:hover {
+  color: color-mix(in oklab, var(--accent, #c4a574) 78%, var(--cream, #f6f3ea) 22%);
+  text-decoration: none;
+}
+
+.detail-song-byline .detail-song-published {
+  font-size: 0.68em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-style: normal;
+  color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), black 14%);
 }
 
 .detail-meta-line {
@@ -570,44 +732,96 @@
   color: #7a7268;
 }
 
+/* Meaning sheet: poster (gold link) → posted date (same treatment as song “Published” line) */
+.detail-meaning-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.22rem;
+  margin: 0 0 0.65rem;
+}
+
+.detail-meaning-poster {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.detail-meaning-posted {
+  margin: 0;
+  font-family: var(--font-roboto);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-style: normal;
+  color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), black 14%);
+}
+
 .detail-author-link {
-  color: #5a4b92;
+  color: var(--accent, #c4a574);
   text-decoration: none;
-  border-bottom: 1px dotted rgba(90, 75, 146, 0.45);
+  border-bottom: none;
+  text-transform: none;
 }
 
 .detail-author-link:hover {
-  color: #3f2f7f;
-  border-bottom-color: rgba(63, 47, 127, 0.75);
+  color: #e2d2a8;
+}
+
+.detail-song-genre-tags {
+  margin: 0.45rem 0 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.45;
+  color: rgba(44, 40, 36, 0.55);
+}
+
+.detail-song-genre-tags .detail-song-genre-chip {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.detail-song-genre-tags .detail-song-genre-chip:hover {
+  text-decoration: none;
+  color: color-mix(in oklab, currentColor 72%, #fff 28%);
+}
+
+.detail-song-genre-tags .detail-song-genre-chip--fallback {
+  color: color-mix(in oklab, var(--accent, #c4a574) 88%, #2c2824 12%);
 }
 
 .detail-song-links {
-  margin: 0 0 0.7rem;
+  margin: 0.55rem 0 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.3rem;
 }
 
 .detail-song-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.24rem 0.6rem;
+  padding: 0.14rem 0.42rem;
   border-radius: 999px;
-  border: 1px solid rgba(45, 40, 35, 0.2);
-  background: rgba(255, 255, 255, 0.62);
-  color: #2f2a25;
+  border: 1px solid color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #1c1812 38%);
+  background: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)) 26%, #fff 74%);
+  color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #0a0a0a 52%);
   text-decoration: none;
-  font-size: 0.66rem;
+  font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .detail-song-link:hover {
-  border-color: rgba(196, 165, 116, 0.65);
-  color: #1e1a16;
-  background: rgba(255, 255, 255, 0.82);
+  border-color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #0f0c08 28%);
+  color: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)), #050506 58%);
+  background: color-mix(in oklab, var(--song-genre-color, hsl(330, 20%, 56%)) 38%, #fff 62%);
 }
 
 .detail-lyrics-wrap {
@@ -621,8 +835,8 @@
 
 .detail-lyrics-scroll {
   flex: 1 1 auto;
-  min-height: min(9rem, 22vh);
-  min-height: min(9rem, 22dvh);
+  min-height: min(11.25rem, 28vh);
+  min-height: min(11.25rem, 28dvh);
   max-height: none;
   overflow: auto;
   border-radius: 3px;
@@ -642,9 +856,9 @@
   margin: 0;
   padding: clamp(0.65rem, 2.5%, 1.1rem) clamp(0.35rem, 1.5%, 0.75rem) clamp(0.85rem, 3%, 1.35rem);
   font-family: var(--font-roboto);
-  font-size: clamp(0.86rem, 1.7vw, 0.9rem);
+  font-size: clamp(0.72rem, 1.45vw, 0.8rem);
   font-weight: 400;
-  line-height: 1.45;
+  line-height: 1.42;
   letter-spacing: 0.01em;
   color: #1a1a1a;
   text-align: left;
@@ -681,6 +895,7 @@
 .detail-lyrics-page .lyric-hl {
   border-radius: 2px;
   padding: 0 0.06em;
+  background: rgba(255, 214, 120, 0.42);
 }
 
 .detail-lyrics-page .lyric-hl--amber {
@@ -713,7 +928,7 @@
   width: clamp(2.75rem, 18vw, 5rem);
   max-width: 38%;
   padding: 0.45rem 0.5rem;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   line-height: 1.35;
   color: #2c2824;
   background: linear-gradient(145deg, #fffef6 0%, #f5ebc8 100%);
@@ -808,4 +1023,22 @@
     margin-bottom: max(2.5rem, env(safe-area-inset-bottom, 0px));
     padding-bottom: max(2rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
   }
+}
+
+/*
+ * Song sheet (song.html): hide scrollbars while keeping overflow scroll.
+ * theme.css styles *::-webkit-scrollbar (gold pill); this page reads cleaner without it.
+ */
+body.song-page .subpage-inner,
+body.song-page .sheet-body,
+body.song-page .detail-lyrics-scroll,
+body.song-page .page-comments__feed-inner {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.song-page *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }

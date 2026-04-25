@@ -633,6 +633,7 @@
     var $songLine = $(".js-lyrics-search-song-line");
     var $count = $(".js-lyrics-search-count");
     var $ul = $(".js-lyrics-search-posts").empty();
+    var genrePaletteTotal = (window.SONG_SHARE_GENRES || []).length;
 
     if (profileOnly) {
       $songLine.text('Profile: "' + profile + '"');
@@ -669,11 +670,38 @@
         window.SongSharePublished.resolvePostBoardLocation &&
         window.SongSharePublished.resolvePostBoardLocation(p.id);
       var who = p.displayName || p.meaningAuthor || "Member";
+      var recordingArtist = String(p.artist || "").trim();
+      var whoKey = String(who || "")
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+      var artistKey = recordingArtist
+        ? recordingArtist
+            .toLowerCase()
+            .normalize("NFKD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim()
+        : "";
+      var showArtistLink = recordingArtist && artistKey !== whoKey;
       var trackLine =
         p.albumTitle && String(p.albumTitle).trim()
           ? String(p.albumTitle).trim() + " — " + String(p.title || "").trim()
           : String(p.title || "").trim() || "Untitled";
       var $li = $("<li/>").addClass("lyrics-search-post-item");
+      var postHref = "";
+      if (loc) {
+        postHref =
+          "song.html?id=" +
+          encodeURIComponent(String(loc.genreId)) +
+          "&track=" +
+          encodeURIComponent(String(loc.trackIdx));
+        $li
+          .addClass("lyrics-search-post-item--clickable")
+          .attr("data-post-href", postHref)
+          .attr("tabindex", "0")
+          .attr("aria-label", "Open song: " + trackLine);
+      }
       var $row = $("<div/>").addClass("lyrics-search-post-row");
       var $track = $("<span/>").addClass("lyrics-search-post-track");
       $track.text(trackLine);
@@ -683,31 +711,76 @@
         window.SongSharePublished && typeof window.SongSharePublished.userProfileHref === "function"
           ? window.SongSharePublished.userProfileHref(p.userId, who)
           : "user.html?name=" + encodeURIComponent(String(who || "").trim());
-      $meta
-        .text("By ")
-        .append(
+      $meta.text("By ").append(
+        $("<a/>", {
+          class: "lyrics-search-post-profile-link",
+          href: profileHref,
+          text: who,
+        })
+      );
+      if (showArtistLink) {
+        var artistHref =
+          window.SongSharePublished && typeof window.SongSharePublished.artistProfileHref === "function"
+            ? window.SongSharePublished.artistProfileHref(recordingArtist)
+            : "artist.html?name=" + encodeURIComponent(recordingArtist);
+        $meta.append(document.createTextNode(" · ")).append(
           $("<a/>", {
-            class: "lyrics-search-post-profile-link",
-            href: profileHref,
-            text: who,
-          })
-        )
-        .append(document.createTextNode(loc ? " · " + loc.genreName : ""));
-      $bottom.append($meta);
-      if (loc) {
-        var href =
-          "song.html?id=" +
-          encodeURIComponent(String(loc.genreId)) +
-          "&track=" +
-          encodeURIComponent(String(loc.trackIdx));
-        $bottom.append(
-          $("<a/>", {
-            class: "lyrics-search-post-link",
-            href: href,
-            text: "View post",
+            class: "lyrics-search-post-artist-link",
+            href: artistHref,
+            text: recordingArtist,
           })
         );
-      } else {
+      } else if (recordingArtist) {
+        $meta.append(document.createTextNode(" · " + recordingArtist));
+      }
+      if (loc && loc.genreName) {
+        $meta.append(document.createTextNode(" · "));
+        var gHsl =
+          SP && typeof SP.genreBoardHslByIndex === "function"
+            ? SP.genreBoardHslByIndex(loc.genreId, genrePaletteTotal)
+            : "";
+        var crateHref = "crate.html?genre=" + encodeURIComponent(String(loc.genreId));
+        var $gLink = $("<a/>", {
+          class: "lyrics-search-post-genre",
+          href: crateHref,
+          text: loc.genreName,
+          title: "Open " + loc.genreName + " crate",
+        });
+        if (gHsl) {
+          $gLink.css("color", gHsl);
+        }
+        $meta.append($gLink);
+      }
+      var allGenresName =
+        SP && SP.ALL_GENRES_SLOT_NAME ? String(SP.ALL_GENRES_SLOT_NAME) : "All genres";
+      var boardGn = loc && loc.genreName ? String(loc.genreName).trim() : "";
+      if (boardGn !== allGenresName) {
+        var genresList = window.SONG_SHARE_GENRES || [];
+        var allGenresIdx = 1;
+        for (var agi = 0; agi < genresList.length; agi++) {
+          if (genresList[agi] && String(genresList[agi].name || "").trim() === allGenresName) {
+            allGenresIdx = agi + 1;
+            break;
+          }
+        }
+        var allHsl =
+          SP && typeof SP.genreBoardHslByName === "function"
+            ? SP.genreBoardHslByName(allGenresName)
+            : "";
+        $meta.append(document.createTextNode(" · "));
+        var $allGenresLink = $("<a/>", {
+          class: "lyrics-search-post-genre",
+          href: "crate.html?genre=" + encodeURIComponent(String(allGenresIdx)),
+          text: allGenresName,
+          title: "Open " + allGenresName + " crate",
+        });
+        if (allHsl) {
+          $allGenresLink.css("color", allHsl);
+        }
+        $meta.append($allGenresLink);
+      }
+      $bottom.append($meta);
+      if (!loc) {
         $bottom.append(
           $("<span/>", {
             class: "lyrics-search-post-unavail",
@@ -761,6 +834,23 @@
       e.preventDefault();
       runLyricsCommunitySearch();
     });
+
+    var $lyricsPanel = $("#lyrics-search-panel");
+    if ($lyricsPanel.length && !$lyricsPanel.data("noteionLyricsResultNavBound")) {
+      $lyricsPanel.data("noteionLyricsResultNavBound", true);
+      $lyricsPanel.on("click", ".lyrics-search-post-item--clickable", function (e) {
+        if ($(e.target).closest("a").length) return;
+        var href = $(this).attr("data-post-href");
+        if (href) window.location.href = href;
+      });
+      $lyricsPanel.on("keydown", ".lyrics-search-post-item--clickable", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        if ($(e.target).closest("a").length) return;
+        e.preventDefault();
+        var href = $(this).attr("data-post-href");
+        if (href) window.location.href = href;
+      });
+    }
   }
 
   function maybeOpenLyricsSearchFromUrl() {

@@ -31,15 +31,6 @@
     max(1rem, env(safe-area-inset-left));
 }
 
-.user-kicker {
-  margin: 0;
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(250, 248, 240, 0.45);
-}
-
 .user-name {
   margin: 0.25rem 0 0.4rem;
   font-size: clamp(1.25rem, 2.6vw, 1.6rem);
@@ -112,5 +103,13 @@
 }
 
 .user-post-line--accent {
+  color: rgba(196, 165, 116, 0.9);
+}
+
+.user-post-line--genre-tags .user-post-genre-chip {
+  font-weight: 600;
+}
+
+.user-post-line--genre-tags .user-post-genre-chip--fallback {
   color: rgba(196, 165, 116, 0.9);
 }

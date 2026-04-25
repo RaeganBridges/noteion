@@ -6,22 +6,6 @@
     return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
   }
 
-  function escapeHtml(str) {
-    return String(str || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function normalize(str) {
-    return String(str || "")
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
   function fmtWhen(ts) {
     if (ts == null || ts === "") return "";
     try {
@@ -45,27 +29,26 @@
     );
   }
 
-  function render(posts, nameHint) {
-    var $name = $(".js-user-name");
-    var $meta = $(".js-user-meta");
-    var $list = $(".js-user-posts").empty();
+  function render(posts, artistHint) {
+    var $name = $(".js-artist-name");
+    var $meta = $(".js-artist-meta");
+    var $list = $(".js-artist-posts").empty();
 
-    var displayName = "";
-    if (posts.length) {
-      displayName = String(posts[0].displayName || "").trim();
+    var artistLabel = String(artistHint || "").trim();
+    if (!artistLabel && posts.length) {
+      artistLabel = String(posts[0].artist || "").trim();
     }
-    if (!displayName) displayName = String(nameHint || "").trim();
-    if (!displayName) displayName = "User";
+    if (!artistLabel) artistLabel = "Artist";
 
-    $name.text(displayName);
-    document.title = displayName + " — Profile — Cr8Dig";
+    $name.text(artistLabel);
+    document.title = artistLabel + " — Artist — Cr8Dig";
 
     if (!posts.length) {
-      $meta.text("No published songs found for this user yet.");
+      $meta.text("No published songs list this name as the track artist yet.");
       return;
     }
 
-    $meta.text(posts.length + " posted song" + (posts.length === 1 ? "" : "s"));
+    $meta.text(posts.length + " song" + (posts.length === 1 ? "" : "s") + " on Cr8Dig");
 
     posts.forEach(function (p) {
       if (!p || !p.id) return;
@@ -75,7 +58,6 @@
         : $('<article class="user-post" role="listitem" aria-disabled="true"></article>');
 
       var title = String(p.title || "Untitled");
-      var artist = String(p.artist || "").trim();
       var genreTags =
         window.SongSharePublished && typeof window.SongSharePublished.displayGenreTagsWithAllSlot === "function"
           ? window.SongSharePublished.displayGenreTagsWithAllSlot(p.genreTags, null)
@@ -84,10 +66,11 @@
             : [];
       var posted = fmtWhen(p.songPublishedAt || p.createdAt);
       var album = String(p.albumTitle || "").trim();
+      var who = String(p.displayName || "").trim();
 
       $item.append($("<h3/>", { class: "user-post-title", text: title }));
-      if (artist) {
-        $item.append($("<p/>", { class: "user-post-line", text: artist }));
+      if (who) {
+        $item.append($("<p/>", { class: "user-post-line", text: who }));
       }
       if (genreTags.length) {
         var $gLine = $("<p/>", { class: "user-post-line user-post-line--genre-tags" });
@@ -126,28 +109,42 @@
 
   $(function () {
     function start() {
-      var uid = String(qp("uid") || "").trim();
-      var name = String(qp("name") || "").trim();
-      if (!uid && !name) {
-        $(".js-user-name").text("User");
-        $(".js-user-meta").text("Open this page from a publisher name on a post.");
+      var name = String(qp("name") || qp("artist") || "").trim();
+      if (!name) {
+        $(".js-artist-name").text("Artist");
+        $(".js-artist-meta").text("Open this page from an artist name on a song, or add ?name=… to the URL.");
         return;
       }
 
       var posts = [];
-      if (window.SongSharePublished && typeof window.SongSharePublished.listPostsByUser === "function") {
-        posts = window.SongSharePublished.listPostsByUser(uid, name);
+      if (window.SongSharePublished && typeof window.SongSharePublished.listPostsByArtist === "function") {
+        posts = window.SongSharePublished.listPostsByArtist(name);
       } else if (window.SongSharePublished && typeof window.SongSharePublished.loadAll === "function") {
         var all = window.SongSharePublished.loadAll();
-        var normName = normalize(name);
-        posts = all.filter(function (p) {
-          if (!p) return false;
-          var pUid = String(p.userId || "").trim();
-          if (uid && pUid) return pUid === uid;
-          if (uid && !pUid) return false;
-          if (!normName) return false;
-          return normalize(p.displayName || "") === normName;
-        });
+        var key = String(name || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[\u2013\u2014\u2212]/g, "-")
+          .replace(/\s+/g, " ")
+          .trim();
+        posts = all
+          .filter(function (p) {
+            if (!p) return false;
+            var pa = String(p.artist || "")
+              .toLowerCase()
+              .normalize("NFKD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/[\u2013\u2014\u2212]/g, "-")
+              .replace(/\s+/g, " ")
+              .trim();
+            return pa === key;
+          })
+          .sort(function (a, b) {
+            var ta = a.songPublishedAt || a.createdAt || 0;
+            var tb = b.songPublishedAt || b.createdAt || 0;
+            return tb - ta;
+          });
       }
       render(posts, name);
     }

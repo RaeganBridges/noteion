@@ -46,6 +46,7 @@
       '<input id="auth-in-email" name="email" class="auth-input" type="text" autocomplete="username" spellcheck="false" required placeholder="you@example.com or username" /></div>' +
       '<div class="auth-field"><label class="auth-label" for="auth-in-pass">Password</label>' +
       '<input id="auth-in-pass" name="password" class="auth-input" type="password" autocomplete="current-password" spellcheck="false" required /></div>' +
+      '<p class="auth-forgot-wrap"><button type="button" class="auth-text-btn" id="auth-open-reset">Forgot password?</button></p>' +
       '<button type="submit" class="auth-submit">Sign in</button>' +
       '<p class="auth-msg" data-auth-msg-in aria-live="polite"></p>' +
       "</form>" +
@@ -59,6 +60,15 @@
       '<button type="submit" class="auth-submit">Create account</button>' +
       '<p class="auth-msg" data-auth-msg-up aria-live="polite"></p>' +
       "</form>" +
+      '<form id="auth-form-reset" class="auth-panel-form" hidden>' +
+      '<p class="auth-reset-lede">Reset password</p>' +
+      '<p class="auth-reset-hint">Enter the email on your account (or a username this browser already knows from sign-in). We’ll email you a link to choose a new password.</p>' +
+      '<div class="auth-field"><label class="auth-label" for="auth-reset-id">Email or username</label>' +
+      '<input id="auth-reset-id" name="identifier" class="auth-input" type="text" autocomplete="username" spellcheck="false" required placeholder="you@example.com or username" /></div>' +
+      '<button type="submit" class="auth-submit">Send reset link</button>' +
+      '<p class="auth-msg" data-auth-msg-reset aria-live="polite"></p>' +
+      '<p class="auth-reset-back-wrap"><button type="button" class="auth-text-btn" id="auth-reset-back">Back to sign in</button></p>' +
+      "</form>" +
       "</div>" +
       "</div>";
 
@@ -66,12 +76,20 @@
     return gate;
   }
 
-  function wireTabs(gate) {
+  function wireGate(gate) {
     var tabs = gate.querySelectorAll(".auth-tab");
+    var tabsRow = gate.querySelector(".auth-tabs");
     var signInForm = gate.querySelector("#auth-form-signin");
     var signUpForm = gate.querySelector("#auth-form-signup");
+    var resetForm = gate.querySelector("#auth-form-reset");
+    var msgIn = gate.querySelector("[data-auth-msg-in]");
+    var msgUp = gate.querySelector("[data-auth-msg-up]");
+    var msgReset = gate.querySelector("[data-auth-msg-reset]");
 
     function select(which) {
+      gate.classList.remove("auth-gate--reset");
+      if (tabsRow) tabsRow.hidden = false;
+      if (resetForm) resetForm.hidden = true;
       var isIn = which === "in";
       tabs[0].setAttribute("aria-selected", isIn ? "true" : "false");
       tabs[1].setAttribute("aria-selected", isIn ? "false" : "true");
@@ -79,15 +97,40 @@
       signUpForm.hidden = isIn;
     }
 
+    function showResetView() {
+      gate.classList.add("auth-gate--reset");
+      if (tabsRow) tabsRow.hidden = true;
+      signInForm.hidden = true;
+      signUpForm.hidden = true;
+      if (resetForm) {
+        resetForm.hidden = false;
+        showMsg(msgReset, "");
+        var first = resetForm.querySelector(".auth-input");
+        if (first) first.focus();
+      }
+    }
+
     tabs[0].addEventListener("click", function () { select("in"); });
     tabs[1].addEventListener("click", function () { select("up"); });
-  }
 
-  function wireForms(gate) {
-    var msgIn = gate.querySelector("[data-auth-msg-in]");
-    var msgUp = gate.querySelector("[data-auth-msg-up]");
+    var openReset = gate.querySelector("#auth-open-reset");
+    if (openReset) {
+      openReset.addEventListener("click", function () {
+        showMsg(msgIn, "");
+        showResetView();
+      });
+    }
+    var backReset = gate.querySelector("#auth-reset-back");
+    if (backReset) {
+      backReset.addEventListener("click", function () {
+        showMsg(msgReset, "");
+        select("in");
+        var fe = signInForm.querySelector(".auth-input");
+        if (fe) fe.focus();
+      });
+    }
 
-    gate.querySelector("#auth-form-signin").addEventListener("submit", function (e) {
+    signInForm.addEventListener("submit", function (e) {
       e.preventDefault();
       showMsg(msgIn, "");
       var fd = new FormData(e.target);
@@ -99,7 +142,7 @@
       });
     });
 
-    gate.querySelector("#auth-form-signup").addEventListener("submit", function (e) {
+    signUpForm.addEventListener("submit", function (e) {
       e.preventDefault();
       showMsg(msgUp, "");
       var fd = new FormData(e.target);
@@ -115,6 +158,22 @@
         else closeGate(gate);
       });
     });
+
+    if (resetForm) {
+      resetForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        showMsg(msgReset, "");
+        var fd = new FormData(e.target);
+        var id = String(fd.get("identifier") || "");
+        var fn = window.SongShareAuth.resetPasswordForEmail;
+        Promise.resolve(typeof fn === "function" ? fn.call(window.SongShareAuth, id) : { error: "Reset is not available." }).then(
+          function (res) {
+            if (res.error) showMsg(msgReset, res.error);
+            else if (res.message) showMsg(msgReset, res.message);
+          }
+        );
+      });
+    }
   }
 
   function run() {
@@ -126,8 +185,7 @@
       var gate = document.getElementById("songshare-auth-gate");
       if (!gate) gate = buildGate();
       if (!gate.dataset.ssWired) {
-        wireTabs(gate);
-        wireForms(gate);
+        wireGate(gate);
         gate.dataset.ssWired = "1";
       }
       openGate(gate);

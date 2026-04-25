@@ -6,6 +6,30 @@ html.crate-page-root {
   --crate-genre-overlay: hsl(36, 20%, 56%);
 }
 
+/* Same layered wash as `.crate-stage-wrap` so the fixed shell header reads
+   as one surface with the 3D stage — no flat black band above the genre tint. */
+html.crate-page-root .page-header {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background:
+    radial-gradient(
+      ellipse 115% 85% at 50% 18%,
+      color-mix(in oklab, var(--crate-genre-overlay) 14%, transparent) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 65% 50% at 95% 55%,
+      color-mix(in oklab, var(--crate-genre-overlay) 9%, transparent) 0%,
+      transparent 48%
+    ),
+    linear-gradient(
+      188deg,
+      color-mix(in oklab, var(--crate-genre-overlay) 10%, #0a0a0c) 0%,
+      #08090a 42%,
+      color-mix(in oklab, var(--crate-genre-overlay) 7%, #070708) 100%
+    );
+}
+
 /* The crate page no longer has the New Song / New Album pill in the
    header (it was moved into the filter bar), so the header is shorter
    on mobile than the global default. Trim the offset so the filter bar
@@ -137,7 +161,8 @@ body.crate-page {
   gap: 0.65rem 0.3rem;
   padding: 0.65rem 0.85rem 0.5rem;
   border-bottom: none;
-  background: rgba(8, 8, 10, 0.35);
+  /* Transparent: parent `.crate-stage-wrap` already paints the stage gradient. */
+  background: transparent;
 }
 
 /* The crate page renders TWO copies of the New Song / New Album pill —
@@ -286,7 +311,8 @@ body.crate-page {
   margin: 0;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  /* Artist + @poster — preserve typed casing (no all-caps). */
+  text-transform: none;
   color: rgba(250, 248, 240, 0.7);
   white-space: nowrap;
   overflow: hidden;
@@ -709,6 +735,104 @@ body.crate-page {
   pointer-events: none !important;
   visibility: hidden;
   transition: opacity 0.4s ease;
+}
+
+/* Mobile-only horizontal bar pinned to the bottom of the crate stage.
+   Drag the thumb to pan the camera (not record selection). Track width
+   scales with crate count but never exceeds the screen. Hidden on
+   desktop where the filter-bar prev/next is already visible. */
+.crate-page-root .crate-mobile-scrollbar {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .crate-page-root .crate-mobile-scrollbar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    bottom: 0.85rem;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 0.55rem 1.1rem;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab;
+  }
+
+  .crate-page-root .crate-mobile-scrollbar:active {
+    cursor: grabbing;
+  }
+
+  /* One crate fits on screen — no camera-pan bar (see crate-page.js). */
+  .crate-page-root .crate-mobile-scrollbar.crate-mobile-scrollbar--hidden {
+    display: none !important;
+  }
+
+  /* Cratedigger adds #bottom-bar.closed while the record detail sheet is open
+     (title / artist / cover). Hide the pan bar so it doesn’t stack above #cratedigger-info. */
+  .crate-page-root .crate-stage-wrap:has(#bottom-bar.closed) .crate-mobile-scrollbar {
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .crate-page-root .crate-mobile-scrollbar-track {
+    position: relative;
+    flex: 1 1 auto;
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: rgba(250, 248, 240, 0.14);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+    touch-action: none;
+  }
+
+  .crate-page-root .crate-mobile-scrollbar-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    touch-action: none;
+    width: 28%;
+    min-width: 2.4rem;
+    max-width: 60%;
+    height: 1.05rem;
+    border-radius: 999px;
+    background: color-mix(
+      in oklab,
+      var(--crate-genre-overlay, rgba(196, 165, 116, 0.95)) 70%,
+      rgba(250, 248, 240, 0.95)
+    );
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transform: translate(0, -50%);
+    transition: background 0.18s ease;
+    will-change: transform;
+  }
+
+  .crate-page-root .crate-mobile-scrollbar.is-dragging .crate-mobile-scrollbar-thumb,
+  .crate-page-root .crate-mobile-scrollbar:focus-visible .crate-mobile-scrollbar-thumb {
+    background: color-mix(
+      in oklab,
+      var(--crate-genre-overlay, rgba(220, 195, 150, 1)) 85%,
+      rgba(255, 255, 255, 1)
+    );
+  }
+
+  .crate-page-root .crate-mobile-scrollbar:focus-visible {
+    outline: none;
+  }
 }
 
 /* Genre subtitle next to logo (same idea as song page) */

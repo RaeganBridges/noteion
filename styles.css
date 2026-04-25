@@ -99,6 +99,11 @@ summary {
     pointer !important;
 }
 
+/* No hover underline on anchors; components use color / chips instead */
+a:hover {
+  text-decoration: none;
+}
+
 /* Gold-accent scrollbar (WebKit / Blink: Safari, Chrome, Edge). */
 *::-webkit-scrollbar {
   width: 10px;
@@ -1131,8 +1136,9 @@ body.is-popup-open {
 }
 
 .sns-chip:hover {
-  color: var(--cream);
-  border-color: var(--line);
+  color: var(--accent, #c4a574);
+  text-decoration: none;
+  border-bottom-color: transparent;
 }
 
 /* —— Setlist popup —— */
@@ -1461,6 +1467,23 @@ body.is-popup-open {
   border-bottom: none;
 }
 
+.lyrics-search-post-item--clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  margin: 0 -0.35rem;
+  padding: 0.2rem 0.35rem;
+  transition: background 0.15s ease;
+}
+
+.lyrics-search-post-item--clickable:hover {
+  background: rgba(250, 248, 240, 0.06);
+}
+
+.lyrics-search-post-item--clickable:focus-visible {
+  outline: 2px solid var(--accent, #c4a574);
+  outline-offset: 2px;
+}
+
 .lyrics-search-post-row {
   display: flex;
   flex-direction: column;
@@ -1481,7 +1504,7 @@ body.is-popup-open {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.5rem 0.75rem;
 }
 
@@ -1492,31 +1515,42 @@ body.is-popup-open {
   min-width: 0;
 }
 
-.lyrics-search-post-profile-link {
-  color: inherit;
+.lyrics-search-post-genre {
+  font-weight: 600;
   text-decoration: none;
-  border-bottom: 1px dotted rgba(250, 248, 240, 0.5);
+  cursor: pointer;
+}
+
+.lyrics-search-post-genre:hover {
+  text-decoration: none;
+  color: rgba(250, 248, 240, 1);
+}
+
+/* Publisher display name — accent gold, no underline */
+.lyrics-search-post-profile-link {
+  color: var(--accent, #c4a574);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: none;
+  text-transform: none;
 }
 
 .lyrics-search-post-profile-link:hover {
-  color: var(--cream);
-  border-bottom-color: rgba(250, 248, 240, 0.9);
-}
-
-.lyrics-search-post-link {
-  flex-shrink: 0;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
+  color: color-mix(in oklab, var(--accent, #c4a574) 78%, var(--cream, #f6f3ea) 22%);
   text-decoration: none;
-  text-underline-offset: 2px;
 }
 
-.lyrics-search-post-link:hover {
-  text-decoration: underline;
+.lyrics-search-post-artist-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: none;
+  text-transform: none;
+}
+
+.lyrics-search-post-artist-link:hover {
   color: var(--cream);
+  text-decoration: none;
 }
 
 .lyrics-search-post-unavail {
@@ -1584,6 +1618,14 @@ body.is-popup-open {
   :root {
     --album-gap-col: clamp(1.35rem, 4.2vmin, 3rem);
     --album-gap-row: clamp(1.35rem, 3.8vmin, 2.6rem);
+  }
+
+  /* Center the streaming-app chips (Spotify · Apple Music · YouTube) in
+     the footer on mobile so they read as a centered row instead of
+     hugging the left safe-area inset. */
+  .footer-sns {
+    justify-content: center;
+    text-align: center;
   }
 }
 

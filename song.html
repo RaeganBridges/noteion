@@ -61,10 +61,15 @@
                 <div class="detail-panels">
                   <div class="detail-column detail-column--song">
                     <div class="sheet-stack">
-                      <div class="sheet-tabs sheet-tabs--left" role="toolbar" aria-label="Song navigation and close">
-                        <button type="button" class="tab-btn tab-btn--prev js-prev" aria-label="Previous song">&lt;</button>
-                        <button type="button" class="tab-btn tab-btn--next js-next" aria-label="Next song">&gt;</button>
-                        <button type="button" class="tab-btn tab-btn--close js-close" aria-label="Back to board">×</button>
+                      <div class="sheet-tabs-row">
+                        <div class="sheet-tabs sheet-tabs--left" role="toolbar" aria-label="Song navigation and close">
+                          <button type="button" class="tab-btn tab-btn--prev js-prev" aria-label="Previous song">&lt;</button>
+                          <button type="button" class="tab-btn tab-btn--next js-next" aria-label="Next song">&gt;</button>
+                          <button type="button" class="tab-btn tab-btn--close js-close" aria-label="Back to board">×</button>
+                        </div>
+                        <div class="sheet-tabs sheet-tabs--right" aria-label="Post author">
+                          <a class="tab-btn tab-btn--poster js-poster-tab" href="#" hidden></a>
+                        </div>
                       </div>
                       <div class="sheet-turn sheet-turn--song">
                         <section
@@ -74,10 +79,10 @@
                           <div class="sheet-lines" aria-hidden="true"></div>
                           <div class="sheet-body sheet-body--song">
                             <h2 id="song-heading" class="detail-panel-heading sr-only">Song sheet</h2>
-                            <p class="detail-panel-body detail-song-title js-song-title">—</p>
-                            <p class="detail-song-artist js-song-artist" hidden></p>
-                            <p class="detail-meta-line detail-annotation-meta js-annotation-meta" hidden></p>
-                            <div class="detail-song-links js-song-links" hidden></div>
+                            <header class="detail-song-head">
+                              <p class="detail-panel-body detail-song-title js-song-title">—</p>
+                              <p class="detail-song-artist js-song-artist" hidden></p>
+                            </header>
                             <div class="detail-lyrics-wrap js-song-lyrics-wrap" hidden>
                               <div class="detail-lyrics-scroll">
                                 <div class="detail-lyrics-scroll-inner">
@@ -86,6 +91,8 @@
                                 </div>
                               </div>
                             </div>
+                            <div class="detail-song-links js-song-links" hidden></div>
+                            <div class="detail-song-genre-tags js-song-genre-tags" hidden aria-label="Genres"></div>
                           </div>
                         </section>
                       </div>
@@ -102,8 +109,11 @@
                           >
                             <div class="sheet-lines" aria-hidden="true"></div>
                             <div class="sheet-body sheet-body--meaning">
-                              <h2 id="meaning-heading" class="detail-panel-heading">Meaning</h2>
-                              <p class="detail-meta-line detail-meaning-meta js-meaning-meta" hidden></p>
+                              <h2 id="meaning-heading" class="detail-panel-heading sr-only">Meaning</h2>
+                              <div class="detail-meaning-head js-meaning-head" hidden>
+                                <p class="detail-meaning-poster js-meaning-poster-line" hidden></p>
+                                <time class="detail-meaning-posted js-meaning-posted" hidden></time>
+                              </div>
                               <div class="detail-panel-body detail-meaning js-meaning" aria-live="polite">—</div>
                             </div>
                           </section>

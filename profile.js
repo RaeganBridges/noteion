@@ -811,7 +811,9 @@
         var title = String((tr && tr.title) || "").trim();
         var artist = String((tr && (tr.artist || item.albumArtist)) || "").trim();
         if (!title) return;
-        if (!shouldBackfillReleaseDate(tr.songPublishedAt, item.createdAt, !!force)) return;
+        /* Album tracks: only backfill when the date is missing — do not compare to album createdAt. */
+        if (!force && tr.songPublishedAt != null && tr.songPublishedAt !== "") return;
+        if (force && !shouldBackfillReleaseDate(tr.songPublishedAt, item.createdAt, true)) return;
 
         chain = chain.then(function () {
           return fetchItunesSongMeta(artist, title).then(function (meta) {
@@ -914,6 +916,60 @@
   function syncAlbumHlSeqFromDom() {
     var ed = document.getElementById("album-lyrics-ed");
     ensureHlSeq(ed, albumHlSeqRef);
+  }
+
+  /**
+   * Wrap the current selection in a highlight span, or retint if the selection
+   * exactly matches an existing highlight. Uses a cloned Range so toolbar
+   * handlers can still run after focus moves.
+   */
+  function wrapLyricsHighlightInEditor(editorId, classSuffix, seqRef) {
+    var el = document.getElementById(editorId);
+    if (!el) return;
+    el.focus();
+    var sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) return;
+    var range = sel.getRangeAt(0).cloneRange();
+    if (!el.contains(range.commonAncestorContainer)) return;
+
+    var ca = range.commonAncestorContainer;
+    var host = null;
+    if (ca.nodeType === Node.ELEMENT_NODE) {
+      if (ca.classList && ca.classList.contains("lyric-hl")) {
+        host = ca;
+      } else if (typeof ca.closest === "function") {
+        host = ca.closest(".lyric-hl");
+      }
+    } else if (ca.nodeType === Node.TEXT_NODE && ca.parentElement && typeof ca.parentElement.closest === "function") {
+      host = ca.parentElement.closest(".lyric-hl");
+    }
+    if (host && el.contains(host)) {
+      var inner = document.createRange();
+      inner.selectNodeContents(host);
+      if (
+        range.compareBoundaryPoints(Range.START_TO_START, inner) === 0 &&
+        range.compareBoundaryPoints(Range.END_TO_END, inner) === 0
+      ) {
+        host.className = "lyric-hl " + classSuffix;
+        seqRef.n += 1;
+        host.setAttribute("data-noteion-hl-seq", String(seqRef.n));
+        sel.removeAllRanges();
+        return;
+      }
+    }
+
+    var span = document.createElement("span");
+    span.className = "lyric-hl " + classSuffix;
+    try {
+      range.surroundContents(span);
+    } catch (err) {
+      var frag = range.extractContents();
+      span.appendChild(frag);
+      range.insertNode(span);
+    }
+    seqRef.n += 1;
+    span.setAttribute("data-noteion-hl-seq", String(seqRef.n));
+    sel.removeAllRanges();
   }
 
   function getHlIndexForMostRecentHighlight(ed) {
@@ -1239,25 +1295,7 @@
   }
 
   function wrapAlbumHl(classSuffix) {
-    var el = document.getElementById("album-lyrics-ed");
-    if (!el) return;
-    el.focus();
-    var sel = window.getSelection();
-    if (!sel.rangeCount || sel.isCollapsed) return;
-    var range = sel.getRangeAt(0);
-    if (!el.contains(range.commonAncestorContainer)) return;
-    var span = document.createElement("span");
-    span.className = "lyric-hl " + classSuffix;
-    try {
-      range.surroundContents(span);
-    } catch (err) {
-      var frag = range.extractContents();
-      span.appendChild(frag);
-      range.insertNode(span);
-    }
-    albumHlSeqRef.n += 1;
-    span.setAttribute("data-noteion-hl-seq", String(albumHlSeqRef.n));
-    sel.removeAllRanges();
+    wrapLyricsHighlightInEditor("album-lyrics-ed", classSuffix, albumHlSeqRef);
   }
 
   function clearAlbumHighlights() {
@@ -1420,8 +1458,10 @@
       if (typeof coverUse !== "string") coverUse = "";
       if (coverUse.length > MAX_SONG_COVER_DATA_URL_CHARS) coverUse = "";
 
+      var publishedAll = window.SongSharePublished.loadAll();
+      var deskTracksForSave = [];
       albumState.tracks.forEach(function (tr, i) {
-        var existing = window.SongSharePublished.loadAll().find(function (p) {
+        var existing = publishedAll.find(function (p) {
           return p.id === tr.pubId;
         });
         var songPublishedAt = tr.songPublishedAt || (existing && existing.songPublishedAt ? existing.songPublishedAt : now);
@@ -1456,6 +1496,14 @@
           albumCoverDataUrl: coverUse,
         };
         window.SongSharePublished.upsert(entry);
+        var o = Object.assign({}, tr, { songPublishedAt: songPublishedAt });
+        var ta = String(o.artist || "").trim() || albumArtist;
+        o.streamLinks = mergeStreamLinks(
+          buildAutoStreamLinks(ta, o.title),
+          normalizeStreamLinks(o.streamLinks || {})
+        );
+        delete o.audioDataUrl;
+        deskTracksForSave.push(o);
       });
 
       var albumEntry = {
@@ -1464,16 +1512,7 @@
         albumTitle: albumTitle,
         albumArtist: albumArtist,
         albumCoverDataUrl: coverUse,
-        tracks: albumState.tracks.map(function (t) {
-          var o = Object.assign({}, t);
-          var ta = String(o.artist || "").trim() || albumArtist;
-          o.streamLinks = mergeStreamLinks(
-            buildAutoStreamLinks(ta, o.title),
-            normalizeStreamLinks(o.streamLinks || {})
-          );
-          delete o.audioDataUrl;
-          return o;
-        }),
+        tracks: deskTracksForSave,
         createdAt: editingAlbumPubId
           ? (function () {
               var prev = window.SongShareUploads.list(session.userId).find(function (x) {
@@ -1541,38 +1580,110 @@
       .join("");
   }
 
-  function buildDeskLyricsHtml(html) {
-    var d = document.createElement("div");
-    d.innerHTML = String(html || "").trim();
-    d.querySelectorAll("br").forEach(function (br) {
-      br.replaceWith("\n");
+  function isLyricHlClassToken(c) {
+    if (c === "lyric-hl") return true;
+    return HL_COLOR_NAMES.some(function (k) {
+      return c === "lyric-hl--" + k;
     });
-    var paras = d.querySelectorAll("p");
-    var text;
-    if (paras.length) {
-      text = Array.prototype.slice
-        .call(paras)
-        .map(function (p) {
-          return (p.textContent || "").trim();
-        })
-        .filter(Boolean)
-        .join("\n\n");
+  }
+
+  /** Inline HTML for desk preview: only text, br, and .lyric-hl spans (matches composer). */
+  function sanitizeDeskLyricsFragment(root) {
+    var html = "";
+    for (var i = 0; i < root.childNodes.length; i++) {
+      html += sanitizeDeskLyricsNode(root.childNodes[i]);
+    }
+    return html;
+  }
+
+  function sanitizeDeskLyricsNode(node) {
+    if (!node) return "";
+    if (node.nodeType === 3) {
+      return escapeHtml(node.nodeValue || "");
+    }
+    if (node.nodeType !== 1) return "";
+    var tag = node.tagName.toLowerCase();
+    if (tag === "br") return "<br>";
+    if (tag === "span") {
+      var cls = node.getAttribute("class") || "";
+      var parts = cls.trim().split(/\s+/).filter(Boolean);
+      var hl = parts.filter(isLyricHlClassToken);
+      if (hl.indexOf("lyric-hl") !== -1) {
+        var safeClass = hl.join(" ").replace(/"/g, "&quot;");
+        return '<span class="' + safeClass + '">' + sanitizeDeskLyricsFragment(node) + "</span>";
+      }
+    }
+    if (tag === "p" || tag === "div" || tag === "section") {
+      return sanitizeDeskLyricsFragment(node);
+    }
+    return escapeHtml(node.textContent || "");
+  }
+
+  function collectDeskParagraphElements(root) {
+    var list = [];
+    var c;
+    for (c = root.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 1 && c.tagName.toLowerCase() === "p") {
+        list.push(c);
+      }
+    }
+    if (list.length) return list;
+    if (root.children.length === 1) {
+      var only = root.children[0];
+      var t = only.tagName.toLowerCase();
+      if (t === "div" || t === "section") {
+        for (c = only.firstChild; c; c = c.nextSibling) {
+          if (c.nodeType === 1 && c.tagName.toLowerCase() === "p") {
+            list.push(c);
+          }
+        }
+      }
+    }
+    return list;
+  }
+
+  function buildDeskLyricsHtml(html) {
+    var rawIn = String(html || "").trim();
+    if (!rawIn) return "";
+
+    var d = document.createElement("div");
+    d.innerHTML = rawIn;
+
+    var pEls = collectDeskParagraphElements(d);
+    if (!pEls.length) {
+      var qp = d.getElementsByTagName("p");
+      if (qp.length) {
+        pEls = Array.prototype.slice.call(qp);
+      }
+    }
+    var blocks = [];
+
+    if (pEls.length) {
+      pEls.forEach(function (p) {
+        var inner = sanitizeDeskLyricsFragment(p);
+        if (!(p.textContent || "").trim()) return;
+        blocks.push('<p class="desk-card-stanza">' + inner + "</p>");
+      });
     } else {
-      text = (d.textContent || "").trim();
+      var inner = sanitizeDeskLyricsFragment(d);
+      var plainAll = (d.textContent || "").trim();
+      if (!plainAll) return "";
+      if (inner.replace(/<br\s*\/?>/gi, "").replace(/\s/g, "").length) {
+        blocks.push('<p class="desk-card-stanza">' + inner + "</p>");
+      } else {
+        if (window.SongShareLyrics && window.SongShareLyrics.normalizeLyricsPlainText) {
+          plainAll = window.SongShareLyrics.normalizeLyricsPlainText(plainAll);
+        }
+        if (!plainAll) return "";
+        plainAll.split(/\n\n+/).forEach(function (stanza) {
+          var t = stanza.trim();
+          if (!t) return;
+          blocks.push('<p class="desk-card-stanza">' + escapeHtml(t).replace(/\n/g, "<br>") + "</p>");
+        });
+      }
     }
-    if (window.SongShareLyrics && window.SongShareLyrics.normalizeLyricsPlainText) {
-      text = window.SongShareLyrics.normalizeLyricsPlainText(text);
-    }
-    if (!text) return "";
-    var stanzas = text.split(/\n\n+/);
-    return stanzas
-      .map(function (stanza) {
-        var t = stanza.trim();
-        if (!t) return "";
-        return '<p class="desk-card-stanza">' + escapeHtml(t).replace(/\n/g, "<br>") + "</p>";
-      })
-      .filter(Boolean)
-      .join("");
+
+    return blocks.length ? blocks.join("") : "";
   }
 
   function getComposerLyricsHtml() {
@@ -1771,25 +1882,7 @@
   }
 
   function wrapComposerHl(classSuffix) {
-    var el = document.getElementById("composer-lyrics-ed");
-    if (!el) return;
-    el.focus();
-    var sel = window.getSelection();
-    if (!sel.rangeCount || sel.isCollapsed) return;
-    var range = sel.getRangeAt(0);
-    if (!el.contains(range.commonAncestorContainer)) return;
-    var span = document.createElement("span");
-    span.className = "lyric-hl " + classSuffix;
-    try {
-      range.surroundContents(span);
-    } catch (err) {
-      var frag = range.extractContents();
-      span.appendChild(frag);
-      range.insertNode(span);
-    }
-    composerHlSeqRef.n += 1;
-    span.setAttribute("data-noteion-hl-seq", String(composerHlSeqRef.n));
-    sel.removeAllRanges();
+    wrapLyricsHighlightInEditor("composer-lyrics-ed", classSuffix, composerHlSeqRef);
   }
 
   function clearComposerHighlights() {
@@ -1894,6 +1987,187 @@
     }
   }
 
+  /** Same chip row as song sheet footer: board colors + automatic “All genres”. */
+  function appendDeskGenreTagsRow($container, genreTags) {
+    var SP = window.SongSharePublished;
+    var tags =
+      SP && typeof SP.displayGenreTagsWithAllSlot === "function"
+        ? SP.displayGenreTagsWithAllSlot(genreTags, null)
+        : Array.isArray(genreTags)
+          ? genreTags.filter(Boolean)
+          : [];
+    var genres = window.SONG_SHARE_GENRES || [];
+    tags.forEach(function (tag, i) {
+      if (i) {
+        $container.append(document.createTextNode(" \u00b7 "));
+      }
+      var t = String(tag != null ? tag : "").trim();
+      if (!t) return;
+      var hsl =
+        SP && typeof SP.genreBoardHslByName === "function" ? SP.genreBoardHslByName(t) : "";
+      var crateHref = "";
+      for (var j = 0; j < genres.length; j++) {
+        if (genres[j] && String(genres[j].name || "").trim() === t) {
+          crateHref = "crate.html?genre=" + encodeURIComponent(String(j + 1));
+          break;
+        }
+      }
+      var $node;
+      if (crateHref) {
+        $node = $("<a/>", {
+          class: "desk-card-genre-chip",
+          href: crateHref,
+          text: t,
+          title: "Open " + t + " crate",
+        });
+      } else {
+        $node = $("<span/>", { class: "desk-card-genre-chip", text: t });
+      }
+      if (hsl) {
+        $node.css("color", hsl);
+      } else {
+        $node.addClass("desk-card-genre-chip--fallback");
+      }
+      $container.append($node);
+    });
+  }
+
+  /** Use stored desk stickies, or fall back to published post data when the desk snapshot is older. */
+  function resolvedDeskStickyNotes(pubId, localNotes, publishedPostById) {
+    var loc = Array.isArray(localNotes) ? localNotes : [];
+    if (loc.length || !pubId || !publishedPostById) return loc;
+    var p = publishedPostById[pubId];
+    return p && Array.isArray(p.stickyNotes) ? p.stickyNotes : [];
+  }
+
+  function deskHasRenderableSticky(notes) {
+    if (!Array.isArray(notes) || !notes.length) return false;
+    return notes.some(function (n) {
+      if (!n || typeof n !== "object") return false;
+      return String(n.text != null ? n.text : "").trim().length > 0;
+    });
+  }
+
+  /**
+   * Lyrics + margin slips like the public song sheet (detail-lyrics-scroll-inner +
+   * song-stickies), not a footer “Annotations” list.
+   */
+  function mountDeskLyricsWithStickies($host, rawLyricsHtml, stickyNotes) {
+    if (!$host || !$host.length) return;
+    var notes = Array.isArray(stickyNotes) ? stickyNotes : [];
+    var lyricsBlock = buildDeskLyricsHtml(rawLyricsHtml || "");
+    if (!lyricsBlock.trim() && !deskHasRenderableSticky(notes)) return;
+
+    var $scroll = $('<div class="desk-lyrics-scroll" />');
+    var $inner = $('<div class="desk-lyrics-scroll-inner" />');
+    var $lyrics = $('<div class="desk-card-lyrics js-desk-lyrics" />').html(lyricsBlock);
+    var $stickies = $('<div class="song-stickies js-desk-stickies" aria-hidden="true" />');
+    $inner.append($lyrics, $stickies);
+    $scroll.append($inner);
+    $host.append($scroll);
+    renderDeskStickiesInInner($inner, notes);
+  }
+
+  function renderDeskStickiesInInner($inner, notes) {
+    var innerEl = $inner.get(0);
+    var $z = $inner.find(".js-desk-stickies").empty();
+    if (!notes || !notes.length) {
+      $z.attr("aria-hidden", "true");
+      return;
+    }
+    var any = false;
+    notes.forEach(function (n, i) {
+      if (!n || typeof n !== "object") return;
+      var body = String(n.text != null ? n.text : "").trim();
+      if (!body) return;
+      any = true;
+      var hasHlIdx = typeof n.highlightIndex === "number" && !isNaN(n.highlightIndex);
+      var hlIdx = hasHlIdx ? n.highlightIndex : i;
+      var legacy =
+        !hasHlIdx &&
+        (n.left != null || n.top != null) &&
+        (typeof n.left === "number" ||
+          typeof n.left === "string" ||
+          typeof n.top === "number" ||
+          typeof n.top === "string");
+
+      var $s = $('<div class="song-sticky" />').text(body);
+      if (legacy) {
+        var left = typeof n.left === "number" ? n.left : parseFloat(n.left);
+        var top = typeof n.top === "number" ? n.top : parseFloat(n.top);
+        if (isNaN(left)) left = 8;
+        if (isNaN(top)) top = 12;
+        $s.addClass("song-sticky--legacy").css({ left: left + "%", top: top + "%" });
+      } else {
+        $s.addClass("song-sticky--right").attr("data-hl-idx", String(hlIdx));
+        if (typeof n.topPx === "number" && !isNaN(n.topPx)) {
+          $s.attr("data-top-px", String(n.topPx));
+        }
+        var sc = n.slipColor;
+        if (sc && /^(amber|mint|rose|sky)$/.test(String(sc))) {
+          $s.addClass("song-sticky--" + sc);
+        }
+      }
+      $z.append($s);
+    });
+    if (any) {
+      $z.removeAttr("aria-hidden");
+    } else {
+      $z.attr("aria-hidden", "true");
+    }
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        relayoutDeskStickiesInInner(innerEl);
+      });
+    });
+  }
+
+  function relayoutDeskStickiesInInner(innerEl) {
+    if (!innerEl) return;
+    var lyricsRoot = innerEl.querySelector(".js-desk-lyrics");
+    if (!lyricsRoot) return;
+    var hls = lyricsRoot.querySelectorAll(".lyric-hl");
+    var br = innerEl.getBoundingClientRect();
+    $(innerEl)
+      .find(".js-desk-stickies .song-sticky")
+      .not(".song-sticky--legacy")
+      .each(function () {
+        var $el = $(this);
+        var fixed = $el.attr("data-top-px");
+        if (fixed != null && fixed !== "") {
+          var px = parseFloat(fixed);
+          if (!isNaN(px)) {
+            $el.css("top", Math.round(px) + "px");
+          }
+          return;
+        }
+        var idx = parseInt($el.attr("data-hl-idx"), 10);
+        if (isNaN(idx)) return;
+        var hl = hls[idx];
+        if (!hl) return;
+        var hr = hl.getBoundingClientRect();
+        var centerY = hr.top - br.top + hr.height / 2;
+        $el.css("top", Math.round(centerY) + "px");
+      });
+  }
+
+  var deskStickyLayoutTimer = null;
+  function scheduleDeskStickyRelayout() {
+    if (deskStickyLayoutTimer) window.clearTimeout(deskStickyLayoutTimer);
+    deskStickyLayoutTimer = window.setTimeout(function () {
+      deskStickyLayoutTimer = null;
+      document.querySelectorAll(".desk-lyrics-scroll-inner").forEach(function (el) {
+        relayoutDeskStickiesInInner(el);
+      });
+    }, 100);
+  }
+
+  function relayoutAllDeskStickiesNow() {
+    document.querySelectorAll(".desk-lyrics-scroll-inner").forEach(function (el) {
+      relayoutDeskStickiesInInner(el);
+    });
+  }
+
   function render() {
     var session = window.SongShareAuth && window.SongShareAuth.getSession();
     if (!session) return;
@@ -1912,6 +2186,15 @@
 
     $empty.attr("hidden", "");
 
+    var publishedPostById = {};
+    if (window.SongSharePublished && typeof window.SongSharePublished.loadAll === "function") {
+      window.SongSharePublished.loadAll().forEach(function (p) {
+        if (p && p.id) {
+          publishedPostById[p.id] = p;
+        }
+      });
+    }
+
     uploads.forEach(function (item, index) {
       var $card;
       if (item.kind === "album") {
@@ -1922,86 +2205,126 @@
           role: "button",
           tabindex: 0,
           "data-pub-id": item.pubId,
+          "data-desk-album-idx": "0",
           "aria-label": "Edit album: " + alTitle,
         });
         var $inner = $('<div class="desk-card-inner desk-card-inner--album">');
         var tracks = item.tracks || [];
         var n = tracks.length;
-        var $albumHead = $('<header class="desk-card-head desk-card-head--album" />');
-        $albumHead.append(
-          $('<h3 class="desk-card-title" />').html(
-            '<span class="desk-card-badge">Album</span> ' + escapeHtml(alTitle)
-          )
-        );
-        if (alArtist) {
-          $albumHead.append($('<p class="desk-card-artist" />').text(alArtist));
-        }
-        $albumHead.append(
-          $('<p class="desk-card-album-meta" />').text(
-            n + " track" + (n === 1 ? "" : "s") + " · Open to edit each song"
-          )
-        );
-        $inner.append($albumHead);
 
-        var $albumSongDesk = $('<div class="desk-album-song-desk" role="list" />');
+        var $tabBar = $('<div class="desk-album-tab-bar" role="toolbar" aria-label="Album and track navigation" tabindex="0" />');
+        var navChevLeft =
+          '<svg class="desk-album-nav__svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" d="M14.5 7.5 9 12l5.5 4.5"/></svg>';
+        var navChevRight =
+          '<svg class="desk-album-nav__svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" d="M9.5 7.5 15 12l-5.5 4.5"/></svg>';
+        var $prev = $('<button type="button" class="desk-album-nav desk-album-nav--prev js-desk-album-prev" aria-label="Previous song" />').html(
+          navChevLeft
+        );
+        var $next = $('<button type="button" class="desk-album-nav desk-album-nav--next js-desk-album-next" aria-label="Next song" />').html(
+          navChevRight
+        );
+        var $tabMain = $('<div class="desk-album-tab-main" />');
+        $tabMain.append($('<span class="desk-album-tab-badge">Album</span>'));
+        $tabMain.append($("<span/>", { class: "desk-album-tab-title", text: alTitle }));
+        if (alArtist) {
+          $tabMain.append($("<span/>", { class: "desk-album-tab-artist", text: alArtist }));
+        }
+        $tabMain.append(
+          $("<span/>", {
+            class: "desk-album-tab-counter",
+            text: n ? "1 / " + n : "0 / 0",
+            "aria-live": "polite",
+          })
+        );
+        $tabBar.append($prev, $tabMain, $next);
+        $inner.append($tabBar);
+
+        var $panelsWrap = $('<div class="desk-album-track-panels" />');
         if (!tracks.length) {
-          $albumSongDesk.append($('<p class="desk-album-empty" />').text("No tracks yet."));
+          $panelsWrap.append($('<p class="desk-album-empty" />').text("No tracks yet."));
+          $prev.prop("disabled", true);
+          $next.prop("disabled", true);
         } else {
-          tracks.forEach(function (tr) {
+          tracks.forEach(function (tr, ti) {
             var tTitle = String(tr.title || "Untitled").trim() || "Untitled";
             var tArtist = String(tr.artist || alArtist || "").trim();
             var tPublished = fmtPostDay(tr.songPublishedAt || tr.createdAt);
-            var lyricsBlock = buildDeskLyricsHtml(tr.lyricsHtml || "");
-            var tags = (tr.genreTags || []).join(" · ");
-            var $song = $('<article class="desk-mini-song" role="listitem" />');
-            var $miniHead = $('<header class="desk-mini-song-head" />');
-            $miniHead.append($("<h4/>", { class: "desk-mini-song-title", text: tTitle }));
+            var $panel = $("<div/>", {
+              class: "desk-album-track-panel",
+              role: "group",
+              "data-track-idx": String(ti),
+              "aria-label": tTitle + " — track " + (ti + 1) + " of " + n,
+            });
+            if (ti !== 0) {
+              $panel.attr("hidden", "hidden").attr("aria-hidden", "true");
+            } else {
+              $panel.attr("aria-hidden", "false");
+            }
+            var $head = $('<header class="desk-card-head" />');
+            $head.append($("<h3/>", { class: "desk-card-title", text: tTitle }));
             if (tArtist) {
-              $miniHead.append($("<p/>", { class: "desk-mini-song-artist", text: tArtist }));
+              $head.append($("<p/>", { class: "desk-card-artist", text: tArtist }));
             }
             if (tPublished) {
-              $miniHead.append($("<p/>", { class: "desk-mini-song-date", text: "Released " + tPublished }));
+              $head.append($("<p/>", { class: "desk-card-date", text: "Published " + tPublished }));
             }
-            $song.append($miniHead);
-            if (lyricsBlock) {
-              $song.append($('<div class="desk-mini-song-lyrics" />').html(lyricsBlock));
+            $panel.append($head);
+            mountDeskLyricsWithStickies(
+              $panel,
+              tr.lyricsHtml || "",
+              resolvedDeskStickyNotes(tr.pubId, tr.stickyNotes, publishedPostById)
+            );
+            var $deskTags = $('<p class="desk-card-tags desk-card-tags--chips" />');
+            appendDeskGenreTagsRow($deskTags, tr.genreTags);
+            if ($deskTags.contents().length) {
+              $panel.append($deskTags);
             }
-            if (tags) {
-              $song.append($('<p class="desk-mini-song-tags" />').text(tags));
-            }
-            $albumSongDesk.append($song);
+            $panelsWrap.append($panel);
           });
+          $prev.prop("disabled", true);
+          $next.prop("disabled", n <= 1);
         }
-        $inner.append($albumSongDesk);
+        $inner.append($panelsWrap);
         $card.append($inner);
       } else {
-        var tags = (item.genreTags || []).join(" · ");
-        var lyricsBlock = buildDeskLyricsHtml(item.lyricsHtml);
         var published = fmtPostDay(item.songPublishedAt || item.createdAt);
-        $card = $(
-          '<article class="desk-card" role="button" tabindex="0" data-pub-id="' +
-            escapeHtml(item.pubId) +
-            '" aria-label="Edit: ' +
-            escapeHtml(item.title || "song") +
-            '">' +
-            '<div class="desk-card-inner">' +
-            '<header class="desk-card-head">' +
-            '<h3 class="desk-card-title">' +
-            escapeHtml(item.title) +
-            "</h3>" +
-            (item.artist ? '<p class="desk-card-artist">' + escapeHtml(item.artist) + "</p>" : "") +
-            (published ? '<p class="desk-card-date">Released ' + escapeHtml(published) + "</p>" : "") +
-            "</header>" +
-            (lyricsBlock ? '<div class="desk-card-lyrics">' + lyricsBlock + "</div>" : "") +
-            (tags ? '<p class="desk-card-tags">' + escapeHtml(tags) + "</p>" : "") +
-            "</div></article>"
+        $card = $("<article/>", {
+          class: "desk-card",
+          role: "button",
+          tabindex: 0,
+          "data-pub-id": item.pubId,
+          "aria-label": "Edit: " + String(item.title || "song"),
+        });
+        var $inner = $('<div class="desk-card-inner">');
+        var $head = $('<header class="desk-card-head">');
+        $head.append($("<h3/>", { class: "desk-card-title", text: item.title || "Untitled" }));
+        if (item.artist) {
+          $head.append($("<p/>", { class: "desk-card-artist", text: item.artist }));
+        }
+        if (published) {
+          $head.append($("<p/>", { class: "desk-card-date", text: "Published " + published }));
+        }
+        $inner.append($head);
+        mountDeskLyricsWithStickies(
+          $inner,
+          item.lyricsHtml || "",
+          resolvedDeskStickyNotes(item.pubId, item.stickyNotes, publishedPostById)
         );
+        var $deskTags = $('<p class="desk-card-tags desk-card-tags--chips" />');
+        appendDeskGenreTagsRow($deskTags, item.genreTags);
+        if ($deskTags.contents().length) {
+          $inner.append($deskTags);
+        }
+        $card.append($inner);
       }
       $card.css({
         zIndex: 10 + index,
         "--desk-rot": deskRot(index) + "deg",
       });
       $profileDesk.append($card);
+    });
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(relayoutAllDeskStickiesNow);
     });
   }
 
@@ -2220,6 +2543,11 @@
   $(function () {
     buildGenreTags();
 
+    /* Keep lyrics selection when using highlighter swatches (click would move focus and collapse the range). */
+    $(document).on("mousedown", ".composer-hl-tools [data-hl]", function (e) {
+      e.preventDefault();
+    });
+
     $(".js-open-composer").on("click", function () {
       closeAlbumComposer();
       resetAlbumComposer();
@@ -2311,6 +2639,7 @@
     }
 
     $(window).on("resize", scheduleComposerSlipRelayout);
+    $(window).on("resize", scheduleDeskStickyRelayout);
     $("#composer-lyrics-ed").on("input", scheduleComposerSlipRelayout);
 
     function activateDeskCard($card) {
@@ -2323,12 +2652,71 @@
       else openComposerForEdit(item);
     }
 
-    $("#profile-desk").on("click", ".desk-card", function () {
+    function setDeskAlbumTrackIndex($card, idx) {
+      var $panels = $card.find(".desk-album-track-panel");
+      var n = $panels.length;
+      if (!n) return;
+      idx = Math.max(0, Math.min(n - 1, idx));
+      $card.attr("data-desk-album-idx", String(idx));
+      $panels.each(function (i) {
+        var $p = $(this);
+        if (i === idx) {
+          $p.removeAttr("hidden").attr("aria-hidden", "false");
+        } else {
+          $p.attr("hidden", "hidden").attr("aria-hidden", "true");
+        }
+      });
+      $card.find(".js-desk-album-prev").prop("disabled", idx <= 0);
+      $card.find(".js-desk-album-next").prop("disabled", idx >= n - 1);
+      $card.find(".desk-album-tab-counter").text(idx + 1 + " / " + n);
+      scheduleDeskStickyRelayout();
+    }
+
+    $("#profile-desk").on("click", ".desk-card-genre-chip", function (e) {
+      e.stopPropagation();
+    });
+
+    $("#profile-desk").on("click", ".js-desk-album-prev", function (e) {
+      e.stopPropagation();
+      var $card = $(this).closest(".desk-card--album");
+      var idx = parseInt($card.attr("data-desk-album-idx"), 10) || 0;
+      setDeskAlbumTrackIndex($card, idx - 1);
+    });
+
+    $("#profile-desk").on("click", ".js-desk-album-next", function (e) {
+      e.stopPropagation();
+      var $card = $(this).closest(".desk-card--album");
+      var idx = parseInt($card.attr("data-desk-album-idx"), 10) || 0;
+      setDeskAlbumTrackIndex($card, idx + 1);
+    });
+
+    $("#profile-desk").on("keydown", ".desk-album-tab-bar", function (e) {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      var $bar = $(this);
+      var $card = $bar.closest(".desk-card--album");
+      var idx = parseInt($card.attr("data-desk-album-idx"), 10) || 0;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        e.stopPropagation();
+        setDeskAlbumTrackIndex($card, idx - 1);
+      } else {
+        e.preventDefault();
+        e.stopPropagation();
+        setDeskAlbumTrackIndex($card, idx + 1);
+      }
+    });
+
+    $("#profile-desk").on("click", ".desk-card", function (e) {
+      if ($(e.target).closest(".js-desk-album-prev, .js-desk-album-next").length) return;
       activateDeskCard($(this));
     });
 
     $("#profile-desk").on("keydown", ".desk-card", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
+      if ($(e.target).closest(".desk-album-tab-bar").length) {
+        if (e.key === " ") e.preventDefault();
+        return;
+      }
       e.preventDefault();
       activateDeskCard($(this));
     });

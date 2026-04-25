@@ -156,6 +156,8 @@
   var crateLoadingAriaPollTimer = null;
   var crateCameraLockRaf = 0;
   var crateLockedPose = null;
+  /** True while the mobile bottom bar is handling a pointer (camera pan only). */
+  var crateMobileScrollbarPointerActive = false;
 
   function tryPlayCrateGenreAudio() {
     if (!crateGenreAudio) return;
@@ -489,32 +491,6 @@
     };
     /* Hook the library's per-frame lookAt so we pin pose immediately before render. */
     patchCameraManagerLookAt(ref.cameraManager);
-    applyCrateCameraFov();
-  }
-
-  /**
-   * On phones the default camera shows three crates (the centered one plus
-   * its left/right neighbors peeking in). The product wants ONE crate on
-   * mobile, so we squeeze the camera's FOV down to zoom the centered record
-   * into the full viewport. Desktop keeps the wider FOV so adjacent records
-   * still hint at the rest of the genre.
-   */
-  function applyCrateCameraFov() {
-    if (!crateLockedPose || !crateLockedPose.camera) return;
-    var cam = crateLockedPose.camera;
-    if (typeof cam.fov !== "number") return;
-    if (typeof cam.__noteionBaseFov !== "number") {
-      cam.__noteionBaseFov = cam.fov;
-    }
-    var isMobile = window.matchMedia("(max-width: 700px)").matches;
-    var nextFov = isMobile ? cam.__noteionBaseFov * 0.45 : cam.__noteionBaseFov;
-    if (Math.abs(cam.fov - nextFov) < 0.01) return;
-    cam.fov = nextFov;
-    if (typeof cam.updateProjectionMatrix === "function") {
-      try {
-        cam.updateProjectionMatrix();
-      } catch (e) {}
-    }
   }
 
   function patchCameraManagerLookAt(cm) {
@@ -720,15 +696,7 @@
     startCrateCameraLock();
     startCrateNowShowing();
     setupCrateSwipeNavigation();
-    window.addEventListener("resize", applyCrateCameraFov, { passive: true });
-    if (window.matchMedia) {
-      var mq = window.matchMedia("(max-width: 700px)");
-      if (typeof mq.addEventListener === "function") {
-        mq.addEventListener("change", applyCrateCameraFov);
-      } else if (typeof mq.addListener === "function") {
-        mq.addListener(applyCrateCameraFov);
-      }
-    }
+    setupCrateMobileScrollbar();
 
     var ld = document.getElementById("cratedigger-loading");
     if (ld) {
@@ -941,6 +909,7 @@
     var out = sortCrateRecords(full, sortKey);
 
     window.__NOTEION_CRATE_RECORDS__ = out;
+    updateCrateMobileScrollbarTrackWidth();
     api.loadRecords(out, false, function () {
       captureCrateCameraPose();
       window.dispatchEvent(new Event("resize"));
@@ -970,6 +939,246 @@
    * target into #cratedigger so overlays sitting above the WebGL canvas
    * (info panel, loading layer) can't swallow the gesture.
    */
+  /**
+   * Lateral pan offset (world units) applied on top of the locked crate
+   * camera pose. Positive values push camera + target along the camera's
+   * "left" direction so records that were cropped off the left side of
+   * the viewport slide into view; negative values reveal the right side.
+   * Read by enforceCrateCameraPose() / patchCameraManagerLookAt() so the
+   * pan survives the per-frame pose enforcement that keeps the camera
+   * locked.
+   */
+  var crateCameraPanOffset = 0;
+  /* Maximum pan distance in either direction; tuned empirically to walk
+     the camera roughly the width of the crate row (24 records × the
+     library's per-record spacing). If a row is shorter than this the
+     scrollbar can pan past the row ends but the visible scene just
+     becomes empty crate floor — harmless. */
+  var CRATE_CAMERA_PAN_RANGE = 110;
+
+  /**
+   * Mobile horizontal scrollbar for the crate. Behaves like a true
+   * scrollbar that pans the 3D camera along the crate's left/right
+   * axis: dragging the thumb to the left scrolls the camera so the
+   * records that were cropped off the LEFT side of the masked viewport
+   * become visible; dragging right reveals the RIGHT side. The current
+   * record selection is unchanged — the user is just looking around the
+   * crate, not advancing through it.
+   *
+   * The pan vector is computed at init time from the current camera
+   * pose (camera "left" direction in world space) so we don't have to
+   * hardcode a world axis. Both the live camera and the locked-pose
+   * record are updated so the per-frame lookAt patch doesn't immediately
+   * snap the camera back.
+   */
+  /** Show/hide mobile pan bar when genre has 2+ crates; track width is always full-bleed in CSS. */
+  function updateCrateMobileScrollbarTrackWidth() {
+    var arr = window.__NOTEION_CRATE_RECORDS__;
+    var len = Array.isArray(arr) ? arr.length : 0;
+    var n = len ? computeNbCratesForRecordCount(len) : 1;
+    var bar = document.querySelector(".js-crate-mobile-scrollbar");
+    if (!bar) return;
+    if (n <= 1) {
+      bar.classList.add("crate-mobile-scrollbar--hidden");
+      bar.setAttribute("aria-hidden", "true");
+      bar.setAttribute("tabindex", "-1");
+      try {
+        if (document.activeElement === bar) bar.blur();
+      } catch (e) {}
+      var applyPanFn = window.__NOTEION_APPLY_CRATE_MOBILE_PAN__;
+      if (typeof applyPanFn === "function") {
+        try {
+          applyPanFn(0);
+        } catch (e2) {}
+      }
+    } else {
+      bar.classList.remove("crate-mobile-scrollbar--hidden");
+      bar.removeAttribute("aria-hidden");
+      bar.setAttribute("tabindex", "0");
+    }
+  }
+
+  function setupCrateMobileScrollbar() {
+    var bar = document.querySelector(".js-crate-mobile-scrollbar");
+    var thumb = document.querySelector(".js-crate-mobile-scrollbar-thumb");
+    if (!bar || !thumb) return;
+    var track = bar.querySelector(".crate-mobile-scrollbar-track");
+    if (!track) return;
+
+    bar.setAttribute("aria-valuemin", "-100");
+    bar.setAttribute("aria-valuemax", "100");
+    bar.setAttribute("aria-valuenow", "0");
+
+    /* Camera "right" direction in world space, derived from the current
+       locked pose. forward = camera - target (points away from scene
+       toward the viewer); up = world Y; right = up × forward. Moving
+       camera + target along +right pans the view to the camera's right
+       (so off-screen-right content slides into frame); along -right
+       pans to the camera's left. */
+    function panDirection() {
+      var fx, fy, fz;
+      if (crateLockedPose) {
+        fx = crateLockedPose.x - crateLockedPose.tx;
+        fy = crateLockedPose.y - crateLockedPose.ty;
+        fz = crateLockedPose.z - crateLockedPose.tz;
+      } else {
+        fx = CRATE_CAMERA_POSE.camera.x - CRATE_CAMERA_POSE.target.x;
+        fy = CRATE_CAMERA_POSE.camera.y - CRATE_CAMERA_POSE.target.y;
+        fz = CRATE_CAMERA_POSE.camera.z - CRATE_CAMERA_POSE.target.z;
+      }
+      /* up × forward = (forward.z, 0, -forward.x) for up = (0,1,0). */
+      var rx = fz;
+      var ry = 0;
+      var rz = -fx;
+      var len = Math.sqrt(rx * rx + ry * ry + rz * rz);
+      if (len < 1e-6) return { x: 0, y: 0, z: 1 };
+      return { x: rx / len, y: ry / len, z: rz / len };
+    }
+
+    function applyPan(offset) {
+      crateCameraPanOffset = offset;
+      var dir = panDirection();
+      var dx = dir.x * offset;
+      var dy = dir.y * offset;
+      var dz = dir.z * offset;
+      /* Update the locked pose so the per-frame enforcement keeps the
+         pan; otherwise patchCameraManagerLookAt would snap us back. */
+      if (crateLockedPose) {
+        crateLockedPose.x = CRATE_CAMERA_POSE.camera.x + dx;
+        crateLockedPose.y = CRATE_CAMERA_POSE.camera.y + dy;
+        crateLockedPose.z = CRATE_CAMERA_POSE.camera.z + dz;
+        crateLockedPose.tx = CRATE_CAMERA_POSE.target.x + dx;
+        crateLockedPose.ty = CRATE_CAMERA_POSE.target.y + dy;
+        crateLockedPose.tz = CRATE_CAMERA_POSE.target.z + dz;
+        var cam = crateLockedPose.camera;
+        var tgt = crateLockedPose.target;
+        if (cam && cam.position) {
+          cam.position.x = crateLockedPose.x;
+          cam.position.y = crateLockedPose.y;
+          cam.position.z = crateLockedPose.z;
+        }
+        if (tgt && tgt.position) {
+          tgt.position.x = crateLockedPose.tx;
+          tgt.position.y = crateLockedPose.ty;
+          tgt.position.z = crateLockedPose.tz;
+        }
+        if (cam && typeof cam.lookAt === "function" && tgt && tgt.position) {
+          try { cam.lookAt(tgt.position); } catch (e) {}
+        }
+      }
+      bar.setAttribute(
+        "aria-valuenow",
+        String(Math.round((offset / CRATE_CAMERA_PAN_RANGE) * 100))
+      );
+    }
+
+    window.__NOTEION_APPLY_CRATE_MOBILE_PAN__ = applyPan;
+    updateCrateMobileScrollbarTrackWidth();
+
+    function fractionFromClientX(x) {
+      var rect = track.getBoundingClientRect();
+      if (rect.width <= 0) return 0.5;
+      return Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+    }
+
+    function paintThumb(frac) {
+      var tw = thumb.getBoundingClientRect().width;
+      var trw = track.getBoundingClientRect().width;
+      if (trw <= 0) return;
+      var maxLeft = Math.max(0, trw - tw);
+      var left = frac * maxLeft;
+      thumb.style.left = "0";
+      thumb.style.transform = "translate(" + left + "px, -50%)";
+    }
+
+    function applyFraction(frac, paint) {
+      /* Map 0..1 thumb fraction → -RANGE..+RANGE camera pan. Thumb at
+         the left end pans the camera left (negative offset along the
+         camera-right axis); thumb at the right end pans right. The
+         fraction is clamped 0..1 by fractionFromClientX, so the camera
+         hard-stops once the thumb hits either end of the track. */
+      var offset = (frac - 0.5) * 2 * CRATE_CAMERA_PAN_RANGE;
+      applyPan(offset);
+      if (paint) paintThumb(frac);
+    }
+
+    var dragging = false;
+    var pendingFrac = 0.5;
+    var rafId = 0;
+
+    function flush() {
+      rafId = 0;
+      applyFraction(pendingFrac, true);
+    }
+
+    function schedule() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(flush);
+    }
+
+    function startDrag(x) {
+      crateMobileScrollbarPointerActive = true;
+      dragging = true;
+      bar.classList.add("is-dragging");
+      pendingFrac = fractionFromClientX(x);
+      applyFraction(pendingFrac, true);
+    }
+    function moveDrag(x) {
+      if (!dragging) return;
+      pendingFrac = fractionFromClientX(x);
+      schedule();
+    }
+    function endDrag() {
+      crateMobileScrollbarPointerActive = false;
+      if (!dragging) return;
+      dragging = false;
+      bar.classList.remove("is-dragging");
+      applyFraction(pendingFrac, true);
+    }
+
+    bar.addEventListener("pointerdown", function (e) {
+      if (e.button != null && e.button !== 0) return;
+      if (bar.classList.contains("crate-mobile-scrollbar--hidden")) return;
+      try { bar.setPointerCapture(e.pointerId); } catch (er) {}
+      startDrag(e.clientX);
+    });
+    bar.addEventListener("pointermove", function (e) { moveDrag(e.clientX); });
+    bar.addEventListener("pointerup", endDrag);
+    bar.addEventListener("pointercancel", endDrag);
+    bar.addEventListener("lostpointercapture", function () {
+      crateMobileScrollbarPointerActive = false;
+      dragging = false;
+      bar.classList.remove("is-dragging");
+    });
+
+    bar.addEventListener("keydown", function (e) {
+      if (bar.classList.contains("crate-mobile-scrollbar--hidden")) return;
+      var step =
+        e.key === "ArrowLeft" || e.key === "ArrowDown"
+          ? -0.05
+          : e.key === "ArrowRight" || e.key === "ArrowUp"
+            ? 0.05
+            : e.key === "Home"
+              ? -1
+              : e.key === "End"
+                ? 1
+                : 0;
+      if (!step) return;
+      e.preventDefault();
+      pendingFrac = Math.max(0, Math.min(1, pendingFrac + step));
+      applyFraction(pendingFrac, true);
+    });
+
+    /* Initial paint at center (thumb middle = no pan offset). */
+    paintThumb(0.5);
+
+    window.addEventListener(
+      "resize",
+      function () { paintThumb(pendingFrac); },
+      { passive: true }
+    );
+  }
+
   function setupCrateSwipeNavigation() {
     var root = document.getElementById("cratedigger");
     if (!root) return;
@@ -985,6 +1194,17 @@
     function inCrate(target) {
       return !!(target && root.contains(target));
     }
+    function onScrollbar(target) {
+      return !!(target && target.closest && target.closest(".js-crate-mobile-scrollbar"));
+    }
+    function touchTopElement(t) {
+      if (!t) return null;
+      try {
+        return document.elementFromPoint(t.clientX, t.clientY);
+      } catch (e) {
+        return null;
+      }
+    }
 
     function clickNav(dir) {
       var btn = document.getElementById(dir < 0 ? "button-next" : "button-prev");
@@ -996,7 +1216,11 @@
     function onStart(e) {
       var t = e.touches && e.touches[0];
       if (!t) return;
-      if (!inCrate(e.target)) return;
+      if (crateMobileScrollbarPointerActive) return;
+      var topEl = touchTopElement(t);
+      /* Bottom bar: camera pan only — never arm record flip. */
+      if (onScrollbar(e.target) || onScrollbar(topEl)) return;
+      if (!inCrate(e.target) && !inCrate(topEl)) return;
       startX = t.clientX;
       startY = t.clientY;
       lastStepX = t.clientX;
@@ -1009,6 +1233,19 @@
       if (!tracking) return;
       var t = e.touches && e.touches[0];
       if (!t) return;
+      if (crateMobileScrollbarPointerActive) {
+        tracking = false;
+        horizontalLocked = false;
+        suppressClick = false;
+        return;
+      }
+      var topEl = touchTopElement(t);
+      if (onScrollbar(topEl)) {
+        tracking = false;
+        horizontalLocked = false;
+        suppressClick = false;
+        return;
+      }
       var dx = t.clientX - startX;
       var dy = t.clientY - startY;
       if (!horizontalLocked) {

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Set new password — Cr8Dig</title>
+    <link rel="stylesheet" href="typefaces/fonts.css" />
+    <link rel="stylesheet" href="auth.css" />
+    <style>
+      .auth-reset-page {
+        min-height: 100dvh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
+          max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
+        background: #050506;
+        color: #f6f3ea;
+        font-family: system-ui, sans-serif;
+      }
+      .auth-reset-card {
+        width: min(22rem, 100%);
+        padding: 1.35rem 1.25rem;
+        border: 1px solid rgba(250, 248, 240, 0.12);
+        border-radius: 6px;
+        background: linear-gradient(180deg, rgba(14, 14, 18, 0.98) 0%, rgba(8, 8, 10, 0.99) 100%);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      }
+      .auth-reset-page-title {
+        margin: 0 0 0.5rem;
+        font-family: var(--font-logo, system-ui);
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .auth-reset-page-lede {
+        margin: 0 0 1rem;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: rgba(250, 248, 240, 0.55);
+      }
+    </style>
+  </head>
+  <body class="auth-reset-page">
+    <main class="auth-reset-card">
+      <h1 class="auth-reset-page-title">Cr8Dig</h1>
+      <p id="auth-recovery-status" class="auth-reset-page-lede" role="status">Checking your reset link…</p>
+      <form id="auth-recovery-form" class="auth-panel-form" hidden>
+        <div class="auth-field">
+          <label class="auth-label" for="auth-recovery-pass">New password</label>
+          <input
+            id="auth-recovery-pass"
+            class="auth-input"
+            type="password"
+            autocomplete="new-password"
+            spellcheck="false"
+            required
+            minlength="6"
+          />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="auth-recovery-pass2">Confirm password</label>
+          <input
+            id="auth-recovery-pass2"
+            class="auth-input"
+            type="password"
+            autocomplete="new-password"
+            spellcheck="false"
+            required
+            minlength="6"
+          />
+        </div>
+        <button type="submit" class="auth-submit">Save password</button>
+        <p id="auth-recovery-msg" class="auth-msg" aria-live="polite"></p>
+      </form>
+      <p class="auth-reset-back-wrap" style="margin: 0.75rem 0 0">
+        <a href="home.html" class="auth-text-btn" style="text-decoration: none; display: inline-block">Back to home</a>
+      </p>
+    </main>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script defer src="supabase-config.js"></script>
+    <script defer src="auth-storage.js"></script>
+    <script defer src="auth-reset.js"></script>
+  </body>
+</html>

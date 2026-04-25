@@ -42,6 +42,15 @@
       .replace(/"/g, "&quot;");
   }
 
+  /** Same hue sweep as noteion-home.js `genreOverlayColor` (board genre cards). */
+  function genreOverlayHslForRank(rank, total) {
+    var t = total && total > 1 ? (rank - 1) / (total - 1) : 0;
+    var startHue = 330;
+    var endHue = 690;
+    var hue = (startHue + (endHue - startHue) * t) % 360;
+    return "hsl(" + hue.toFixed(1) + ", 20%, 56%)";
+  }
+
   function newlinesToBrInLyricsHtml(s) {
     s = String(s || "").replace(/\r\n/g, "\n");
     s = s.replace(/>\s*\n\s*</g, "><");
@@ -89,11 +98,14 @@
       .join("");
   }
 
-  function formatLyricsForDisplay(html) {
+  function formatLyricsForDisplay(html, track) {
+    track = track || {};
     var s = String(html || "").trim();
     if (!s) return "";
     var hasHighlight = /lyric-hl/i.test(s);
-    if (/<[a-z][\s\S]*>/i.test(s) && hasHighlight) {
+    var stickyLen = Array.isArray(track.stickyNotes) ? track.stickyNotes.length : 0;
+    /* Keep composer HTML when there are highlights or margin slips (slips pair to .lyric-hl nodes). */
+    if (/<[a-z][\s\S]*>/i.test(s) && (hasHighlight || stickyLen > 0)) {
       return newlinesToBrInLyricsHtml(s);
     }
     if (/<[a-z][\s\S]*>/i.test(s)) {
@@ -192,6 +204,52 @@
     }
   }
 
+  function renderSongGenreTags(track, boardGenre) {
+    var $host = $(".js-song-genre-tags").empty();
+    var SP = window.SongSharePublished;
+    var tags =
+      SP && typeof SP.displayGenreTagsWithAllSlot === "function"
+        ? SP.displayGenreTagsWithAllSlot(track && track.genreTags, boardGenre)
+        : [];
+    if (!tags.length) {
+      $host.attr("hidden", "");
+      return;
+    }
+    tags.forEach(function (tag, gi) {
+      if (gi) {
+        $host.append(document.createTextNode(" · "));
+      }
+      var hsl =
+        SP && typeof SP.genreBoardHslByName === "function" ? SP.genreBoardHslByName(String(tag).trim()) : "";
+      var genres = window.SONG_SHARE_GENRES || [];
+      var crateHref = "";
+      for (var gi2 = 0; gi2 < genres.length; gi2++) {
+        if (genres[gi2] && String(genres[gi2].name || "").trim() === String(tag).trim()) {
+          crateHref = "crate.html?genre=" + encodeURIComponent(String(gi2 + 1));
+          break;
+        }
+      }
+      var $node;
+      if (crateHref) {
+        $node = $("<a/>", {
+          class: "detail-song-genre-chip",
+          href: crateHref,
+          text: tag,
+          title: "Open " + tag + " crate",
+        });
+      } else {
+        $node = $("<span/>", { class: "detail-song-genre-chip", text: tag });
+      }
+      if (hsl) {
+        $node.css("color", hsl);
+      } else {
+        $node.addClass("detail-song-genre-chip--fallback");
+      }
+      $host.append($node);
+    });
+    $host.removeAttr("hidden");
+  }
+
   $(function () {
     function start() {
     var genres = window.SONG_SHARE_GENRES || [];
@@ -206,11 +264,43 @@
     var idx = queryTrack();
     idx = Math.max(0, Math.min(idx, tracks.length - 1));
     $(".js-genre-label").text(g.name);
+    document.documentElement.style.setProperty(
+      "--song-genre-color",
+      genreOverlayHslForRank(id, genres.length)
+    );
 
     function fmtWhen(ts) {
       if (ts == null || ts === "") return "";
       try {
         return new Date(ts).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+      } catch (e) {
+        return "";
+      }
+    }
+
+    /** Song release line: date only (no time of day). */
+    function fmtSongPublishedDateOnly(ts) {
+      if (ts == null || ts === "") return "";
+      try {
+        return new Date(ts).toLocaleDateString(undefined, { dateStyle: "medium" });
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function songPublishedIsoDate(ts) {
+      if (ts == null || ts === "") return "";
+      try {
+        return new Date(ts).toISOString().slice(0, 10);
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function meaningPostedIso(ts) {
+      if (ts == null || ts === "") return "";
+      try {
+        return new Date(ts).toISOString();
       } catch (e) {
         return "";
       }
@@ -352,29 +442,54 @@
       t = t || {};
       $(".js-song-title").text(t.title || "—");
       var artist = String(t.artist || t.songArtist || "").trim();
-      if (artist) {
-        $(".js-song-artist").text(artist).removeAttr("hidden");
-      } else {
-        $(".js-song-artist").text("").attr("hidden", "");
-      }
-      var annParts = [];
-      if (t.userPublished) {
-        var postedBy = String(t.displayName || "").trim();
-        if (postedBy) {
-          annParts.push(
-            'Posted by <a class="detail-author-link" href="' +
-              escapeHtml(profileHrefFor(t.userId, postedBy)) +
+      var pubDateStr =
+        t.userPublished && t.songPublishedAt ? fmtSongPublishedDateOnly(t.songPublishedAt) : "";
+      if (artist || pubDateStr) {
+        var row = [];
+        if (artist) {
+          var artistHref =
+            window.SongSharePublished && typeof window.SongSharePublished.artistProfileHref === "function"
+              ? window.SongSharePublished.artistProfileHref(artist)
+              : "artist.html?name=" + encodeURIComponent(artist);
+          row.push(
+            '<a class="detail-song-artist-name" href="' +
+              escapeHtml(artistHref) +
               '">' +
-              escapeHtml(postedBy) +
+              escapeHtml(artist) +
               "</a>"
           );
         }
-        if (t.songPublishedAt) annParts.push("Published " + fmtWhen(t.songPublishedAt));
-      }
-      if (annParts.length) {
-        $(".js-annotation-meta").html(annParts.join(" · ")).removeAttr("hidden");
+        if (pubDateStr) {
+          var iso = songPublishedIsoDate(t.songPublishedAt);
+          var dtAttr = iso ? ' datetime="' + escapeHtml(iso) + '"' : "";
+          row.push(
+            "<time class=\"detail-song-published\"" +
+              dtAttr +
+              ">Published " +
+              escapeHtml(pubDateStr) +
+              "</time>"
+          );
+        }
+        $(".js-song-artist")
+          .html('<span class="detail-song-byline">' + row.join("") + "</span>")
+          .removeAttr("hidden");
       } else {
-        $(".js-annotation-meta").text("").attr("hidden", "");
+        $(".js-song-artist").empty().attr("hidden", "");
+      }
+      var $posterTab = $(".js-poster-tab");
+      if (t.userPublished) {
+        var postedBy = String(t.displayName || "").trim();
+        if (postedBy) {
+          $posterTab
+            .attr("href", profileHrefFor(t.userId, postedBy))
+            .text(postedBy)
+            .attr("title", "View " + postedBy + "’s profile")
+            .removeAttr("hidden");
+        } else {
+          $posterTab.text("").attr("hidden", "").attr("href", "#").removeAttr("title");
+        }
+      } else {
+        $posterTab.text("").attr("hidden", "").attr("href", "#").removeAttr("title");
       }
       renderSongLinks({
         spotify:
@@ -390,12 +505,13 @@
       var lh = t.lyricsHtml != null ? String(t.lyricsHtml).trim() : "";
       $(".js-song-lyrics").empty();
       if (lh) {
-        $(".js-song-lyrics").html(formatLyricsForDisplay(lh));
+        $(".js-song-lyrics").html(formatLyricsForDisplay(lh, t));
         $(".js-song-lyrics-wrap").removeAttr("hidden");
       } else {
         $(".js-song-lyrics-wrap").attr("hidden", "");
       }
 
+      renderSongGenreTags(t, g);
       renderStickies(t.stickyNotes);
 
       var mean = t.meaning != null ? String(t.meaning).trim() : "";
@@ -407,21 +523,37 @@
         $(".js-meaning").empty();
       }
       var by = String(t.meaningBy || "").trim();
-      var metaParts = [];
-      if (hasMeaning && by) {
-        metaParts.push(
-          '<a class="detail-author-link" href="' +
-            escapeHtml(profileHrefFor(t.userId, by)) +
-            '">' +
-            escapeHtml(by) +
-            "</a>"
-        );
-      }
-      if (hasMeaning && t.meaningAt) metaParts.push(fmtWhen(t.meaningAt));
-      if (metaParts.length) {
-        $(".js-meaning-meta").html(metaParts.join(" · ")).removeAttr("hidden");
+      var $mHead = $(".js-meaning-head");
+      var $mPoster = $(".js-meaning-poster-line");
+      var $mPosted = $(".js-meaning-posted");
+      $mPoster.empty().attr("hidden", "");
+      $mPosted.text("").removeAttr("datetime").attr("hidden", "");
+      if (hasMeaning && (by || t.meaningAt)) {
+        if (by) {
+          $mPoster
+            .html(
+              '<a class="detail-author-link" href="' +
+                escapeHtml(profileHrefFor(t.userId, by)) +
+                '">' +
+                escapeHtml(by) +
+                "</a>"
+            )
+            .removeAttr("hidden");
+        }
+        if (t.meaningAt) {
+          var postedLabel = "Posted " + fmtSongPublishedDateOnly(t.meaningAt);
+          var mIso = meaningPostedIso(t.meaningAt);
+          $mPosted.text(postedLabel);
+          if (mIso) {
+            $mPosted.attr("datetime", mIso);
+          } else {
+            $mPosted.removeAttr("datetime");
+          }
+          $mPosted.removeAttr("hidden");
+        }
+        $mHead.removeAttr("hidden");
       } else {
-        $(".js-meaning-meta").text("").attr("hidden", "");
+        $mHead.attr("hidden", "");
       }
 
       document.title = (t.title || "Song") + " — " + g.name + " — Cr8Dig";

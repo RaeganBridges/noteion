@@ -198,6 +198,15 @@
       whenReady: function () {
         return Promise.resolve();
       },
+      resetPasswordForEmail: function () {
+        return Promise.resolve({
+          error:
+            "Password reset by email isn’t available in offline demo mode. Configure Supabase for this site, or use the password you chose when you created your demo account.",
+        });
+      },
+      updatePasswordAfterRecovery: function () {
+        return Promise.resolve({ error: "Not available in demo mode." });
+      },
     };
     return;
   }
@@ -243,6 +252,17 @@
       var loc = global.location;
       if (!loc || !loc.href || loc.protocol === "file:") return undefined;
       return new URL("home.html", loc.href).href;
+    } catch (e) {
+      return undefined;
+    }
+  }
+
+  /** Where Supabase redirects after “Forgot password” email link (add to Redirect URLs). */
+  function passwordRecoveryRedirectTo() {
+    try {
+      var loc = global.location;
+      if (!loc || !loc.href || loc.protocol === "file:") return undefined;
+      return new URL("auth-reset.html", loc.href).href;
     } catch (e) {
       return undefined;
     }
@@ -324,6 +344,53 @@
     signOut: function () {
       return sb.auth.signOut().then(function () {
         sessionCache = null;
+      });
+    },
+    /**
+     * Sends Supabase password-recovery email. `identifier` may be email or a
+     * username that was previously linked on this browser (same map as sign-in).
+     */
+    resetPasswordForEmail: function (identifier) {
+      identifier = (identifier || "").trim();
+      if (!identifier) {
+        return Promise.resolve({ error: "Enter your email or username." });
+      }
+      var email = resolveEmailFromIdentifier(identifier);
+      if (!email && identifier.indexOf("@") !== -1) {
+        email = identifier.toLowerCase();
+      }
+      if (!email) {
+        return Promise.resolve({
+          error:
+            "Could not find an email for that username on this device. Enter the email you used to sign up, or sign in once with email so we can remember it here.",
+        });
+      }
+      var redirect = passwordRecoveryRedirectTo();
+      var opts = redirect ? { redirectTo: redirect } : {};
+      return sb.auth.resetPasswordForEmail(email, opts).then(function (res) {
+        if (res.error) return { error: res.error.message };
+        var okMsg =
+          "If an account exists for that address, we sent a reset link. Check your inbox and spam folder.";
+        if (redirect && typeof console !== "undefined" && console.info) {
+          console.info(
+            "[Noteion] Add this URL to Supabase → Authentication → URL Configuration → Redirect URLs if the email link fails:",
+            redirect
+          );
+        }
+        return { ok: true, message: okMsg };
+      });
+    },
+    /**
+     * After user opens the recovery link (PASSWORD_RECOVERY session), set a new password.
+     */
+    updatePasswordAfterRecovery: function (newPassword) {
+      newPassword = String(newPassword || "");
+      if (newPassword.length < 6) {
+        return Promise.resolve({ error: "Use at least 6 characters (Supabase policy)." });
+      }
+      return sb.auth.updateUser({ password: newPassword }).then(function (res) {
+        if (res.error) return { error: res.error.message };
+        return { ok: true };
       });
     },
   };

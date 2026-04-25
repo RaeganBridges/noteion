@@ -3,19 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>User Profile — Cr8Dig</title>
+    <title>Artist — Cr8Dig</title>
     <link rel="stylesheet" href="typefaces/fonts.css" />
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="user.css" />
     <link rel="stylesheet" href="auth.css" />
   </head>
-  <body>
+  <body class="artist-page">
     <div class="page">
       <header class="page-header">
         <div class="header-brand">
           <h1 class="logo">
             <a href="home.html">Cr8Dig</a>
-            <span class="logo-user-tag">User profile</span>
+            <span class="logo-user-tag">Artist profile</span>
           </h1>
         </div>
         <div class="header-compose-toggle" role="group" aria-label="Create post type">
@@ -56,10 +56,10 @@
         <div class="main-fore" aria-hidden="true"></div>
 
         <div class="subpage-inner">
-          <section class="user-wrap" aria-labelledby="user-heading">
-            <h2 id="user-heading" class="user-name js-user-name">User</h2>
-            <p class="user-meta js-user-meta">Loading posts…</p>
-            <div class="user-posts js-user-posts" role="list"></div>
+          <section class="user-wrap" aria-labelledby="artist-heading">
+            <h2 id="artist-heading" class="user-name js-artist-name">Artist</h2>
+            <p class="user-meta js-artist-meta">Loading posts…</p>
+            <div class="user-posts js-artist-posts" role="list"></div>
           </section>
         </div>
       </main>
@@ -81,6 +81,6 @@
     <script defer src="genres-data.js"></script>
     <script defer src="published-feed.js"></script>
     <script defer src="songshare-remote-sync.js"></script>
-    <script defer src="user.js"></script>
+    <script defer src="artist.js"></script>
   </body>
 </html>

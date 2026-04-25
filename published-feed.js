@@ -203,6 +203,7 @@
       albumTrackIndex:
         typeof p.albumTrackIndex === "number" && !isNaN(p.albumTrackIndex) ? p.albumTrackIndex : null,
       albumCoverDataUrl: p.albumCoverDataUrl || "",
+      genreTags: Array.isArray(p.genreTags) ? p.genreTags.slice() : [],
     };
   }
 
@@ -531,6 +532,97 @@
       });
   }
 
+  /** Posts whose track `artist` string matches (normalized, exact). */
+  function listPostsByArtist(artistName) {
+    var key = normalizeSongToken(artistName || "");
+    if (!key) return [];
+    return loadAll()
+      .filter(function (p) {
+        if (!p) return false;
+        return normalizeSongToken(p.artist || "") === key;
+      })
+      .sort(function (a, b) {
+        var ta = a.songPublishedAt || a.createdAt || 0;
+        var tb = b.songPublishedAt || b.createdAt || 0;
+        return tb - ta;
+      });
+  }
+
+  function artistProfileHref(artistName) {
+    var a = String(artistName || "").trim();
+    if (!a) return "artist.html";
+    return "artist.html?name=" + encodeURIComponent(a);
+  }
+
+  /**
+   * Same HSL sweep as home genre cards / song sheet (`genreOverlayColor` in noteion-home.js).
+   * `oneBasedIndex` matches board `genreId` (1 = first row in `SONG_SHARE_GENRES`).
+   */
+  function genreBoardHslByIndex(oneBasedIndex, totalGenres) {
+    var rank = Math.max(1, Math.floor(Number(oneBasedIndex)) || 1);
+    var total = Math.max(1, Math.floor(Number(totalGenres)) || 1);
+    var t = total > 1 ? (rank - 1) / (total - 1) : 0;
+    var startHue = 330;
+    var endHue = 690;
+    var hue = (startHue + (endHue - startHue) * t) % 360;
+    return "hsl(" + hue.toFixed(1) + ", 20%, 56%)";
+  }
+
+  /** Board tint for a genre display name, or "" if the name is not a known board genre. */
+  function genreBoardHslByName(displayName) {
+    var genres = global.SONG_SHARE_GENRES || [];
+    var want = String(displayName || "").trim();
+    if (!want) return "";
+    for (var i = 0; i < genres.length; i++) {
+      if (genres[i] && String(genres[i].name || "").trim() === want) {
+        return genreBoardHslByIndex(i + 1, genres.length);
+      }
+    }
+    return "";
+  }
+
+  /**
+   * On a genre board tab, show only *other* tagged genres (not the tab you are in).
+   * On the "All genres" slot, returns every tag on the post unchanged.
+   */
+  function otherGenreTagsForBoardTab(genreTags, boardGenre) {
+    var raw = Array.isArray(genreTags)
+      ? genreTags
+          .filter(Boolean)
+          .map(function (x) {
+            return String(x).trim();
+          })
+      : [];
+    var bn = boardGenre && boardGenre.name ? String(boardGenre.name).trim() : "";
+    if (!bn || bn === ALL_GENRES_SLOT_NAME) {
+      return raw;
+    }
+    return raw.filter(function (name) {
+      return name !== bn;
+    });
+  }
+
+  /**
+   * Tags shown at the bottom of a post in the app UI only (not stored on the post).
+   * Starts from {@link otherGenreTagsForBoardTab}, then appends the "All genres" slot
+   * once if it is not already among the post's tags.
+   */
+  function displayGenreTagsWithAllSlot(genreTags, boardGenre) {
+    var out = otherGenreTagsForBoardTab(genreTags, boardGenre);
+    var merged = [];
+    var seen = {};
+    out.forEach(function (x) {
+      var n = String(x != null ? x : "").trim();
+      if (!n || seen[n]) return;
+      seen[n] = true;
+      merged.push(n);
+    });
+    if (!seen[ALL_GENRES_SLOT_NAME]) {
+      merged.push(ALL_GENRES_SLOT_NAME);
+    }
+    return merged;
+  }
+
   /** First genre board slot for a published id after merge (for deep links). */
   function resolvePostBoardLocation(pubId) {
     if (!pubId) return null;
@@ -571,8 +663,14 @@
     findPostsByProfile: findPostsByProfile,
     filterPostsByProfile: filterPostsByProfile,
     userProfileHref: userProfileHref,
+    artistProfileHref: artistProfileHref,
     listPostsByUser: listPostsByUser,
+    listPostsByArtist: listPostsByArtist,
     resolvePostBoardLocation: resolvePostBoardLocation,
+    genreBoardHslByIndex: genreBoardHslByIndex,
+    genreBoardHslByName: genreBoardHslByName,
+    otherGenreTagsForBoardTab: otherGenreTagsForBoardTab,
+    displayGenreTagsWithAllSlot: displayGenreTagsWithAllSlot,
   };
 
   applyMerge();

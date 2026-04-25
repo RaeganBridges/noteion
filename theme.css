@@ -173,6 +173,11 @@ samp {
   color: var(--accent);
 }
 
+/* No hover underline on anchors; components use color / chips instead */
+a:hover {
+  text-decoration: none;
+}
+
 .header-tagline {
   margin: 0.35rem 0 0;
   font-size: 0.72rem;
@@ -389,8 +394,9 @@ samp {
 }
 
 .sns-chip:hover {
-  color: var(--cream);
-  border-color: var(--line);
+  color: var(--accent, #c4a574);
+  text-decoration: none;
+  border-bottom-color: transparent;
 }
 
 @media (hover: none) and (pointer: coarse) {
@@ -439,5 +445,12 @@ samp {
   .header-compose-btn {
     min-width: 0;
     width: 50%;
+  }
+
+  /* Center the streaming-app chips in the footer on mobile so they
+     read as a centered row rather than left-aligned text. */
+  .footer-sns {
+    justify-content: center;
+    text-align: center;
   }
 }
