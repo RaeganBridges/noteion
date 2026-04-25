@@ -1469,7 +1469,20 @@ body.is-popup-open {
     align-items: start;
   }
 
+  /* Stack order on mobile: brand → icon row → new-song/new-album. */
+  .header-brand {
+    order: 1;
+  }
+
+  .header-actions {
+    order: 2;
+    align-self: flex-end;
+    justify-self: end;
+    margin-top: 0;
+  }
+
   .header-compose-toggle {
+    order: 3;
     width: 100%;
     max-width: min(22rem, 100%);
     justify-self: center;
@@ -1478,12 +1491,6 @@ body.is-popup-open {
   .header-compose-btn {
     min-width: 0;
     width: 50%;
-  }
-
-  .header-actions {
-    align-self: flex-end;
-    justify-self: end;
-    margin-top: 0;
   }
 
   .board-wrap {
