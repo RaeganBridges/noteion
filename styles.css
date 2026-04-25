@@ -1650,7 +1650,7 @@ body.is-popup-open {
    back inside each cubby. Inspired by a real record-store display. */
 
 :root {
-  --shelf-album-size: clamp(7rem, 17vmin, 10rem);
+  --shelf-album-size: clamp(6.8rem, 16vmin, 9.5rem);
   --shelf-bin-pad-x: 0.35rem;
   --shelf-wall-thickness: 0.55rem;
   --shelf-bin-width: calc(var(--shelf-album-size) + var(--shelf-bin-pad-x) * 2 + var(--shelf-wall-thickness));
@@ -1676,9 +1676,11 @@ body.is-popup-open {
   --label-ink: #2a1d0c;
 }
 
-/* Dim the page wood backdrop — the shelf itself is the foreground now. */
+/* Dim the page wood backdrop — the shelf itself is the foreground now.
+   Bottom stop matches the footer (#050506) so there's no visible grey
+   band between the shelf base and the footer. */
 .main-back {
-  background: linear-gradient(180deg, #1a1a1d 0%, #0c0c0e 100%);
+  background: linear-gradient(180deg, #1a1a1d 0%, #050506 100%);
   opacity: 1;
 }
 
