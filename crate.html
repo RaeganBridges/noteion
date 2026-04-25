@@ -20,6 +20,10 @@
             <span class="logo-genre js-crate-genre-label" aria-live="polite">Genre</span>
           </h1>
         </div>
+        <div class="header-compose-toggle crate-header-compose-desktop" role="group" aria-label="Create post type">
+          <a href="profile.html?compose=song" class="profile-new-song header-compose-btn">New song</a>
+          <a href="profile.html?compose=album" class="profile-new-album header-compose-btn">New album</a>
+        </div>
         <nav class="header-actions" aria-label="Toolbar">
           <button
             type="button"
@@ -65,7 +69,7 @@
               <svg class="crate-filter-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M4 5h16M7 12h10M10 19h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              <span class="crate-filter-label">Filter</span>
+              <span class="crate-filter-label">Sort</span>
               <select id="crate-filter-sort" class="crate-filter-select">
                 <option value="date-desc" selected>Posted: Newest first</option>
                 <option value="date-asc">Posted: Oldest first</option>
@@ -134,8 +138,8 @@
             <div id="cratedigger-info">
               <div class="info-container">
                 <div class="vertical-center">
-                  <div id="cratedigger-record-artist"></div>
                   <div id="cratedigger-record-title"></div>
+                  <div id="cratedigger-record-artist"></div>
                   <div id="cratedigger-record-cover"></div>
                 </div>
               </div>
@@ -179,9 +183,6 @@
         <div class="lyrics-search-panel">
           <div class="lyrics-search-scroll">
             <h2 id="lyrics-search-title" class="setlist-heading">Lyrics search</h2>
-            <p class="setlist-lede">
-              Search by song (title + optional artist), by publisher profile alone, or combine title with profile to narrow results.
-            </p>
             <label class="lyrics-search-label" for="lyrics-q-title">Title</label>
             <input id="lyrics-q-title" class="lyrics-search-input" type="search" autocomplete="off" spellcheck="true" placeholder="Song or album title" />
             <label class="lyrics-search-label" for="lyrics-q-artist">Artist</label>

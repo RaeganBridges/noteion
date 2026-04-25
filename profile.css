@@ -59,7 +59,7 @@ body.composer-open {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0 max(1rem, env(safe-area-inset-right)) 0.75rem max(1rem, env(safe-area-inset-left));
+  padding: 0.85rem max(1rem, env(safe-area-inset-right)) 0.75rem max(1rem, env(safe-area-inset-left));
   width: 100%;
   max-width: none;
   margin: 0;

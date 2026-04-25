@@ -51,31 +51,52 @@ body {
   /* Gold-accent scrollbar (Firefox + others) */
   scrollbar-color: var(--accent) rgba(12, 12, 14, 0.55);
   scrollbar-width: thin;
-  /* Retro vinyl-record cursor — small black disc with gold label and a
-     gold tonearm/needle pointing into the hot-spot at the upper-left.
-     Falls back to `auto` if the browser refuses the data URL. */
-  cursor:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g><circle cx='17' cy='17' r='9' fill='%23070707' stroke='%23c4a574' stroke-width='1'/><circle cx='17' cy='17' r='6' fill='none' stroke='%23222' stroke-width='0.6'/><circle cx='17' cy='17' r='4' fill='none' stroke='%23222' stroke-width='0.6'/><circle cx='17' cy='17' r='2.4' fill='%23c4a574'/><circle cx='17' cy='17' r='0.7' fill='%23070707'/><line x1='2' y1='2' x2='14' y2='14' stroke='%23c4a574' stroke-width='2' stroke-linecap='round'/><circle cx='14' cy='14' r='1.6' fill='%23c4a574'/></g></svg>")
-      2 2,
-    auto;
 }
 
-/* Pointer-style affordances (links, buttons) get a slightly larger,
-   "gold needle pointing right" variant so interactive elements still
-   feel distinct from idle hover. */
+/* Subtle retro arrow cursor — gold (accent-colored) pointer with a
+   black outline reminiscent of classic 90s OS cursors. Hot-spot at
+   the tip (1,1). Applied to every element with !important so it
+   beats the many local `cursor: pointer` declarations scattered
+   across the project's CSS files. The pointer rule below switches
+   to a cream-filled variant on hover over interactive elements. */
+html,
+body,
+* {
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><path d='M2 1 L2 16 L6 12 L9 18 L11.5 16.7 L8.5 11 L13.5 11 Z' fill='%23c4a574' stroke='%23070707' stroke-width='1.2' stroke-linejoin='round'/></svg>")
+      1 1,
+    default !important;
+}
+
+/* Hovering an interactive target (link, button, input, etc.) swaps
+   the cursor to a cream-filled version of the same retro arrow so
+   clickable areas read distinctly. */
 a,
+a *,
 button,
+button *,
 [role="button"],
+[role="button"] *,
+[onclick],
+[onclick] *,
 .icon-btn,
+.icon-btn *,
 input[type="submit"],
 input[type="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
 .header-compose-btn,
 .profile-new-song,
-.profile-new-album {
+.profile-new-album,
+label,
+label *,
+select,
+summary {
   cursor:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'><g><circle cx='20' cy='20' r='8' fill='%23070707' stroke='%23c4a574' stroke-width='1.2'/><circle cx='20' cy='20' r='5' fill='none' stroke='%23333' stroke-width='0.6'/><circle cx='20' cy='20' r='2.2' fill='%23c4a574'/><circle cx='20' cy='20' r='0.6' fill='%23070707'/><path d='M3 3 L14 14 L9 14 L14 19 L19 14 L14 14 Z' fill='%23c4a574' stroke='%23070707' stroke-width='0.6' stroke-linejoin='round'/></g></svg>")
-      3 3,
-    pointer;
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><path d='M2 1 L2 16 L6 12 L9 18 L11.5 16.7 L8.5 11 L13.5 11 Z' fill='%23faf5e8' stroke='%23070707' stroke-width='1.2' stroke-linejoin='round'/></svg>")
+      1 1,
+    pointer !important;
 }
 
 /* Gold-accent scrollbar (WebKit / Blink: Safari, Chrome, Edge). */
@@ -1086,7 +1107,7 @@ body.is-popup-open {
 .footer-sns {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem 0.5rem;
+  gap: 0.35rem 1rem;
 }
 
 .sns-chip {
@@ -1622,7 +1643,7 @@ body.is-popup-open {
    back inside each cubby. Inspired by a real record-store display. */
 
 :root {
-  --shelf-album-size: clamp(5.9rem, 16.5vmin, 9.4rem);
+  --shelf-album-size: clamp(6.6rem, 18.5vmin, 10.5rem);
   --shelf-bin-pad-x: 0.35rem;
   --shelf-wall-thickness: 0.55rem;
   --shelf-bin-width: calc(var(--shelf-album-size) + var(--shelf-bin-pad-x) * 2 + var(--shelf-wall-thickness));
