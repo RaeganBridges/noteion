@@ -1650,7 +1650,7 @@ body.is-popup-open {
    back inside each cubby. Inspired by a real record-store display. */
 
 :root {
-  --shelf-album-size: clamp(6.6rem, 15vmin, 9rem);
+  --shelf-album-size: clamp(7rem, 17vmin, 10rem);
   --shelf-bin-pad-x: 0.35rem;
   --shelf-wall-thickness: 0.55rem;
   --shelf-bin-width: calc(var(--shelf-album-size) + var(--shelf-bin-pad-x) * 2 + var(--shelf-wall-thickness));
