@@ -618,6 +618,7 @@ body.crate-page {
   align-items: center;
   justify-content: center;
   gap: 1.25rem;
+  transform: translateY(-1.5rem);
 }
 
 .crate-page-root .crate-loading-vinyl-wrap {
