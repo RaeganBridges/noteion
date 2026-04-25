@@ -2284,3 +2284,43 @@ body.is-popup-open {
     height: 100dvh !important;
   }
 }
+
+/* —— Mobile (≤700px): one crate per genre per screen ————————————————
+   Phones get a single-column shelf where each cubby stretches to fill
+   the available viewport so only one crate is visible at a time. The
+   scroll container snaps to each crate as the user scrolls down, and
+   inside each crate the album cover automatically rotates through the
+   genre's full cover stack while the crate is on screen, so genres
+   with more albums than fit can still surface them all without
+   shrinking the artwork. */
+@media (max-width: 700px) {
+  .scrapbook-row--shelf {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+    grid-auto-rows: minmax(70dvh, 1fr) !important;
+    aspect-ratio: auto !important;
+    max-width: min(
+      100%,
+      calc(var(--shelf-album-size) + var(--shelf-top-height) + 0.6rem)
+    ) !important;
+    max-height: none !important;
+  }
+
+  /* Page-level scroll-snap: each crate snaps under the user's thumb so
+     only one is in view at a time. The actual scroll container on home
+     mobile is <html> (set in the 900px block above). */
+  html:has(#genre-board) {
+    scroll-snap-type: y proximity;
+  }
+
+  .scrapbook-row--shelf .genre-card {
+    scroll-snap-align: center;
+  }
+
+  /* The cover sits inside the cubby; let it grow vertically so it fills
+     the taller per-screen cubby on phones rather than leaving big gaps
+     above and below the artwork. */
+  :root {
+    --shelf-album-size: clamp(11rem, 62vw, 18rem) !important;
+  }
+}

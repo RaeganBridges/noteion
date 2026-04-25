@@ -1186,6 +1186,32 @@ body.composer-open {
   background: rgba(255, 80, 80, 0.14);
 }
 
+/* Block-style "Add annotation slip" — sits on its own row below the
+   highlighter swatches and reads as an obvious action button rather
+   than a small dashed chip wedged into the toolbar. */
+.profile-slip-btn--block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.5rem 0 0.85rem;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.72rem;
+  border-style: solid;
+  border-color: rgba(196, 165, 116, 0.55);
+  background: rgba(196, 165, 116, 0.16);
+  color: var(--cream, #f6f3ea);
+  border-radius: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.profile-slip-btn--block:hover,
+.profile-slip-btn--block:focus-visible {
+  background: rgba(196, 165, 116, 0.28);
+  border-color: rgba(196, 165, 116, 0.85);
+  color: var(--accent, #c4a574);
+  outline: none;
+}
+
 .composer-genres {
   margin: 0 0 0.75rem;
   padding: 0;
@@ -1463,6 +1489,12 @@ body.composer-open {
 }
 
 @media (max-width: 700px) {
+  /* Nudge the "Hi, name" greeting and Sign-out button down a touch on mobile
+     so they don't crowd the header underline. */
+  .profile-toolbar {
+    padding-top: 1.6rem;
+  }
+
   .header-compose-toggle {
     width: 100%;
     max-width: min(22rem, 100%);
