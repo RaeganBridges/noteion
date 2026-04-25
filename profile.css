@@ -925,6 +925,7 @@ body.composer-open {
   z-index: 1;
   min-height: min(8rem, 40vh);
   padding: 0.75rem 0.45rem;
+  font-family: var(--font-roboto);
   font-size: 0.9rem;
   line-height: 1.55;
   color: var(--cream, #f6f3ea);

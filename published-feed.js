@@ -252,19 +252,17 @@
       var boardStackCoverUrls = [];
       var seenCover = {};
       var maxCovers = 16;
+      // Only include posts that have real album cover art — tracks
+      // without an `albumCoverDataUrl` are skipped entirely so the
+      // shelf never shows generated placeholder covers.
       for (var bi = 0; bi < userTracks.length && boardStackCoverUrls.length < maxCovers; bi++) {
         var track = userTracks[bi];
         var bc = track && track.albumCoverDataUrl ? String(track.albumCoverDataUrl).trim() : "";
-        var cs = bc || makeSongFallbackCoverDataUrl(track, g.name, bi);
-        if (!cs) continue;
-        if (seenCover[cs]) {
-          // If two songs share the same cover, force a song-specific fallback for variety.
-          cs = makeSongFallbackCoverDataUrl(track, g.name, bi + "_" + String(track && track.pubId || ""));
-        }
-        if (seenCover[cs]) continue;
-        seenCover[cs] = true;
-        boardStackCoverUrls.push(cs);
-        if (!boardStackCoverUrl) boardStackCoverUrl = cs;
+        if (!bc) continue;
+        if (seenCover[bc]) continue;
+        seenCover[bc] = true;
+        boardStackCoverUrls.push(bc);
+        if (!boardStackCoverUrl) boardStackCoverUrl = bc;
       }
       var baseG = baseList[i] && baseList[i].name === g.name ? baseList[i] : baseList.find(function (b) { return b.name === g.name; });
       var baseTracks = baseG && baseG.tracks && baseG.tracks.length ? baseG.tracks.slice() : [];

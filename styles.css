@@ -102,7 +102,7 @@ body.is-popup-open {
 
 .logo {
   margin: 0;
-  font-family: var(--font-rajdhani);
+  font-family: var(--font-logo);
   font-size: clamp(1.35rem, 3vw, 1.85rem);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1552,5 +1552,548 @@ body.is-popup-open {
 
   .genre-card.is-spotlight {
     animation: none;
+  }
+}
+
+/* —— Record-store shelf (home page) ———————————————————————————————
+   Honey-maple wood cubbies with an angled front lip, records leaning
+   back inside each cubby. Inspired by a real record-store display. */
+
+:root {
+  --shelf-album-size: clamp(6.6rem, 18.5vmin, 10.5rem);
+  --shelf-bin-pad-x: 0.35rem;
+  --shelf-wall-thickness: 0.55rem;
+  --shelf-bin-width: calc(var(--shelf-album-size) + var(--shelf-bin-pad-x) * 2 + var(--shelf-wall-thickness));
+  --shelf-lip-height: 4.25rem;
+  --shelf-top-height: 0.6rem;
+  --shelf-base-height: 0.7rem;
+  --shelf-album-tilt: 14deg;
+
+  /* Honey / maple wood palette, matching the reference photograph. */
+  --wood-hi: #f1c88a;
+  --wood-mid: #d9a35b;
+  --wood-mid-dark: #b8843e;
+  --wood-lo: #8a5b25;
+  --wood-shadow: #5b3814;
+  --wood-ink: #3a2410;
+
+  /* Photographic wood texture shared with the crate page so the home
+     shelves and the 3D crate feel like the same material. */
+  --wood-texture: url("cratedigger-lib/images/wood.jpg");
+
+  --label-paper: #f8efd8;
+  --label-paper-dark: #e6d9b2;
+  --label-ink: #2a1d0c;
+}
+
+/* Dim the page wood backdrop — the shelf itself is the foreground now. */
+.main-back {
+  background: linear-gradient(180deg, #1a1a1d 0%, #0c0c0e 100%);
+  opacity: 1;
+}
+
+.board-scroll-hint {
+  display: none;
+}
+
+.board-wrap {
+  padding: 1rem 0 9rem;
+  min-height: 0;
+}
+
+/* Shelf fits within the viewport — no vertical scrolling. The chain
+   of flex containers (.page-main → .board-wrap → .board-scroll →
+   #genre-board) all fill available height, and the grid uses
+   aspect-ratio so it scales down to fit both axes. */
+.page-main {
+  overflow: hidden;
+}
+
+/* Lock the home shelf to the viewport on desktop so the page never
+   scrolls vertically. Scoped via :has(#genre-board) so it only
+   applies to the home page; other pages keep their normal scroll. */
+@media (min-width: 700px) {
+  html:has(#genre-board),
+  body:has(#genre-board) {
+    overflow: hidden;
+    height: 100%;
+    height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  .page:has(#genre-board) {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+/* Top/bottom padding stays constant; the left/right padding is 0
+   because the grid auto-centers itself with `margin: 0 auto` and its
+   left/right breathing room grows/shrinks with the viewport to keep
+   cubbies square. */
+.board-scroll {
+  padding: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+@media (max-width: 700px) {
+  .board-wrap {
+    padding: 1rem 0 6.5rem;
+  }
+  .board-scroll {
+    padding: 1.5rem 0;
+  }
+}
+
+/* No horizontal scrolling anymore — hide the "scroll" corner hint. */
+.board-scroll-hint {
+  display: none;
+}
+
+/* —— Shelf board: a flex container that fills its vertical track and
+      centers the grid horizontally AND vertically so the shelf never
+      needs to scroll out of view. */
+#genre-board.scrapbook-board {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  position: relative;
+}
+
+#genre-board.scrapbook-board::before,
+#genre-board.scrapbook-board::after {
+  display: none;
+}
+
+/* The row is now a CSS grid of equally-sized cubbies. Each column
+   stretches to fill available space, and new rows appear automatically
+   when the cubbies run out of horizontal room. */
+.scrapbook-row--shelf {
+  display: grid;
+  /* Locked to a 6-wide, 4-row rectangular shelving unit. With both
+     axes at 1fr and `aspect-ratio: 6 / 4`, the grid scales down to
+     fit whichever of the parent's width or height is more constraining,
+     so the shelf always fits in the viewport without scrolling. */
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 0;
+  width: 100%;
+  aspect-ratio: 6 / 4;
+  /* The cap is derived only from the album + top plank + a hair of
+     padding. The lip height is intentionally EXCLUDED so that making
+     the genre-name panel taller covers more of the album instead of
+     growing the cubby itself. */
+  max-width: min(
+    100%,
+    calc((var(--shelf-album-size) + var(--shelf-top-height) + 0.6rem) * 6)
+  );
+  max-height: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 3;
+  /* Deep drop shadow below the whole shelving unit so it reads as one
+     piece of furniture sitting in the room. No overflow clipping so
+     hover lifts on cubbies aren't cropped at the edges. */
+  filter: drop-shadow(0 18px 20px rgba(0, 0, 0, 0.55));
+}
+
+/* Legacy scrapbook row offset no longer applies. */
+.scrapbook-row--bottom,
+.scrapbook-row--top {
+  margin-inline-start: 0;
+}
+
+/* —— Cubby (one per genre). Each is a complete framed box with its
+      own top plank, side walls, honey-wood back, and angled front lip
+      so the cubbies tile horizontally AND stack cleanly in rows. */
+.scrapbook-row--shelf .genre-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: auto;
+  min-width: 0;
+  /* Every cubby fills its grid cell, which is already square because
+     the outer grid has `aspect-ratio: 6 / 4` with equal-fraction tracks. */
+  height: 100%;
+  padding: calc(var(--shelf-top-height) + 0.4rem) var(--shelf-bin-pad-x) 0;
+  margin: 0;
+  /* The cubby's back wall is intentionally very dark so the album art
+     pops forward like in a real record-store display. A hint of the
+     wood texture still shows through to keep the material coherent
+     with the lit wood on the frame, top plank, walls, and lip. */
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.82) 0%,
+      rgba(0, 0, 0, 0.92) 100%),
+    var(--wood-texture);
+  background-size: auto, 150% auto;
+  background-position: center, center 35%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  transform: none;
+  transition:
+    transform 0.25s var(--ease-out),
+    filter 0.25s var(--ease-out);
+}
+
+/* Top plank of each cubby — adjacent cubbies' planks tile into a
+   continuous horizontal beam that reads as the shelf's top rail. */
+.genre-bin-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: var(--shelf-top-height);
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.52) 0%,
+      rgba(0, 0, 0, 0.68) 100%),
+    var(--wood-texture);
+  background-size: auto, 300% auto;
+  background-position: center, center 10%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 210, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* Right wall of each cubby. Adjacent cubbies' walls touch to form the
+   interior dividers; the last cubby's wall becomes the shelf's right
+   edge. */
+.scrapbook-row--shelf .genre-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--shelf-wall-thickness);
+  /* Side walls face perpendicular to the shelf's light, so they get a
+     gentle edge-to-edge shade to read as a beveled plank. Grain still
+     runs horizontally across the wall (matching the crate sides). */
+  background:
+    linear-gradient(90deg,
+      rgba(0, 0, 0, 0.48) 0%,
+      rgba(0, 0, 0, 0.7) 100%),
+    var(--wood-texture);
+  background-size: auto, auto 150%;
+  background-position: center, right center;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 240, 210, 0.12),
+    inset -1px 0 0 rgba(0, 0, 0, 0.45),
+    -1px 0 4px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Left wall of each cubby. Its width matches the right wall so grid
+   tracks are visually symmetric regardless of column index. */
+.scrapbook-row--shelf .genre-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--shelf-wall-thickness);
+  background:
+    linear-gradient(90deg,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0.48) 100%),
+    var(--wood-texture);
+  background-size: auto, auto 150%;
+  background-position: center, left center;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  box-shadow:
+    inset 1px 0 0 rgba(0, 0, 0, 0.45),
+    inset -1px 0 0 rgba(255, 240, 210, 0.12),
+    1px 0 4px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* No hover lift or scale on shelf cards — the audio preview is the
+   only hover response; the record stays put. Specificity here matches
+   the legacy .genre-card:hover:not(:has(...)) rule so this wins. */
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover)),
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus)) {
+  transform: none;
+  z-index: auto;
+}
+
+/* Kill the polaroid frame around the album, and size the crate as a
+   percentage of the cubby so the record scales with the grid instead
+   of sticking to a fixed rem size. */
+.scrapbook-row--shelf .genre-crate {
+  position: relative;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  z-index: 2;
+  width: 82%;
+  aspect-ratio: 1 / 1;
+  /* Push the record up off the bottom so the lip covers its lower edge. */
+  margin-bottom: 14%;
+  perspective: 900px;
+  perspective-origin: 50% 40%;
+}
+
+/* The record sleeve — leans back like it's resting against the cubby. */
+.scrapbook-row--shelf .card-inner {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+  transform: rotateX(var(--shelf-album-tilt));
+  transform-style: preserve-3d;
+  transition: transform 0.28s var(--ease-out);
+}
+
+.scrapbook-row--shelf .vinyl-wrap {
+  width: 100%;
+  height: 100%;
+}
+
+/* Neutralize every legacy hover transform/reveal for shelf cubbies —
+   the record, album cover, vinyl peek, and backing squares all stay
+   in their resting state. Only the audio preview (JS) still fires.
+   Each selector mirrors the legacy :not(:has(...)) clause so we tie
+   or beat the original rule's specificity. */
+/* On hover/focus, straighten the album up (no lean) — paired with the
+   audio preview. */
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-inner {
+  transform: rotateX(0deg);
+}
+
+/* At rest, shelf albums keep the genre-color duotone tint (via the
+   global `luminosity, normal` blend on `.card-inner::before/::after`
+   and `.card-face`). On hover/focus we swap to `normal, normal` so
+   the opaque artwork wins and the album shows in its original colors. */
+.scrapbook-row--shelf .card-inner[data-has-board-cover="1"]::before,
+.scrapbook-row--shelf .card-inner[data-has-board-cover="1"]::after,
+.scrapbook-row--shelf .card-face[data-has-face-cover="1"] {
+  transition: background-blend-mode 0.25s var(--ease-out);
+}
+
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover))
+  .card-inner[data-has-board-cover="1"]::before,
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover))
+  .card-inner[data-has-board-cover="1"]::after,
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover))
+  .card-face[data-has-face-cover="1"],
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus))
+  .card-inner[data-has-board-cover="1"]::before,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus))
+  .card-inner[data-has-board-cover="1"]::after,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus))
+  .card-face[data-has-face-cover="1"] {
+  background-blend-mode: normal, normal;
+}
+
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover)) .vinyl-wrap,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus)) .vinyl-wrap {
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover)) .card-face,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-face {
+  opacity: 1;
+  transform: none;
+}
+
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner::before,
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover)) .card-inner::after,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-inner::before,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus)) .card-inner::after {
+  opacity: 1;
+}
+
+.scrapbook-row--shelf .genre-card:hover:not(:has(.stack-shuffle:hover)) .stack-shuffle,
+.scrapbook-row--shelf .genre-card:focus-within:not(:has(.stack-shuffle :focus)) .stack-shuffle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* "More records behind" — subtle neighbors offset to either side. */
+.scrapbook-row--shelf .card-inner::before,
+.scrapbook-row--shelf .card-inner::after {
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 8px 14px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+}
+
+.scrapbook-row--shelf .card-inner[data-stack-arr="0"]::before,
+.scrapbook-row--shelf .card-inner[data-stack-arr="1"]::before,
+.scrapbook-row--shelf .card-inner[data-stack-arr="2"]::before,
+.scrapbook-row--shelf .card-inner[data-stack-arr="3"]::before {
+  transform: translate(-4px, 2px) rotate(1.5deg);
+  opacity: 0.82;
+}
+
+.scrapbook-row--shelf .card-inner[data-stack-arr="0"]::after,
+.scrapbook-row--shelf .card-inner[data-stack-arr="1"]::after,
+.scrapbook-row--shelf .card-inner[data-stack-arr="2"]::after,
+.scrapbook-row--shelf .card-inner[data-stack-arr="3"]::after {
+  transform: translate(4px, 2px) rotate(-1.5deg);
+  opacity: 0.88;
+}
+
+/* Front album cover: flat, crisp, square. */
+.scrapbook-row--shelf .card-face {
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* —— Angled front lip — the sloped wooden panel across the bottom of
+      each cubby that the records lean against. Injected via the
+      .genre-bin-tag element (which becomes part of the lip). */
+.genre-bin-tag {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  min-height: var(--shelf-lip-height);
+  padding: 0 calc(var(--shelf-bin-pad-x) + 0.35rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  color: var(--label-ink);
+  text-align: center;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.46) 0%,
+      rgba(0, 0, 0, 0.68) 100%
+    ),
+    var(--wood-texture);
+  background-size: auto, 200% auto;
+  background-position: center, center 70%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  /* Trapezoidal lip — narrower at top, wider at bottom, so it reads
+     like a panel that angles out toward the viewer. */
+  clip-path: polygon(
+    0.75rem 0,
+    calc(100% - 0.75rem) 0,
+    100% 100%,
+    0 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 210, 0.28),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* Dark edge/shadow cast by the lip onto the records above it. */
+.genre-bin-tag::before {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  top: -0.35rem;
+  height: 0.6rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 100%);
+  border-radius: 2px 2px 0 0;
+  pointer-events: none;
+}
+
+.genre-bin-tag-num {
+  font-family: var(--font-sf-pro-display, var(--font-roboto));
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(250, 230, 195, 0.55);
+  text-transform: uppercase;
+}
+
+.genre-bin-tag-name {
+  font-family: var(--font-sf-pro-display, var(--font-roboto));
+  font-size: clamp(0.78rem, 1.7vmin, 0.98rem);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  color: rgba(250, 230, 195, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+}
+
+/* Hide the old genre-name/rank baked into the card-face — the lip label
+   is now the source of truth. Keep the face as a pure album cover. */
+.scrapbook-row--shelf .card-face .genre-rank,
+.scrapbook-row--shelf .card-face .genre-name {
+  display: none;
+}
+
+/* Shuffle arrows are hidden on the shelf layout — hovering a cubby
+   only plays the audio preview. The shuffle controls remain in the
+   DOM so keyboard/JS access isn't broken. */
+.scrapbook-row--shelf .genre-card-controls {
+  display: none;
+}
+
+.scrapbook-row--shelf .stack-shuffle {
+  transform: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+  justify-content: space-between;
+  padding: 0;
+  gap: 0;
+  width: 100%;
+}
+
+.scrapbook-row--shelf .stack-shuffle-btn {
+  width: 1.45rem;
+  height: 1.2rem;
+  min-width: 1.45rem;
+  border-radius: 0.3rem;
+}
+
+
+/* Responsive: tighten on small screens. */
+@media (max-width: 700px) {
+  :root {
+    --shelf-album-size: clamp(5rem, 22vmin, 7rem);
+    --shelf-lip-height: 3.25rem;
+    --shelf-top-height: 0.5rem;
+    --shelf-base-height: 0.6rem;
+    --shelf-wall-thickness: 0.45rem;
+  }
+  .board-wrap {
+    padding: 3.1rem 0 2.5rem;
   }
 }

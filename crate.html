@@ -74,6 +74,31 @@
                 <option value="artist-desc">Artist Z–A</option>
               </select>
             </label>
+            <div
+              class="crate-filter-now"
+              id="crate-filter-now"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              hidden
+            >
+              <p class="crate-filter-now-title" id="crate-filter-now-title"></p>
+              <p class="crate-filter-now-meta">
+                <span class="crate-filter-now-artist" id="crate-filter-now-artist"></span>
+                <span class="crate-filter-now-sep" aria-hidden="true">·</span>
+                <span class="crate-filter-now-poster" id="crate-filter-now-poster"></span>
+              </p>
+            </div>
+            <div
+              id="bottom-bar"
+              class="noselect crate-filter-nav"
+              role="group"
+              aria-label="Record navigation"
+            >
+              <div id="button-prev" class="bottom-bar-item" role="button" tabindex="0">Previous</div>
+              <div id="button-show" class="bottom-bar-item" role="button" tabindex="0">Show</div>
+              <div id="button-next" class="bottom-bar-item" role="button" tabindex="0">Next</div>
+            </div>
           </div>
           <div id="cratedigger">
             <div id="cratedigger-canvas"></div>
@@ -96,11 +121,6 @@
                 </div>
               </div>
             </div>
-          </div>
-          <div id="bottom-bar" class="noselect">
-            <div id="button-prev" class="bottom-bar-item">PREVIOUS</div>
-            <div id="button-show" class="bottom-bar-item">SHOW</div>
-            <div id="button-next" class="bottom-bar-item">NEXT</div>
           </div>
         </div>
       </main>

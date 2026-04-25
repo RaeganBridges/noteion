@@ -154,6 +154,8 @@
 
   var crateGenreAudio = null;
   var crateLoadingAriaPollTimer = null;
+  var crateCameraLockRaf = 0;
+  var crateLockedPose = null;
 
   function tryPlayCrateGenreAudio() {
     if (!crateGenreAudio) return;
@@ -326,6 +328,322 @@
     });
   }
 
+  function freezeCrateNavigationCameraTweens() {
+    var T = typeof window !== "undefined" ? window.TWEEN : null;
+    if (!T || !T.Tween || !T.Tween.prototype || T.Tween.prototype.__noteionCameraFreezePatched) {
+      return;
+    }
+    var originalTo = T.Tween.prototype.to;
+    if (typeof originalTo !== "function") return;
+
+    T.Tween.prototype.to = function (properties, duration) {
+      var props = properties;
+      var obj = this && this._object;
+      if (
+        props &&
+        obj &&
+        typeof props === "object" &&
+        typeof obj === "object" &&
+        typeof props.x === "number" &&
+        typeof props.y === "number" &&
+        typeof obj.x === "number" &&
+        typeof obj.y === "number" &&
+        /* Cratedigger camera/target tweens use high Y values (>= ~75). */
+        props.y > 60
+      ) {
+        props = Object.assign({}, props, {
+          x: obj.x,
+          y: obj.y,
+          z: typeof props.z === "number" && typeof obj.z === "number" ? obj.z : props.z,
+        });
+        duration = 0;
+      }
+      return originalTo.call(this, props, duration);
+    };
+    T.Tween.prototype.__noteionCameraFreezePatched = true;
+  }
+
+  function findCameraAndControls(root) {
+    if (!root || typeof root !== "object") return null;
+    var seen = [];
+    var foundCamera = null;
+    var foundControls = null;
+    function walk(node, depth) {
+      if (!node || typeof node !== "object" || depth > 22) return;
+      if (seen.indexOf(node) !== -1) return;
+      seen.push(node);
+      if (
+        !foundCamera &&
+        (node.isCamera === true ||
+          (node.position &&
+            typeof node.lookAt === "function" &&
+            node.projectionMatrix &&
+            typeof node.updateProjectionMatrix === "function"))
+      ) {
+        foundCamera = node;
+      }
+      if (!foundControls && node.target && typeof node.update === "function") {
+        foundControls = node;
+      }
+      if (foundCamera && foundControls) return;
+      var keys;
+      try {
+        keys = Reflect.ownKeys(node);
+      } catch (e) {
+        keys = Object.keys(node);
+      }
+      for (var i = 0; i < keys.length; i++) {
+        var child;
+        try {
+          child = node[keys[i]];
+        } catch (e) {
+          continue;
+        }
+        if (!child || typeof child !== "object") continue;
+        walk(child, depth + 1);
+        if (foundCamera && foundControls) return;
+      }
+    }
+    walk(root, 0);
+    if (!foundCamera) return null;
+    return {
+      camera: foundCamera,
+      controls: foundControls,
+    };
+  }
+
+  function getCrateCameraAndTarget() {
+    var api = window.__NOTEION_CRATEDIGGER__;
+    if (!api) return null;
+    var cm = api.__noteionCameraManager;
+    if (!cm || typeof cm.getCamera !== "function" || typeof cm.getTarget !== "function") {
+      return null;
+    }
+    var camera = cm.getCamera();
+    var target = cm.getTarget();
+    if (!camera || !camera.position) return null;
+    if (!target || !target.position) return null;
+    return { camera: camera, target: target, cameraManager: cm };
+  }
+
+  /**
+   * Fixed crate camera pose. Dialed in with the dev camera tuner:
+   *   yaw 89.54°, pitch 51.00°, distance 457.839 around the default target.
+   * Kept as plain numbers so we're not re-running spherical math each frame.
+   */
+  var CRATE_CAMERA_POSE = {
+    camera: { x: 335.796, y: 298.127, z: 2.880 },
+    target: { x: -20.0, y: 10.0, z: 0.0 },
+  };
+
+  function captureCrateCameraPose() {
+    var ref = getCrateCameraAndTarget();
+    if (!ref) return;
+    var cam = ref.camera;
+    var tgt = ref.target;
+    var api = window.__NOTEION_CRATEDIGGER__;
+    var consts = api && api.__noteionConstants;
+    var sceneC = consts && consts.scene;
+
+    if (consts) {
+      /* Disable the library's mouse-driven scene rotation so the camera actually locks. */
+      consts.cameraMouseMove = false;
+    }
+    /* Overwrite the library's base positions so any internal resetCamera()
+       (which does run during init / on record close) tweens toward our
+       locked pose instead of the stock (280,200,180) → (-20,10,0). */
+    if (sceneC && sceneC.cameraBasePosition) {
+      sceneC.cameraBasePosition.x = CRATE_CAMERA_POSE.camera.x;
+      sceneC.cameraBasePosition.y = CRATE_CAMERA_POSE.camera.y;
+      sceneC.cameraBasePosition.z = CRATE_CAMERA_POSE.camera.z;
+    }
+    if (sceneC && sceneC.targetBasePosition) {
+      sceneC.targetBasePosition.x = CRATE_CAMERA_POSE.target.x;
+      sceneC.targetBasePosition.y = CRATE_CAMERA_POSE.target.y;
+      sceneC.targetBasePosition.z = CRATE_CAMERA_POSE.target.z;
+    }
+
+    /* Seed pose directly; the TWEEN freeze patch neutralizes startup tweens. */
+    cam.position.x = CRATE_CAMERA_POSE.camera.x;
+    cam.position.y = CRATE_CAMERA_POSE.camera.y;
+    cam.position.z = CRATE_CAMERA_POSE.camera.z;
+    tgt.position.x = CRATE_CAMERA_POSE.target.x;
+    tgt.position.y = CRATE_CAMERA_POSE.target.y;
+    tgt.position.z = CRATE_CAMERA_POSE.target.z;
+    if (typeof cam.lookAt === "function") {
+      try {
+        cam.lookAt(tgt.position);
+      } catch (e) {}
+    }
+
+    crateLockedPose = {
+      camera: cam,
+      target: tgt,
+      cameraManager: ref.cameraManager,
+      x: CRATE_CAMERA_POSE.camera.x,
+      y: CRATE_CAMERA_POSE.camera.y,
+      z: CRATE_CAMERA_POSE.camera.z,
+      tx: CRATE_CAMERA_POSE.target.x,
+      ty: CRATE_CAMERA_POSE.target.y,
+      tz: CRATE_CAMERA_POSE.target.z,
+    };
+    /* Hook the library's per-frame lookAt so we pin pose immediately before render. */
+    patchCameraManagerLookAt(ref.cameraManager);
+  }
+
+  function patchCameraManagerLookAt(cm) {
+    if (!cm || cm.__noteionLookAtPatched) return;
+    var original = cm.lookAtTarget;
+    if (typeof original !== "function") return;
+    cm.lookAtTarget = function () {
+      try {
+        if (crateLockedPose && crateLockedPose.camera && crateLockedPose.target) {
+          var c = crateLockedPose.camera;
+          var t = crateLockedPose.target;
+          c.position.x = crateLockedPose.x;
+          c.position.y = crateLockedPose.y;
+          c.position.z = crateLockedPose.z;
+          t.position.x = crateLockedPose.tx;
+          t.position.y = crateLockedPose.ty;
+          t.position.z = crateLockedPose.tz;
+        }
+      } catch (e) {}
+      return original.apply(cm, arguments);
+    };
+    cm.__noteionLookAtPatched = true;
+  }
+
+  function enforceCrateCameraPose() {
+    if (!crateLockedPose || !crateLockedPose.camera || !crateLockedPose.target) return;
+    var cam = crateLockedPose.camera;
+    var tgt = crateLockedPose.target;
+    /* Pin camera. */
+    cam.position.x = crateLockedPose.x;
+    cam.position.y = crateLockedPose.y;
+    cam.position.z = crateLockedPose.z;
+    /* Pin the library's lookAt target so its per-frame camera.lookAt(target)
+       cannot drift the orientation during album navigation. */
+    tgt.position.x = crateLockedPose.tx;
+    tgt.position.y = crateLockedPose.ty;
+    tgt.position.z = crateLockedPose.tz;
+    if (typeof cam.lookAt === "function") {
+      try {
+        cam.lookAt(tgt.position);
+      } catch (e) {}
+    }
+    if (typeof cam.updateProjectionMatrix === "function") {
+      cam.updateProjectionMatrix();
+    }
+    /* Also clear any scene-root drift from the mouse-move rotation (belt + suspenders). */
+    var root = document.getElementById("cratedigger");
+    if (root && root.__noteionSceneRoot) {
+      var sr = root.__noteionSceneRoot;
+      if (sr && sr.rotation) {
+        sr.rotation.y = 0;
+        sr.rotation.z = 0;
+      }
+    }
+  }
+
+  function startCrateCameraLock() {
+    if (crateCameraLockRaf) return;
+    function tick() {
+      crateCameraLockRaf = requestAnimationFrame(tick);
+      if (!crateLockedPose) {
+        captureCrateCameraPose();
+      }
+      enforceCrateCameraPose();
+    }
+    crateCameraLockRaf = requestAnimationFrame(tick);
+  }
+
+  function stopCrateCameraLock() {
+    if (!crateCameraLockRaf) return;
+    cancelAnimationFrame(crateCameraLockRaf);
+    crateCameraLockRaf = 0;
+  }
+
+  /**
+   * Filter-bar "now showing" readout — reflects the record the crate is
+   * currently centered on. Polls cratedigger.getSelectedRecord() on RAF; only
+   * touches the DOM when the selection actually changes.
+   */
+  var crateNowRaf = 0;
+  var crateNowLastId = -2;
+
+  function crateSelectedRecordId(api) {
+    if (!api || typeof api.getSelectedRecord !== "function") return -1;
+    var rec;
+    try {
+      rec = api.getSelectedRecord();
+    } catch (e) {
+      return -1;
+    }
+    if (!rec) return -1;
+    return typeof rec.id === "number" ? rec.id : -1;
+  }
+
+  function renderCrateNowShowing() {
+    var api = window.__NOTEION_CRATEDIGGER__;
+    var panel = document.getElementById("crate-filter-now");
+    if (!panel) return;
+    var id = crateSelectedRecordId(api);
+    if (id === crateNowLastId) return;
+    crateNowLastId = id;
+
+    var rec = null;
+    try {
+      rec = api && typeof api.getSelectedRecord === "function" ? api.getSelectedRecord() : null;
+    } catch (e) {
+      rec = null;
+    }
+    var data = rec && rec.data;
+    if (!data || id < 0) {
+      panel.setAttribute("hidden", "");
+      panel.classList.remove("is-visible");
+      return;
+    }
+
+    var titleEl = document.getElementById("crate-filter-now-title");
+    var artistEl = document.getElementById("crate-filter-now-artist");
+    var posterEl = document.getElementById("crate-filter-now-poster");
+
+    var title = String(data.title || "").trim();
+    var artist = String(data.artist || "").trim();
+    var poster = String(data.posterName || "").trim();
+    /* Avoid duplicating "Artist · Artist" when posterName === artist. */
+    if (poster && poster === artist) poster = "";
+
+    if (titleEl) titleEl.textContent = title;
+    if (artistEl) artistEl.textContent = artist;
+    if (posterEl) posterEl.textContent = poster ? "@" + poster : "";
+    if (!artist || !poster) {
+      panel.classList.add("no-meta-sep");
+    } else {
+      panel.classList.remove("no-meta-sep");
+    }
+
+    panel.removeAttribute("hidden");
+    requestAnimationFrame(function () {
+      panel.classList.add("is-visible");
+    });
+  }
+
+  function startCrateNowShowing() {
+    if (crateNowRaf) return;
+    function tick() {
+      crateNowRaf = requestAnimationFrame(tick);
+      renderCrateNowShowing();
+    }
+    crateNowRaf = requestAnimationFrame(tick);
+  }
+
+  function stopCrateNowShowing() {
+    if (!crateNowRaf) return;
+    cancelAnimationFrame(crateNowRaf);
+    crateNowRaf = 0;
+  }
+
   /**
    * Cratedigger sizes the WebGL canvas from container dimensions. If the flex
    * chain yields 0×0 on first paint, the scene is invisible until a resize.
@@ -369,6 +687,12 @@
     setupCrateGenreAudioUi();
 
     initCrateRecordFilters();
+    freezeCrateNavigationCameraTweens();
+    captureCrateCameraPose();
+    setTimeout(captureCrateCameraPose, 80);
+    setTimeout(captureCrateCameraPose, 260);
+    startCrateCameraLock();
+    startCrateNowShowing();
 
     var ld = document.getElementById("cratedigger-loading");
     if (ld) {
@@ -490,6 +814,7 @@
       records.push({
         title: (t && t.title) || "Untitled",
         artist: (t && (t.artist || t.displayName)) || "",
+        posterName: (t && t.displayName) || "",
         cover: cover,
         hasSleeve: false,
         songPublishedAt: trackSongPublishedMs(t),
@@ -581,6 +906,7 @@
 
     window.__NOTEION_CRATE_RECORDS__ = out;
     api.loadRecords(out, false, function () {
+      captureCrateCameraPose();
       window.dispatchEvent(new Event("resize"));
     });
   }
@@ -650,9 +976,18 @@
       afterCratediggerScriptsLoaded();
     })
     .catch(function (err) {
+      stopCrateCameraLock();
       stopCrateGenreAudio();
       if (typeof console !== "undefined" && console.error) {
         console.error("[crate-page]", err);
       }
     });
+
+  window.addEventListener(
+    "beforeunload",
+    function () {
+      stopCrateCameraLock();
+    },
+    { passive: true }
+  );
 })();

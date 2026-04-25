@@ -186,6 +186,7 @@
         " A short preview clip plays on hover." +
         " Open genre page." +
         '">' +
+        '<div class="genre-bin-top" aria-hidden="true"></div>' +
         '<div class="genre-card-controls">' +
         '<div class="stack-shuffle" data-sticker="' +
         stickerKind +
@@ -225,9 +226,13 @@
         '<div class="genre-crate-post genre-crate-post--right"></div>' +
         "</div>" +
         "</div>" +
+        '<div class="genre-bin-tag" aria-hidden="true">' +
+        '<span class="genre-bin-tag-name"></span>' +
+        "</div>" +
         "</article>"
     );
     $card.find(".genre-name").text(g.name);
+    $card.find(".genre-bin-tag-name").text(g.name);
     $card.css({
       "--genre-overlay": genreOverlayColor(rank, totalGenres),
       "--tilt": tilt + "deg",
@@ -236,7 +241,8 @@
     var $faceNode = $card.find(".card-face");
     var covers = collectBoardCovers(g);
     if (covers.length) {
-      var ci = getStoredCoverIdx(rank) % covers.length;
+      var ci = Math.floor(Math.random() * covers.length);
+      setStoredCoverIdx(rank, ci);
       applyInnerBoardCover($innerNode, covers, ci);
       applyFaceBoardCover($faceNode, covers, ci);
     } else {
@@ -274,22 +280,16 @@
     var $board = $("#genre-board");
     $board.empty();
 
-    var $rowTop = $('<div class="scrapbook-row scrapbook-row--top"></div>');
-    var $rowBottom = $('<div class="scrapbook-row scrapbook-row--bottom"></div>');
+    var $row = $('<div class="scrapbook-row scrapbook-row--shelf"></div>');
     var genres = getGenres();
-    var half = Math.ceil(genres.length / 2);
 
     genres.forEach(function (g, i) {
       var rank = i + 1;
       var $card = buildGenreCard(g, rank, genres.length);
-      if (i < half) {
-        $rowTop.append($card);
-      } else {
-        $rowBottom.append($card);
-      }
+      $row.append($card);
     });
 
-    $board.append($rowTop, $rowBottom);
+    $board.append($row);
   }
 
   function buildSetlist() {

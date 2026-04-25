@@ -39,11 +39,115 @@
   src: url("./SpecialElite-Regular.ttf") format("truetype");
 }
 
-/* Legacy ROC Nation distribution fonts (kept for compatibility) */
+/* Apple SF Pro — used for song lyrics and smaller body type.
+   SF Pro Text is optimized for sizes below ~20px; SF Pro Display for larger. */
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-Light.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-Regular.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-RegularItalic.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-Medium.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-MediumItalic.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-Semibold.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-SemiboldItalic.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-Bold.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Text";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Text-BoldItalic.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Display-Regular.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Display-Medium.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Display-Semibold.otf") format("opentype");
+}
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./sf-pro/SF-Pro-Display-Bold.otf") format("opentype");
+}
+
+/* Legacy typography variables now all resolve to SF Pro.
+   The only element that stays on Special Elite is the .logo (Cr8Dig),
+   which overrides its font-family directly. */
 :root {
-  --font-rajdhani: "Special Elite", "Rajdhani", sans-serif;
-  --font-roboto: "Special Elite", "Rajdhani", sans-serif;
-  --font-rocnation: "Special Elite", "Rajdhani", sans-serif;
+  --font-rajdhani: "SF Pro Display", "SF Pro Text", -apple-system,
+    BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-roboto: "SF Pro Text", -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-rocnation: "SF Pro Display", "SF Pro Text", -apple-system,
+    BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sf-pro-text: "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sf-pro-display: "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-logo: "Special Elite", "Courier Prime", "Courier New", monospace;
 }
 
 @font-face{font-family:"Rajdhani";font-style:normal;font-weight:400;font-display:swap;src:url(./7e5a5c10421db7a0-s.woff2) format("woff2");unicode-range:u+0900-097f,u+1cd0-1cf9,u+200c-200d,u+20a8,u+20b9,u+20f0,u+25cc,u+a830-a839,u+a8e0-a8ff,u+11b00-11b09}

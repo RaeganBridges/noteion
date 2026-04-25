@@ -85,6 +85,7 @@ body.crate-page {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
+  justify-content: space-between;
   gap: 0.65rem 1rem;
   padding: 0.65rem 0.85rem 0.5rem;
   border-bottom: 1px solid color-mix(in oklab, var(--crate-genre-overlay) 22%, transparent);
@@ -173,14 +174,128 @@ body.crate-page {
   line-height: 1.45;
 }
 
-.crate-page-root #bottom-bar {
-  z-index: 90;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--crate-genre-overlay) 11%, rgba(10, 10, 12, 0.35)) 0%,
-    rgba(8, 8, 10, 0.82) 55%,
-    rgba(6, 6, 8, 0.92) 100%
-  ) !important;
+/* Now-showing readout in the center of the filter bar — song title on top,
+   "artist · poster" below. Pure status block; pointer-events disabled so it
+   doesn't block clicks on the nav buttons on small screens. */
+.crate-page-root .crate-filter-now {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.05rem 0.75rem;
+  text-align: center;
+  color: rgba(250, 248, 240, 0.94);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.crate-page-root .crate-filter-now.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.crate-page-root .crate-filter-now[hidden] {
+  display: none !important;
+}
+
+.crate-page-root .crate-filter-now-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: rgba(250, 248, 240, 0.98);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(40rem, 56vw);
+}
+
+.crate-page-root .crate-filter-now-meta {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 240, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(40rem, 56vw);
+}
+
+.crate-page-root .crate-filter-now-artist {
+  color: rgba(250, 248, 240, 0.85);
+}
+
+.crate-page-root .crate-filter-now-sep {
+  margin: 0 0.45rem;
+  color: rgba(250, 248, 240, 0.4);
+}
+
+.crate-page-root .crate-filter-now-poster {
+  color: color-mix(in oklab, var(--crate-genre-overlay) 70%, rgba(250, 248, 240, 0.85));
+}
+
+.crate-page-root .crate-filter-now.no-meta-sep .crate-filter-now-sep {
+  display: none;
+}
+
+/* Inline nav group (moved from absolute bottom bar into filter bar). Overrides
+   cratedigger-lib/index.css which positions #bottom-bar absolutely at 60px. */
+.crate-page-root #bottom-bar.crate-filter-nav {
+  position: static !important;
+  display: inline-flex !important;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.3rem;
+  width: auto !important;
+  height: auto !important;
+  padding: 0;
+  margin-left: auto;
+  background: transparent !important;
+  color: rgba(250, 248, 240, 0.92);
+  border-radius: 8px;
+  overflow: visible;
+  table-layout: auto;
+}
+
+.crate-page-root #bottom-bar.crate-filter-nav.closed {
+  bottom: auto !important;
+}
+
+.crate-page-root #bottom-bar.crate-filter-nav .bottom-bar-item {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0.38rem 0.7rem;
+  line-height: 1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(250, 248, 240, 0.92);
+  background: rgba(18, 18, 20, 0.85);
+  border: 1px solid color-mix(in oklab, var(--crate-genre-overlay) 28%, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.crate-page-root #bottom-bar.crate-filter-nav .bottom-bar-item:hover,
+.crate-page-root #bottom-bar.crate-filter-nav .bottom-bar-item:focus-visible {
+  background: color-mix(in oklab, var(--crate-genre-overlay) 22%, rgba(36, 36, 42, 0.95)) !important;
+  color: rgba(250, 248, 240, 1);
+  outline: none;
+}
+
+.crate-page-root #bottom-bar.crate-filter-nav #button-show {
+  background: color-mix(in oklab, var(--crate-genre-overlay) 32%, rgba(20, 20, 24, 0.9));
+  border-color: color-mix(in oklab, var(--crate-genre-overlay) 48%, rgba(255, 255, 255, 0.12));
 }
 
 /* Loading: spinning vinyl (replaces “Loading records…” text); tint follows genre via --crate-genre-overlay */
@@ -243,8 +358,8 @@ body.crate-page {
 
 .crate-page-root .crate-loading-vinyl {
   position: relative;
-  width: min(58vmin, 340px);
-  height: min(58vmin, 340px);
+  width: min(48vmin, 280px);
+  height: min(48vmin, 280px);
   border-radius: 50%;
   background:
     radial-gradient(
@@ -368,3 +483,4 @@ body.crate-page {
   opacity: 1;
   pointer-events: auto;
 }
+
