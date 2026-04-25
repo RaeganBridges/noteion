@@ -156,7 +156,8 @@ samp {
 }
 
 @media (min-width: 701px) {
-  .header-brand {
+  .header-brand,
+  .header-actions {
     transform: translateY(-3px);
   }
 }
