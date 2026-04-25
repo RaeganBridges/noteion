@@ -921,57 +921,102 @@
   }
 
   /**
-   * Touch swipe navigation: on touch devices, swiping horizontally over the
-   * 3D crate canvas flips to the previous/next record by simulating a click
-   * on the existing prev/next buttons (which the cratedigger library already
-   * has handlers for). Vertical swipes are ignored so the page can still
-   * scroll. We attach the listener with passive:true so we don't block
-   * default scrolling, but only trigger nav when the gesture is clearly
-   * horizontal (|dx| > |dy| and |dx| beyond a threshold).
+   * Touch swipe navigation: on touch devices, horizontal drags over the 3D
+   * crate canvas pan through the records in real time. As the user moves
+   * their finger, every STEP_PX of horizontal travel advances/retreats one
+   * record, so longer drags pan farther and the user perceives the view
+   * sliding rather than jumping. Vertical scrolling on the page is left
+   * untouched until we're confident the gesture is horizontal — at which
+   * point we call preventDefault() to keep ownership of the gesture and
+   * also suppress the synthetic click that would otherwise open whichever
+   * record happened to be under the touch.
+   *
+   * Listeners are attached on document and gated by hit-testing the touch
+   * target into #cratedigger so overlays sitting above the WebGL canvas
+   * (info panel, loading layer) can't swallow the gesture.
    */
   function setupCrateSwipeNavigation() {
     var root = document.getElementById("cratedigger");
     if (!root) return;
-    var SWIPE_PX = 38;
-    var SWIPE_TIME_MS = 700;
+    var STEP_PX = 32;
+    var H_THRESHOLD = 12;
     var startX = 0;
     var startY = 0;
-    var startT = 0;
+    var lastStepX = 0;
     var tracking = false;
+    var horizontalLocked = false;
+    var suppressClick = false;
 
-    function onStart(e) {
-      var t = e.touches && e.touches[0];
-      if (!t) return;
-      startX = t.clientX;
-      startY = t.clientY;
-      startT = Date.now();
-      tracking = true;
+    function inCrate(target) {
+      return !!(target && root.contains(target));
     }
 
-    function onEnd(e) {
-      if (!tracking) return;
-      tracking = false;
-      var t = (e.changedTouches && e.changedTouches[0]) || null;
-      if (!t) return;
-      var dx = t.clientX - startX;
-      var dy = t.clientY - startY;
-      var dt = Date.now() - startT;
-      if (dt > SWIPE_TIME_MS) return;
-      if (Math.abs(dx) < SWIPE_PX) return;
-      if (Math.abs(dx) <= Math.abs(dy)) return;
-      var btn = document.getElementById(dx < 0 ? "button-next" : "button-prev");
+    function clickNav(dir) {
+      var btn = document.getElementById(dir < 0 ? "button-next" : "button-prev");
       if (btn && typeof btn.click === "function") {
         btn.click();
       }
     }
 
-    function onCancel() {
-      tracking = false;
+    function onStart(e) {
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      if (!inCrate(e.target)) return;
+      startX = t.clientX;
+      startY = t.clientY;
+      lastStepX = t.clientX;
+      tracking = true;
+      horizontalLocked = false;
+      suppressClick = false;
     }
 
-    root.addEventListener("touchstart", onStart, { passive: true });
-    root.addEventListener("touchend", onEnd, { passive: true });
-    root.addEventListener("touchcancel", onCancel, { passive: true });
+    function onMove(e) {
+      if (!tracking) return;
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      var dx = t.clientX - startX;
+      var dy = t.clientY - startY;
+      if (!horizontalLocked) {
+        if (Math.abs(dx) < H_THRESHOLD && Math.abs(dy) < H_THRESHOLD) return;
+        if (Math.abs(dx) <= Math.abs(dy)) {
+          tracking = false;
+          return;
+        }
+        horizontalLocked = true;
+        suppressClick = true;
+      }
+      if (e.cancelable) e.preventDefault();
+      var deltaSinceStep = t.clientX - lastStepX;
+      while (Math.abs(deltaSinceStep) >= STEP_PX) {
+        clickNav(deltaSinceStep < 0 ? -1 : 1);
+        if (deltaSinceStep < 0) {
+          lastStepX -= STEP_PX;
+          deltaSinceStep += STEP_PX;
+        } else {
+          lastStepX += STEP_PX;
+          deltaSinceStep -= STEP_PX;
+        }
+      }
+    }
+
+    function onEnd() {
+      tracking = false;
+      horizontalLocked = false;
+    }
+
+    function onClickCapture(e) {
+      if (suppressClick) {
+        suppressClick = false;
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }
+
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd, { passive: true });
+    document.addEventListener("touchcancel", onEnd, { passive: true });
+    root.addEventListener("click", onClickCapture, true);
   }
 
   var remoteReady =
