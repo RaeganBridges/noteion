@@ -860,102 +860,6 @@
     });
   }
 
-  /**
-   * Mobile (≤700px) "shuffle in and out" effect: when a genre crate has
-   * more covers than fit on its single visible face, cycle through them
-   * while the crate is on-screen. Driven by IntersectionObserver so we
-   * only advance covers for cards the user is actually looking at, and
-   * paced by scroll movement so the artwork shuffles AS the user scrolls
-   * past — not on a metronome timer when the page is idle.
-   *
-   * Disabled above 700px (desktop / tablet keep the static shuffle
-   * controls, since multiple crates are visible at once).
-   */
-  function bindMobileCoverShuffle() {
-    var mq = window.matchMedia("(max-width: 700px)");
-    var observer = null;
-    var visible = new Set();
-    var lastScrollY = window.scrollY || 0;
-    var scrollAccum = 0;
-    var SHUFFLE_PX = 220;
-
-    function shuffleVisibleCards() {
-      visible.forEach(function (cardEl) {
-        var $card = $(cardEl);
-        var $inner = $card.find(".card-inner");
-        var $face = $card.find(".card-face");
-        var covers = $inner.data("noteionBoardCovers") || [];
-        if (covers.length < 2) return;
-        var raw = (cardEl.id || "").replace(/^genre-card-/, "");
-        var rank = parseInt(raw, 10);
-        if (isNaN(rank) || rank < 1) return;
-        var cur = getStoredCoverIdx(rank) % covers.length;
-        var next = (cur + 1) % covers.length;
-        setStoredCoverIdx(rank, next);
-        applyInnerBoardCover($inner, covers, next);
-        applyFaceBoardCover($face, covers, next);
-      });
-    }
-
-    function onScroll() {
-      var y = window.scrollY || 0;
-      scrollAccum += Math.abs(y - lastScrollY);
-      lastScrollY = y;
-      if (scrollAccum >= SHUFFLE_PX) {
-        scrollAccum = 0;
-        shuffleVisibleCards();
-      }
-    }
-
-    function enable() {
-      if (observer) return;
-      var cards = document.querySelectorAll(".genre-card");
-      if (!cards.length || !("IntersectionObserver" in window)) return;
-      observer = new IntersectionObserver(
-        function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting && entry.intersectionRatio >= 0.55) {
-              visible.add(entry.target);
-            } else {
-              visible.delete(entry.target);
-            }
-          });
-        },
-        { threshold: [0, 0.55, 1] }
-      );
-      cards.forEach(function (c) {
-        observer.observe(c);
-      });
-      lastScrollY = window.scrollY || 0;
-      scrollAccum = 0;
-      window.addEventListener("scroll", onScroll, { passive: true });
-    }
-
-    function disable() {
-      if (!observer) return;
-      observer.disconnect();
-      observer = null;
-      visible.clear();
-      window.removeEventListener("scroll", onScroll);
-    }
-
-    function sync() {
-      if (mq.matches) enable();
-      else disable();
-    }
-
-    sync();
-    if (typeof mq.addEventListener === "function") {
-      mq.addEventListener("change", sync);
-    } else if (typeof mq.addListener === "function") {
-      mq.addListener(sync);
-    }
-    $(window).on("songshare:remote-posts", function () {
-      disable();
-      window.setTimeout(sync, 0);
-    });
-  }
-
   function bindBoardScrollWheel() {
     var el = document.querySelector(".board-scroll");
     if (!el) return;
@@ -989,7 +893,6 @@
     bindLoading();
     bindParallax();
     bindBoardScrollWheel();
-    bindMobileCoverShuffle();
 
     $(window).on("songshare:remote-posts", function () {
       if (!getGenres().length) return;
