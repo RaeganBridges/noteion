@@ -48,6 +48,54 @@ body {
   font-family: var(--font-roboto);
   color: var(--cream);
   background: var(--void);
+  /* Gold-accent scrollbar (Firefox + others) */
+  scrollbar-color: var(--accent) rgba(12, 12, 14, 0.55);
+  scrollbar-width: thin;
+  /* Retro vinyl-record cursor — small black disc with gold label and a
+     gold tonearm/needle pointing into the hot-spot at the upper-left.
+     Falls back to `auto` if the browser refuses the data URL. */
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g><circle cx='17' cy='17' r='9' fill='%23070707' stroke='%23c4a574' stroke-width='1'/><circle cx='17' cy='17' r='6' fill='none' stroke='%23222' stroke-width='0.6'/><circle cx='17' cy='17' r='4' fill='none' stroke='%23222' stroke-width='0.6'/><circle cx='17' cy='17' r='2.4' fill='%23c4a574'/><circle cx='17' cy='17' r='0.7' fill='%23070707'/><line x1='2' y1='2' x2='14' y2='14' stroke='%23c4a574' stroke-width='2' stroke-linecap='round'/><circle cx='14' cy='14' r='1.6' fill='%23c4a574'/></g></svg>")
+      2 2,
+    auto;
+}
+
+/* Pointer-style affordances (links, buttons) get a slightly larger,
+   "gold needle pointing right" variant so interactive elements still
+   feel distinct from idle hover. */
+a,
+button,
+[role="button"],
+.icon-btn,
+input[type="submit"],
+input[type="button"],
+.header-compose-btn,
+.profile-new-song,
+.profile-new-album {
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'><g><circle cx='20' cy='20' r='8' fill='%23070707' stroke='%23c4a574' stroke-width='1.2'/><circle cx='20' cy='20' r='5' fill='none' stroke='%23333' stroke-width='0.6'/><circle cx='20' cy='20' r='2.2' fill='%23c4a574'/><circle cx='20' cy='20' r='0.6' fill='%23070707'/><path d='M3 3 L14 14 L9 14 L14 19 L19 14 L14 14 Z' fill='%23c4a574' stroke='%23070707' stroke-width='0.6' stroke-linejoin='round'/></g></svg>")
+      3 3,
+    pointer;
+}
+
+/* Gold-accent scrollbar (WebKit / Blink: Safari, Chrome, Edge). */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: rgba(12, 12, 14, 0.55);
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 999px;
+  border: 2px solid rgba(12, 12, 14, 0.55);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--accent) 80%, white 20%);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 body.is-popup-open {
@@ -1459,33 +1507,40 @@ body.is-popup-open {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 700px) {
   :root {
     --shell-header-offset: 7.3rem;
   }
 
+  /* Two-row layout on mobile:
+       Row 1: title (left)  ·  icons (right)   ← inline together
+       Row 2: NEW SONG / NEW ALBUM toggle (full width) */
   .page-header {
-    grid-template-columns: 1fr;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "brand   actions"
+      "toggle  toggle" !important;
+    align-items: center !important;
+    row-gap: 0.6rem;
   }
 
-  /* Stack order on mobile: brand → icon row → new-song/new-album. */
   .header-brand {
-    order: 1;
+    grid-area: brand !important;
+    justify-self: start !important;
   }
 
   .header-actions {
-    order: 2;
-    align-self: flex-end;
-    justify-self: end;
-    margin-top: 0;
+    grid-area: actions !important;
+    align-self: center !important;
+    justify-self: end !important;
+    margin-top: 0 !important;
   }
 
   .header-compose-toggle {
-    order: 3;
-    width: 100%;
-    max-width: min(22rem, 100%);
-    justify-self: center;
+    grid-area: toggle !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-self: stretch !important;
   }
 
   .header-compose-btn {
@@ -1618,8 +1673,11 @@ body.is-popup-open {
 
 /* Lock the home shelf to the viewport on desktop so the page never
    scrolls vertically. Scoped via :has(#genre-board) so it only
-   applies to the home page; other pages keep their normal scroll. */
-@media (min-width: 700px) {
+   applies to the home page; other pages keep their normal scroll.
+   Breakpoint is 901px+ to match the mobile/tablet shelf reflow at
+   max-width: 900px below — otherwise tablets would inherit the
+   desktop overflow lock and lose vertical scroll. */
+@media (min-width: 901px) {
   html:has(#genre-board),
   body:has(#genre-board) {
     overflow: hidden;
@@ -2113,17 +2171,57 @@ body.is-popup-open {
       calc((var(--shelf-album-size) + var(--shelf-top-height) + 0.6rem) * 2)
     ) !important;
     max-height: none !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
   /* Break the desktop "lock to viewport" flex chain so content drives
-     height and the body scrolls naturally on phones/tablets. */
+     height and the document scrolls naturally on phones/tablets.
+     IMPORTANT: only ONE element should be the scroll container — the
+     <html> element. body / .page must be `overflow: visible` and
+     content-driven height so they don't trap the shelf inside their
+     own scroll context (which made scrolling feel buggy / clipped).
+     Horizontal overflow is suppressed at the html level so the
+     document never scrolls sideways. */
+  html:has(#genre-board) {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: 100dvh !important;
+    max-width: 100% !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain !important;
+  }
+  body:has(#genre-board) {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    max-width: 100% !important;
+  }
+
+  .page:has(#genre-board) {
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
   .page-main {
     flex: 0 0 auto !important;
     min-height: auto !important;
+    /* Use overflow: visible (instead of overflow-x: hidden) so the
+       element doesn't become a scroll container. The horizontal axis
+       is already locked by `body { overflow-x: hidden }`, so we don't
+       need to clip here. Setting overflow-x to a non-visible value
+       would force the y-axis into `auto`, trapping the shelf inside
+       page-main and blocking the body's natural scroll. */
     overflow: visible !important;
+    /* Reserve enough room below the shelf so when the user scrolls all
+       the way down the bottom row sits a couple rems above the fixed
+       footer (footer height + ~2rem visual gap). */
+    padding-bottom: calc(var(--shell-footer-offset) + 0.75rem) !important;
   }
   .board-wrap {
-    padding: 1.5rem 0 2.5rem !important;
+    padding: 1.5rem 0 0 !important;
     flex: 0 0 auto !important;
     min-height: auto !important;
     overflow: visible !important;
@@ -2132,11 +2230,27 @@ body.is-popup-open {
     flex: 0 0 auto !important;
     min-height: auto !important;
     overflow: visible !important;
-    padding: 1.5rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left)) !important;
+    padding: 1.5rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)) !important;
   }
   #genre-board.scrapbook-board {
     flex: 0 0 auto !important;
     align-items: flex-start !important;
+    justify-content: center !important;
     min-height: auto !important;
+  }
+
+  /* Lock the layered home-page backdrop to the viewport on mobile so
+     the dark wood gradient covers every pixel from the header all
+     the way down past the last shelf row to the footer (instead of
+     only the .page-main box, which can leave a gap at the bottom of
+     long shelves). Using position: fixed pins the backdrop to the
+     viewport, so it stays full-bleed while the content scrolls. */
+  .page:has(#genre-board) .main-back,
+  .page:has(#genre-board) .main-book,
+  .page:has(#genre-board) .main-fore {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
   }
 }

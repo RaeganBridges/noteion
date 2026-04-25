@@ -6,6 +6,60 @@ html.crate-page-root {
   --crate-genre-overlay: hsl(36, 20%, 56%);
 }
 
+/* The crate page no longer has the New Song / New Album pill in the
+   header (it was moved into the filter bar), so the header is shorter
+   on mobile than the global default. Trim the offset so the filter bar
+   doesn't sit below a chunk of empty space. */
+@media (max-width: 700px) {
+  html.crate-page-root {
+    --shell-header-offset: 4.4rem;
+  }
+
+  /* The crate page header has no compose-toggle row anymore (moved into
+     the filter bar), so collapse the header to a single row and trim
+     the vertical padding. The padding is symmetric (after the iOS
+     safe-area inset is added on top), so the brand and icon row sit
+     visually centered within the header. */
+  html.crate-page-root .page-header {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "brand actions" !important;
+    align-items: center !important;
+    padding-top: calc(var(--safe-y-top, 0px) + 0.9rem) !important;
+    padding-bottom: 0.35rem !important;
+    row-gap: 0 !important;
+  }
+
+  html.crate-page-root .header-brand,
+  html.crate-page-root .header-actions {
+    align-self: center !important;
+  }
+
+  html.crate-page-root .header-actions {
+    transform: translateY(-2px);
+  }
+}
+
+/* Desktop: center the header contents vertically too so the brand and
+   icon nav line up nicely. Symmetric padding (after safe-area inset)
+   so the visible content sits in the middle. */
+.crate-page-root .page-header {
+  align-items: center;
+  padding-top: calc(var(--safe-y-top, 0px) + 0.85rem);
+  padding-bottom: 0.85rem;
+}
+
+.crate-page-root .header-brand,
+.crate-page-root .header-actions {
+  align-self: center;
+}
+
+/* Filter bar items are centered as a unit; ensure each child also
+   self-centers so the filter, nav, compose pill, and now-showing
+   strip all read on the same baseline. */
+.crate-page-root .crate-filter-bar > * {
+  align-self: center;
+}
+
 html.crate-page-root,
 body.crate-page {
   height: auto !important;
@@ -54,7 +108,10 @@ body.crate-page {
   background: transparent;
 }
 
-/* Filter bar + 3D stage: column flex so controls sit above the canvas (not under absolute #cratedigger) */
+/* Filter bar + 3D stage: column flex so controls sit above the canvas
+   (not under absolute #cratedigger). The wrap itself is transparent —
+   the canvas paints its own backdrop, and the body's body-level
+   gradient shows through behind the filter bar. */
 .crate-page-root .crate-stage-wrap {
   position: relative;
   z-index: 10;
@@ -65,18 +122,7 @@ body.crate-page {
   width: 100%;
   min-height: calc(100vh - var(--shell-header-offset) - var(--shell-footer-offset) - 0.5rem);
   min-height: calc(100dvh - var(--shell-header-offset) - var(--shell-footer-offset) - 0.5rem);
-  background:
-    linear-gradient(
-      185deg,
-      color-mix(in oklab, var(--crate-genre-overlay) 9%, transparent) 0%,
-      transparent 38%,
-      color-mix(in oklab, var(--crate-genre-overlay) 6%, var(--void)) 100%
-    ),
-    radial-gradient(
-      ellipse 95% 70% at 50% 100%,
-      color-mix(in oklab, var(--crate-genre-overlay) 7%, var(--void)) 0%,
-      var(--void) 62%
-    );
+  background: transparent;
 }
 
 .crate-page-root .crate-filter-bar {
@@ -84,12 +130,34 @@ body.crate-page {
   z-index: 20;
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.65rem 1rem;
-  padding: 0.65rem 0.85rem 0.5rem;
-  border-bottom: 1px solid color-mix(in oklab, var(--crate-genre-overlay) 22%, transparent);
-  background: color-mix(in oklab, var(--void) 88%, transparent);
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 1.4rem;
+  border-bottom: none;
+  background: transparent;
+}
+
+/* New-song / New-album pill lives inside the filter bar on the crate
+   page (moved out of the header). It sits at the end of the controls
+   row (after the filter icon and prev/show/next nav). Kept compact so
+   it doesn't crowd out the nav buttons. */
+.crate-page-root .crate-filter-bar .crate-filter-compose {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: none;
+  margin: 0 0 0 0.85rem;
+  order: 5;
+}
+
+.crate-page-root .crate-filter-bar .crate-filter-compose .header-compose-btn {
+  flex: 1 1 0;
+  width: 50%;
+  min-width: 0;
+  min-height: 1.85rem;
+  padding: 0.22rem 1.25rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
 }
 
 .crate-page-root .crate-filter-field {
@@ -97,6 +165,15 @@ body.crate-page {
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
+}
+
+/* Filter icon — desktop hides it (the "Filter" text label suffices),
+   mobile shows it inline next to the dropdown to replace the hidden
+   text label. */
+.crate-page-root .crate-filter-icon {
+  display: none;
+  flex: 0 0 auto;
+  color: rgba(250, 248, 240, 0.78);
 }
 
 .crate-page-root .crate-filter-label {
@@ -203,6 +280,15 @@ body.crate-page {
   display: none !important;
 }
 
+/* When cratedigger opens its info panel (the large title / artist /
+   cover overlay), the library adds .closed to #bottom-bar. Hide the
+   smaller now-showing strip in the filter bar at the same time so we
+   don't see the title and artist at two sizes simultaneously. */
+.crate-page-root #bottom-bar.closed ~ .crate-filter-now,
+.crate-page-root .crate-filter-bar:has(#bottom-bar.closed) .crate-filter-now {
+  display: none !important;
+}
+
 .crate-page-root .crate-filter-now-title {
   margin: 0;
   font-size: 0.92rem;
@@ -243,6 +329,150 @@ body.crate-page {
 
 .crate-page-root .crate-filter-now.no-meta-sep .crate-filter-now-sep {
   display: none;
+}
+
+/* On mobile, simplify the filter selector: hide the "Filter" label,
+   shrink the dropdown so it doesn't crowd the icon nav, and fit the
+   now-showing readout onto its own row beneath the filter bar. */
+@media (max-width: 700px) {
+  .crate-page-root .crate-filter-label {
+    display: none;
+  }
+
+  /* The filter dropdown collapses into a single icon-button on mobile.
+     The native <select> is layered transparently on top of the icon so
+     tapping the icon opens the platform's native picker — no JS, no
+     custom menu, and full accessibility/keyboard support. */
+  .crate-page-root .crate-filter-field {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border-radius: 6px;
+    background: rgba(18, 18, 20, 0.85);
+    border: 1px solid color-mix(in oklab, var(--crate-genre-overlay) 28%, rgba(255, 255, 255, 0.08));
+    color: rgba(250, 248, 240, 0.92);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .crate-page-root .crate-filter-field:hover,
+  .crate-page-root .crate-filter-field:focus-within {
+    background: color-mix(in oklab, var(--crate-genre-overlay) 22%, rgba(36, 36, 42, 0.95));
+    color: rgba(250, 248, 240, 1);
+  }
+
+  .crate-page-root .crate-filter-icon {
+    display: inline-flex;
+    color: currentColor;
+    pointer-events: none;
+  }
+
+  /* Native select stretched invisibly over the icon — its click opens
+     the platform's native dropdown / picker. */
+  .crate-page-root .crate-filter-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: transparent;
+    font-size: 0;
+    opacity: 0;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .crate-page-root .crate-filter-select:focus-visible {
+    box-shadow: none;
+    outline: none;
+  }
+
+  /* Mobile: detach the now-showing title/artist from the filter bar
+     visually so it reads as plain text sitting in the page below the
+     bar. We absolutely-position it so it overlays the top of the
+     crate stage rather than reflowing the layout — that way the 3D
+     crate doesn't get pushed downward when the strip becomes
+     visible after a record is selected. */
+  .crate-page-root .crate-filter-bar {
+    position: relative;
+  }
+
+  .crate-page-root .crate-filter-now {
+    order: 10;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin: 1.1rem 0 0;
+    padding: 0 1.15rem;
+    flex: none;
+    width: auto;
+    border-top: none;
+    background: transparent;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* New-song / New-album pill stays inline with the filter row on
+     mobile — sits on the far side of the filter button, after the
+     prev/show/next nav buttons, with a small gap to separate them. */
+  .crate-page-root .crate-filter-bar .crate-filter-compose {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 0 0 0.6rem !important;
+    order: 5 !important;
+  }
+
+  .crate-page-root .crate-filter-bar .crate-filter-compose .header-compose-btn {
+    flex: 1 1 0;
+    width: 50%;
+    min-width: 0;
+    min-height: 1.7rem;
+    padding: 0.2rem 1rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Pack the filter button and the prev/show/next nav buttons into a
+     single tight cluster at the start of the bar on mobile. All four
+     buttons share the same gap so they read as a unified row. The
+     bar's dark background is dropped so the now-showing title/artist
+     row sits cleanly on the page backdrop instead of on a black bar. */
+  .crate-page-root .crate-filter-bar {
+    justify-content: flex-start;
+    gap: 0.35rem;
+    padding: 0 1.15rem 0.7rem;
+    background: transparent;
+    border-bottom: none;
+  }
+
+  .crate-page-root #bottom-bar.crate-filter-nav {
+    margin-left: 0 !important;
+    gap: 0.35rem;
+  }
+
+  .crate-page-root .crate-filter-now-title {
+    max-width: 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .crate-page-root .crate-filter-now-meta {
+    max-width: 100%;
+  }
 }
 
 /* Inline nav group (moved from absolute bottom bar into filter bar). Overrides
@@ -286,6 +516,35 @@ body.crate-page {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+/* Icon-only nav buttons (PREV / SHOW / NEXT) — square footprint with
+   the SVG centered. The visible text is replaced by SVG icons; a
+   visually-hidden `<span class="sr-only">` keeps the accessible name. */
+.crate-page-root #bottom-bar.crate-filter-nav .bottom-bar-item--icon {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  letter-spacing: 0;
+}
+
+.crate-page-root #bottom-bar.crate-filter-nav .bottom-bar-item--icon svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  color: currentColor;
+}
+
+.crate-page-root .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .crate-page-root #bottom-bar.crate-filter-nav .bottom-bar-item:hover,
 .crate-page-root #bottom-bar.crate-filter-nav .bottom-bar-item:focus-visible {
   background: color-mix(in oklab, var(--crate-genre-overlay) 22%, rgba(36, 36, 42, 0.95)) !important;
@@ -293,10 +552,8 @@ body.crate-page {
   outline: none;
 }
 
-.crate-page-root #bottom-bar.crate-filter-nav #button-show {
-  background: color-mix(in oklab, var(--crate-genre-overlay) 32%, rgba(20, 20, 24, 0.9));
-  border-color: color-mix(in oklab, var(--crate-genre-overlay) 48%, rgba(255, 255, 255, 0.12));
-}
+/* The Show button shares the same neutral styling as Prev/Next — no
+   accent highlight. */
 
 /* Loading: spinning vinyl (replaces “Loading records…” text); tint follows genre via --crate-genre-overlay */
 .crate-page-root #cratedigger-loading {

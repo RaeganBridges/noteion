@@ -693,6 +693,7 @@
     setTimeout(captureCrateCameraPose, 260);
     startCrateCameraLock();
     startCrateNowShowing();
+    setupCrateSwipeNavigation();
 
     var ld = document.getElementById("cratedigger-loading");
     if (ld) {
@@ -917,6 +918,60 @@
     sortEl.addEventListener("change", function () {
       applyCrateRecordFilter();
     });
+  }
+
+  /**
+   * Touch swipe navigation: on touch devices, swiping horizontally over the
+   * 3D crate canvas flips to the previous/next record by simulating a click
+   * on the existing prev/next buttons (which the cratedigger library already
+   * has handlers for). Vertical swipes are ignored so the page can still
+   * scroll. We attach the listener with passive:true so we don't block
+   * default scrolling, but only trigger nav when the gesture is clearly
+   * horizontal (|dx| > |dy| and |dx| beyond a threshold).
+   */
+  function setupCrateSwipeNavigation() {
+    var root = document.getElementById("cratedigger");
+    if (!root) return;
+    var SWIPE_PX = 38;
+    var SWIPE_TIME_MS = 700;
+    var startX = 0;
+    var startY = 0;
+    var startT = 0;
+    var tracking = false;
+
+    function onStart(e) {
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+      startT = Date.now();
+      tracking = true;
+    }
+
+    function onEnd(e) {
+      if (!tracking) return;
+      tracking = false;
+      var t = (e.changedTouches && e.changedTouches[0]) || null;
+      if (!t) return;
+      var dx = t.clientX - startX;
+      var dy = t.clientY - startY;
+      var dt = Date.now() - startT;
+      if (dt > SWIPE_TIME_MS) return;
+      if (Math.abs(dx) < SWIPE_PX) return;
+      if (Math.abs(dx) <= Math.abs(dy)) return;
+      var btn = document.getElementById(dx < 0 ? "button-next" : "button-prev");
+      if (btn && typeof btn.click === "function") {
+        btn.click();
+      }
+    }
+
+    function onCancel() {
+      tracking = false;
+    }
+
+    root.addEventListener("touchstart", onStart, { passive: true });
+    root.addEventListener("touchend", onEnd, { passive: true });
+    root.addEventListener("touchcancel", onCancel, { passive: true });
   }
 
   var remoteReady =

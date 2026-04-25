@@ -20,10 +20,6 @@
             <span class="logo-genre js-crate-genre-label" aria-live="polite">Genre</span>
           </h1>
         </div>
-        <div class="header-compose-toggle" role="group" aria-label="Create post type">
-          <a href="profile.html?compose=song" class="profile-new-song header-compose-btn">New song</a>
-          <a href="profile.html?compose=album" class="profile-new-album header-compose-btn">New album</a>
-        </div>
         <nav class="header-actions" aria-label="Toolbar">
           <button
             type="button"
@@ -60,9 +56,16 @@
 
       <main class="page-main crate-page-main">
         <div class="crate-stage-wrap">
-          <div class="crate-filter-bar" role="region" aria-label="Sort records">
+          <div class="crate-filter-bar" role="region" aria-label="Filter records">
+            <div class="header-compose-toggle crate-filter-compose" role="group" aria-label="Create post type">
+              <a href="profile.html?compose=song" class="profile-new-song header-compose-btn">New song</a>
+              <a href="profile.html?compose=album" class="profile-new-album header-compose-btn">New album</a>
+            </div>
             <label class="crate-filter-field">
-              <span class="crate-filter-label">Sort</span>
+              <svg class="crate-filter-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 5h16M7 12h10M10 19h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="crate-filter-label">Filter</span>
               <select id="crate-filter-sort" class="crate-filter-select">
                 <option value="date-desc" selected>Posted: Newest first</option>
                 <option value="date-asc">Posted: Oldest first</option>
@@ -95,9 +98,25 @@
               role="group"
               aria-label="Record navigation"
             >
-              <div id="button-prev" class="bottom-bar-item" role="button" tabindex="0">Previous</div>
-              <div id="button-show" class="bottom-bar-item" role="button" tabindex="0">Show</div>
-              <div id="button-next" class="bottom-bar-item" role="button" tabindex="0">Next</div>
+              <div id="button-prev" class="bottom-bar-item bottom-bar-item--icon" role="button" tabindex="0" aria-label="Previous record" title="Previous">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="sr-only">Previous</span>
+              </div>
+              <div id="button-show" class="bottom-bar-item bottom-bar-item--icon" role="button" tabindex="0" aria-label="Show record details" title="Show">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span class="sr-only">Show</span>
+              </div>
+              <div id="button-next" class="bottom-bar-item bottom-bar-item--icon" role="button" tabindex="0" aria-label="Next record" title="Next">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="sr-only">Next</span>
+              </div>
             </div>
           </div>
           <div id="cratedigger">
