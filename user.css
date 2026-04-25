@@ -42,7 +42,7 @@
 
 .user-name {
   margin: 0.25rem 0 0.4rem;
-  font-size: clamp(1.25rem, 3.2vw, 1.9rem);
+  font-size: clamp(1.25rem, 2.6vw, 1.6rem);
   font-weight: 800;
   letter-spacing: 0.03em;
   color: var(--cream, #f6f3ea);

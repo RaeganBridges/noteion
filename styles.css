@@ -24,9 +24,9 @@
   --shadow: rgba(0, 0, 0, 0.45);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   /* Two-row horizontal strip: large “album” tiles */
-  --album-size: clamp(9.1rem, 27.5vmin, 14.6rem);
-  --album-gap-row: clamp(3.7rem, 9vmin, 5.7rem);
-  --album-gap-col: clamp(4.5rem, 10vmin, 7.2rem);
+  --album-size: clamp(9.1rem, 22vmin, 12.5rem);
+  --album-gap-row: clamp(3.7rem, 7.5vmin, 4.9rem);
+  --album-gap-col: clamp(4.5rem, 8.5vmin, 6.2rem);
   /* Half-step offset so the bottom row sits between top-row albums */
   --album-stagger: calc((var(--album-size) + var(--album-gap-col)) * 0.5);
   --safe-x: env(safe-area-inset-left, 0px);
@@ -172,7 +172,7 @@ body.is-popup-open {
 .logo {
   margin: 0;
   font-family: var(--font-logo);
-  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-size: clamp(1.35rem, 2.5vw, 1.6rem);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -235,7 +235,7 @@ body.is-popup-open {
   align-items: center;
   justify-content: center;
   min-height: 2.2rem;
-  min-width: clamp(6.25rem, 14vw, 9rem);
+  min-width: clamp(6.25rem, 11vw, 7.75rem);
   padding: 0.32rem 0.8rem;
   border-radius: 999px;
   font-family: var(--font-rajdhani);
@@ -966,14 +966,14 @@ body.is-popup-open {
   position: absolute;
   top: 0.45rem;
   left: 0.5rem;
-  font-size: clamp(0.62rem, 2vmin, 0.78rem);
+  font-size: clamp(0.62rem, 1.65vmin, 0.7rem);
   font-weight: 800;
   color: rgba(0, 0, 0, 0.38);
   letter-spacing: 0.02em;
 }
 
 .genre-name {
-  font-size: clamp(0.92rem, 3.2vmin, 1.35rem);
+  font-size: clamp(0.92rem, 2.6vmin, 1.18rem);
   font-weight: 700;
   line-height: 1.15;
   text-transform: capitalize;
@@ -1575,8 +1575,8 @@ body.is-popup-open {
   }
 
   :root {
-    --album-gap-col: clamp(1.35rem, 5vmin, 3.5rem);
-    --album-gap-row: clamp(1.35rem, 4.5vmin, 3rem);
+    --album-gap-col: clamp(1.35rem, 4.2vmin, 3rem);
+    --album-gap-row: clamp(1.35rem, 3.8vmin, 2.6rem);
   }
 }
 
@@ -1643,7 +1643,7 @@ body.is-popup-open {
    back inside each cubby. Inspired by a real record-store display. */
 
 :root {
-  --shelf-album-size: clamp(6.6rem, 18.5vmin, 10.5rem);
+  --shelf-album-size: clamp(6.6rem, 15vmin, 9rem);
   --shelf-bin-pad-x: 0.35rem;
   --shelf-wall-thickness: 0.55rem;
   --shelf-bin-width: calc(var(--shelf-album-size) + var(--shelf-bin-pad-x) * 2 + var(--shelf-wall-thickness));
@@ -2126,7 +2126,7 @@ body.is-popup-open {
 
 .genre-bin-tag-name {
   font-family: var(--font-sf-pro-display, var(--font-roboto));
-  font-size: clamp(0.78rem, 1.7vmin, 0.98rem);
+  font-size: clamp(0.78rem, 1.4vmin, 0.88rem);
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;

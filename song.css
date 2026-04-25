@@ -74,7 +74,7 @@
   width: 100%;
   max-width: min(calc(2 * var(--letter-short) + 4rem), 100%);
   padding: 0 max(1rem, env(safe-area-inset-right)) 2.5rem max(1rem, env(safe-area-inset-left));
-  margin-bottom: clamp(2.5rem, 7vh, 3.5rem);
+  margin-bottom: clamp(2.5rem, 5.8vh, 3rem);
 }
 
 .logo-genre {
@@ -95,7 +95,7 @@
 }
 
 .detail-panels {
-  --detail-panel-gap: clamp(1.25rem, 3vw, 2.5rem);
+  --detail-panel-gap: clamp(1.25rem, 2.5vw, 2rem);
   position: relative;
   display: flex;
   flex-wrap: wrap;
@@ -130,7 +130,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: clamp(0.75rem, 2vw, 1.35rem);
+  gap: clamp(0.75rem, 1.65vw, 1.1rem);
 }
 
 @media (max-width: 1100px) {
@@ -514,7 +514,7 @@
 
 .detail-meaning {
   font-family: var(--font-roboto);
-  font-size: clamp(0.9rem, 2.2vw, 1.02rem);
+  font-size: clamp(0.9rem, 1.85vw, 0.96rem);
   line-height: 1.58;
   color: #252220;
 }
@@ -545,7 +545,7 @@
 
 .detail-song-title {
   font-family: var(--font-roboto);
-  font-size: clamp(1.35rem, 4.5vw, 2rem);
+  font-size: clamp(1.35rem, 3.6vw, 1.7rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -556,7 +556,7 @@
 .detail-song-artist {
   margin: 0.35rem 0 0.5rem;
   font-family: var(--font-roboto);
-  font-size: clamp(0.88rem, 2.3vw, 1.05rem);
+  font-size: clamp(0.88rem, 1.9vw, 0.95rem);
   font-weight: 500;
   color: #5b4dc9;
 }
@@ -633,8 +633,8 @@
 
 .detail-lyrics-scroll-inner {
   position: relative;
-  padding-left: clamp(2.85rem, 11vw, 3.65rem);
-  padding-right: clamp(2.45rem, 10vw, 3.15rem);
+  padding-left: clamp(2.85rem, 9vw, 3.2rem);
+  padding-right: clamp(2.45rem, 8vw, 2.75rem);
 }
 
 /* Lyric sheet: title / artist / body — left-aligned stanzas like a lyric app */
@@ -642,7 +642,7 @@
   margin: 0;
   padding: clamp(0.65rem, 2.5%, 1.1rem) clamp(0.35rem, 1.5%, 0.75rem) clamp(0.85rem, 3%, 1.35rem);
   font-family: var(--font-roboto);
-  font-size: clamp(0.86rem, 2vw, 0.98rem);
+  font-size: clamp(0.86rem, 1.7vw, 0.9rem);
   font-weight: 400;
   line-height: 1.45;
   letter-spacing: 0.01em;
@@ -710,7 +710,7 @@
   position: absolute;
   z-index: 2;
   box-sizing: border-box;
-  width: clamp(2.75rem, 22vw, 6.25rem);
+  width: clamp(2.75rem, 18vw, 5rem);
   max-width: 38%;
   padding: 0.45rem 0.5rem;
   font-size: 0.68rem;

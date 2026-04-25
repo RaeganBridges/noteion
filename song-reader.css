@@ -37,7 +37,7 @@
 
 .reader-title {
   margin: 0;
-  font-size: clamp(1.25rem, 4vw, 1.65rem);
+  font-size: clamp(1.25rem, 3.3vw, 1.4rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--cream, #f6f3ea);
@@ -60,7 +60,7 @@
 
 .reader-lyrics {
   font-family: var(--font-roboto);
-  font-size: clamp(0.88rem, 2.2vw, 1rem);
+  font-size: clamp(0.88rem, 1.85vw, 0.92rem);
   line-height: 1.55;
   color: rgba(250, 248, 240, 0.92);
   white-space: pre-wrap;

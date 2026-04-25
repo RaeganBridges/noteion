@@ -16,7 +16,7 @@
     calc(min(var(--letter-long), var(--desk-vertical-budget)) * 8.5 / 11)
   );
   --sheet-w: calc(var(--sheet-w-raw) * var(--desk-sheet-scale));
-  --desk-overlap: clamp(1.4rem, 4.6vw, 2.35rem);
+  --desk-overlap: clamp(1.4rem, 3.8vw, 2rem);
 }
 
 @supports (height: 100dvh) {
@@ -68,7 +68,7 @@ body.composer-open {
 
 .profile-welcome {
   margin: 0;
-  font-size: clamp(1.05rem, 3vw, 1.35rem);
+  font-size: clamp(1.05rem, 2.5vw, 1.2rem);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -110,7 +110,7 @@ body.composer-open {
 
 .header-compose-toggle .header-compose-btn {
   min-height: 2.2rem;
-  min-width: clamp(6.25rem, 14vw, 9rem);
+  min-width: clamp(6.25rem, 11vw, 7.75rem);
   letter-spacing: 0.16em;
   font-size: 0.7rem;
   font-weight: 900;
@@ -337,7 +337,7 @@ body.composer-open {
 .desk-mini-song-title {
   margin: 0;
   font-family: var(--font-roboto);
-  font-size: clamp(0.68rem, 1.85vw, 0.82rem);
+  font-size: clamp(0.68rem, 1.55vw, 0.74rem);
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: -0.02em;
@@ -347,7 +347,7 @@ body.composer-open {
 .desk-mini-song-artist {
   margin: 0.42rem 0 0;
   font-family: var(--font-roboto);
-  font-size: clamp(0.58rem, 1.5vw, 0.68rem);
+  font-size: clamp(0.58rem, 1.25vw, 0.62rem);
   font-weight: 500;
   color: #5b4dc9;
 }
@@ -355,7 +355,7 @@ body.composer-open {
 .desk-mini-song-date {
   margin: 0.22rem 0 0;
   font-family: var(--font-roboto);
-  font-size: clamp(0.52rem, 1.35vw, 0.62rem);
+  font-size: clamp(0.52rem, 1.15vw, 0.56rem);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -370,7 +370,7 @@ body.composer-open {
 
 .desk-mini-song-lyrics .desk-card-stanza {
   margin: 0 0 0.55em;
-  font-size: clamp(0.54rem, 1.45vw, 0.65rem);
+  font-size: clamp(0.54rem, 1.2vw, 0.58rem);
   font-weight: 400;
   line-height: 1.35;
   color: #2a2a2a;
@@ -421,7 +421,7 @@ body.composer-open {
 }
 
 .desk-card-cover-initials {
-  font-size: clamp(1.75rem, 8vmin, 2.75rem);
+  font-size: clamp(1.75rem, 6.5vmin, 2.35rem);
   font-weight: 800;
   letter-spacing: 0.06em;
   color: rgba(250, 248, 240, 0.88);
@@ -449,7 +449,7 @@ body.composer-open {
 .desk-card-title {
   margin: 0;
   font-family: var(--font-roboto);
-  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  font-size: clamp(1.05rem, 2.3vw, 1.18rem);
   font-weight: 700;
   font-style: normal;
   line-height: 1.28;
@@ -460,7 +460,7 @@ body.composer-open {
 .desk-card-artist {
   margin: 0.62rem 0 0;
   font-family: var(--font-roboto);
-  font-size: clamp(0.82rem, 2.1vw, 0.95rem);
+  font-size: clamp(0.82rem, 1.75vw, 0.86rem);
   font-weight: 500;
   color: #5b4dc9;
 }
@@ -468,7 +468,7 @@ body.composer-open {
 .desk-card-date {
   margin: 0.28rem 0 0;
   font-family: var(--font-roboto);
-  font-size: clamp(0.6rem, 1.55vw, 0.7rem);
+  font-size: clamp(0.6rem, 1.3vw, 0.64rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -489,7 +489,7 @@ body.composer-open {
 
 .desk-card-stanza {
   margin: 0 0 1.05em;
-  font-size: clamp(0.72rem, 1.9vw, 0.84rem);
+  font-size: clamp(0.72rem, 1.6vw, 0.76rem);
   font-weight: 400;
   line-height: 1.38;
   letter-spacing: 0.01em;
@@ -535,7 +535,7 @@ body.composer-open {
 .desk-card-album-meta {
   margin: 0.35rem 0 0;
   font-family: var(--font-roboto);
-  font-size: clamp(0.72rem, 1.8vw, 0.82rem);
+  font-size: clamp(0.72rem, 1.5vw, 0.76rem);
   font-weight: 500;
   color: #6a6258;
 }
@@ -921,8 +921,8 @@ body.composer-open {
 .composer-lyrics-scroll-inner {
   position: relative;
   min-height: 100%;
-  padding-left: clamp(3.1rem, 13vw, 4rem);
-  padding-right: clamp(2.65rem, 11vw, 3.45rem);
+  padding-left: clamp(3.1rem, 10.5vw, 3.45rem);
+  padding-right: clamp(2.65rem, 9vw, 2.9rem);
 }
 
 .composer-lyrics-ed {
@@ -975,7 +975,7 @@ body.composer-open {
   position: absolute;
   z-index: 2;
   box-sizing: border-box;
-  width: clamp(2.85rem, 24vw, 6.75rem);
+  width: clamp(2.85rem, 20vw, 5.5rem);
   max-width: 42%;
   padding: 0.35rem 0.35rem 0.45rem;
   font-size: 0.65rem;
