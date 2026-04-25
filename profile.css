@@ -210,13 +210,13 @@ body.composer-open {
   min-width: 0;
   overflow-x: hidden;
   margin: 0;
-  padding: 0.45rem max(1rem, env(safe-area-inset-right)) max(3rem, calc(1.5rem + env(safe-area-inset-bottom)))
-    max(1rem, env(safe-area-inset-left));
+  padding: 0.75rem max(1.75rem, env(safe-area-inset-right)) max(3rem, calc(1.75rem + env(safe-area-inset-bottom)))
+    max(1.75rem, env(safe-area-inset-left));
   box-sizing: border-box;
 }
 
 .profile-desk-heading {
-  margin: 0 0 0.5rem max(0.35rem, env(safe-area-inset-left));
+  margin: 0 0 0.75rem max(0.35rem, env(safe-area-inset-left));
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.22em;
@@ -228,7 +228,7 @@ body.composer-open {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
   align-items: start;
-  gap: 1rem;
+  gap: 1.6rem;
   overflow-x: hidden;
   overflow-y: visible;
   width: 100%;
@@ -822,8 +822,13 @@ body.composer-open {
 .composer-hl-tools {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.35rem;
   margin-bottom: 0.5rem;
+}
+
+.composer-hl-tools .profile-slip-btn {
+  margin-left: auto;
 }
 
 .composer-hl-title {
