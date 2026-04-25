@@ -35,10 +35,11 @@
 
 .auth-panel-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-family: var(--font-logo);
+  font-size: 1.35rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 
 .auth-panel-lede {
