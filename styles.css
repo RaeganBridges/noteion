@@ -2086,10 +2086,11 @@ body.is-popup-open {
 
 /* Responsive: on mobile the shelf reflows into a tall 2-column × 12-row
    layout so each album is large enough to tap. The page gains vertical
-   scrolling because 12 rows are taller than the viewport. */
-@media (max-width: 700px) {
+   scrolling because 12 rows are taller than the viewport. Breakpoint
+   is generous (900px) so portrait tablets reflow too. */
+@media (max-width: 900px) {
   :root {
-    --shelf-album-size: clamp(7rem, 36vw, 12rem);
+    --shelf-album-size: clamp(7rem, 38vw, 13rem);
     --shelf-lip-height: 3.25rem;
     --shelf-top-height: 0.5rem;
     --shelf-base-height: 0.6rem;
@@ -2097,31 +2098,38 @@ body.is-popup-open {
   }
 
   .scrapbook-row--shelf {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(12, 1fr);
-    aspect-ratio: 2 / 12;
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-rows: repeat(12, 1fr) !important;
+    aspect-ratio: 2 / 12 !important;
     max-width: min(
       100%,
       calc((var(--shelf-album-size) + var(--shelf-top-height) + 0.6rem) * 2)
-    );
-    max-height: none;
+    ) !important;
+    max-height: none !important;
   }
 
-  /* Let the page grow taller than the viewport so all 12 rows are
-     reachable. Override the desktop "fit in viewport" chain. */
+  /* Break the desktop "lock to viewport" flex chain so content drives
+     height and the body scrolls naturally on phones/tablets. */
   .page-main {
-    overflow: visible;
+    flex: 0 0 auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
   }
   .board-wrap {
-    padding: 1.5rem 0 2.5rem;
-    min-height: 0;
+    padding: 1.5rem 0 2.5rem !important;
+    flex: 0 0 auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
   }
   .board-scroll {
-    overflow: visible;
-    flex: 0 0 auto;
+    flex: 0 0 auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    padding: 1.5rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left)) !important;
   }
   #genre-board.scrapbook-board {
-    flex: 0 0 auto;
-    align-items: flex-start;
+    flex: 0 0 auto !important;
+    align-items: flex-start !important;
+    min-height: auto !important;
   }
 }
