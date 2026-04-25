@@ -489,6 +489,32 @@
     };
     /* Hook the library's per-frame lookAt so we pin pose immediately before render. */
     patchCameraManagerLookAt(ref.cameraManager);
+    applyCrateCameraFov();
+  }
+
+  /**
+   * On phones the default camera shows three crates (the centered one plus
+   * its left/right neighbors peeking in). The product wants ONE crate on
+   * mobile, so we squeeze the camera's FOV down to zoom the centered record
+   * into the full viewport. Desktop keeps the wider FOV so adjacent records
+   * still hint at the rest of the genre.
+   */
+  function applyCrateCameraFov() {
+    if (!crateLockedPose || !crateLockedPose.camera) return;
+    var cam = crateLockedPose.camera;
+    if (typeof cam.fov !== "number") return;
+    if (typeof cam.__noteionBaseFov !== "number") {
+      cam.__noteionBaseFov = cam.fov;
+    }
+    var isMobile = window.matchMedia("(max-width: 700px)").matches;
+    var nextFov = isMobile ? cam.__noteionBaseFov * 0.45 : cam.__noteionBaseFov;
+    if (Math.abs(cam.fov - nextFov) < 0.01) return;
+    cam.fov = nextFov;
+    if (typeof cam.updateProjectionMatrix === "function") {
+      try {
+        cam.updateProjectionMatrix();
+      } catch (e) {}
+    }
   }
 
   function patchCameraManagerLookAt(cm) {
@@ -694,6 +720,15 @@
     startCrateCameraLock();
     startCrateNowShowing();
     setupCrateSwipeNavigation();
+    window.addEventListener("resize", applyCrateCameraFov, { passive: true });
+    if (window.matchMedia) {
+      var mq = window.matchMedia("(max-width: 700px)");
+      if (typeof mq.addEventListener === "function") {
+        mq.addEventListener("change", applyCrateCameraFov);
+      } else if (typeof mq.addListener === "function") {
+        mq.addListener(applyCrateCameraFov);
+      }
+    }
 
     var ld = document.getElementById("cratedigger-loading");
     if (ld) {
