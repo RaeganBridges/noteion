@@ -647,6 +647,102 @@
   }
 
   /**
+   * Press-and-hold on prev/next fires repeated clicks (same as keyboard repeat)
+   * so the crate keeps advancing while the control stays down.
+   */
+  function setupCrateNavButtonHoldRepeat() {
+    var prev = document.getElementById("button-prev");
+    var next = document.getElementById("button-next");
+    var HOLD_MS = 400;
+    var REPEAT_MS = 135;
+
+    function bindHold(btn) {
+      if (!btn || btn.__noteionHoldRepeatBound) return;
+      if (typeof btn.click !== "function") return;
+      btn.__noteionHoldRepeatBound = true;
+
+      var delayId = null;
+      var intervalId = null;
+      var repeated = false;
+      var activeId = null;
+
+      function clearTimers() {
+        if (delayId) {
+          clearTimeout(delayId);
+          delayId = null;
+        }
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
+
+      function swallowTrailingClick() {
+        window.requestAnimationFrame(function () {
+          btn.addEventListener(
+            "click",
+            function swallowOnce(ev) {
+              ev.preventDefault();
+              ev.stopImmediatePropagation();
+            },
+            { once: true, capture: true }
+          );
+        });
+      }
+
+      function onGlobalPointerEnd(e) {
+        if (activeId != null && e && e.pointerId != null && e.pointerId !== activeId) {
+          return;
+        }
+        window.removeEventListener("pointerup", onGlobalPointerEnd, true);
+        window.removeEventListener("pointercancel", onGlobalPointerEnd, true);
+        var didRepeat = repeated;
+        try {
+          if (activeId != null && typeof btn.releasePointerCapture === "function") {
+            btn.releasePointerCapture(activeId);
+          }
+        } catch (err3) {}
+        clearTimers();
+        if (didRepeat) {
+          swallowTrailingClick();
+        }
+        activeId = null;
+        repeated = false;
+      }
+
+      btn.addEventListener(
+        "pointerdown",
+        function (e) {
+          if (!e.isPrimary || e.button !== 0) return;
+          clearTimers();
+          repeated = false;
+          activeId = e.pointerId;
+          window.addEventListener("pointerup", onGlobalPointerEnd, true);
+          window.addEventListener("pointercancel", onGlobalPointerEnd, true);
+          try {
+            btn.setPointerCapture(e.pointerId);
+          } catch (err) {}
+          delayId = setTimeout(function () {
+            delayId = null;
+            repeated = true;
+            function fire() {
+              try {
+                btn.click();
+              } catch (err2) {}
+            }
+            fire();
+            intervalId = setInterval(fire, REPEAT_MS);
+          }, HOLD_MS);
+        },
+        { passive: true }
+      );
+    }
+
+    bindHold(prev);
+    bindHold(next);
+  }
+
+  /**
    * Cratedigger sizes the WebGL canvas from container dimensions. If the flex
    * chain yields 0×0 on first paint, the scene is invisible until a resize.
    */
@@ -697,6 +793,7 @@
     startCrateNowShowing();
     setupCrateSwipeNavigation();
     setupCrateMobileScrollbar();
+    setupCrateNavButtonHoldRepeat();
 
     var ld = document.getElementById("cratedigger-loading");
     if (ld) {
