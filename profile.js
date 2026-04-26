@@ -1494,9 +1494,19 @@
           albumArtist: albumArtist,
           albumTrackIndex: i,
           albumCoverDataUrl: coverUse,
+          createdAt:
+            existing && existing.createdAt != null && existing.createdAt !== ""
+              ? existing.createdAt
+              : tr.createdAt != null && tr.createdAt !== ""
+                ? tr.createdAt
+                : now,
+          updatedAt: now,
         };
         window.SongSharePublished.upsert(entry);
-        var o = Object.assign({}, tr, { songPublishedAt: songPublishedAt });
+        var o = Object.assign({}, tr, {
+          songPublishedAt: songPublishedAt,
+          createdAt: entry.createdAt,
+        });
         var ta = String(o.artist || "").trim() || albumArtist;
         o.streamLinks = mergeStreamLinks(
           buildAutoStreamLinks(ta, o.title),
@@ -1987,6 +1997,50 @@
     }
   }
 
+  function parsePostedMs(v) {
+    if (v == null || v === "") return NaN;
+    if (typeof v === "number" && !isNaN(v) && v > 0) return v;
+    if (typeof v === "string" && /^\d+$/.test(v.trim())) {
+      var asNum = parseInt(v, 10);
+      if (!isNaN(asNum) && asNum > 0) return asNum;
+    }
+    var n = Date.parse(String(v));
+    return !isNaN(n) && n > 0 ? n : NaN;
+  }
+
+  /** When the post hit the board (prefer published record; else desk snapshot). */
+  function postedMsForDesk(pubId, publishedPostById, fallbackMs) {
+    var p = pubId && publishedPostById ? publishedPostById[pubId] : null;
+    if (p) {
+      var c = parsePostedMs(p.createdAt);
+      if (!isNaN(c)) return c;
+      var u = parsePostedMs(p.updatedAt);
+      if (!isNaN(u)) return u;
+    }
+    return parsePostedMs(fallbackMs);
+  }
+
+  function fmtPostedDateTime(ms) {
+    if (isNaN(ms)) return "";
+    try {
+      return new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function appendDeskPostedAtRow($host, pubId, publishedPostById, fallbackMs, hasTagsAbove) {
+    if (!$host || !$host.length) return;
+    var ms = postedMsForDesk(pubId, publishedPostById, fallbackMs);
+    var label = fmtPostedDateTime(ms);
+    if (!label) return;
+    var $p = $("<p/>", {
+      class: "desk-card-posted-at" + (hasTagsAbove ? "" : " desk-card-posted-at--solo"),
+      text: "Posted " + label,
+    });
+    $host.append($p);
+  }
+
   /** Same chip row as song sheet footer: board colors + automatic “All genres”. */
   function appendDeskGenreTagsRow($container, genreTags) {
     var SP = window.SongSharePublished;
@@ -2276,9 +2330,17 @@
             );
             var $deskTags = $('<p class="desk-card-tags desk-card-tags--chips" />');
             appendDeskGenreTagsRow($deskTags, tr.genreTags);
-            if ($deskTags.contents().length) {
+            var hasTags = !!$deskTags.contents().length;
+            if (hasTags) {
               $panel.append($deskTags);
             }
+            appendDeskPostedAtRow(
+              $panel,
+              tr.pubId,
+              publishedPostById,
+              tr.createdAt || item.createdAt,
+              hasTags
+            );
             $panelsWrap.append($panel);
           });
           $prev.prop("disabled", true);
@@ -2312,9 +2374,11 @@
         );
         var $deskTags = $('<p class="desk-card-tags desk-card-tags--chips" />');
         appendDeskGenreTagsRow($deskTags, item.genreTags);
-        if ($deskTags.contents().length) {
+        var hasTags = !!$deskTags.contents().length;
+        if (hasTags) {
           $inner.append($deskTags);
         }
+        appendDeskPostedAtRow($inner, item.pubId, publishedPostById, item.createdAt, hasTags);
         $card.append($inner);
       }
       $card.css({
@@ -2422,6 +2486,19 @@
       "pub_" + now + "_" + Math.random().toString(36).slice(2, 9);
     var displayName = session.displayName || session.email || "Member";
     var existing = editingPubId ? findUpload(session, editingPubId) : null;
+    var existingPublished =
+      editingPubId && window.SongSharePublished && typeof window.SongSharePublished.loadAll === "function"
+        ? window.SongSharePublished.loadAll().find(function (p) {
+            return p.id === editingPubId;
+          })
+        : null;
+    var preservedPostCreatedAt = !editingPubId
+      ? now
+      : existingPublished && existingPublished.createdAt != null && existingPublished.createdAt !== ""
+        ? existingPublished.createdAt
+        : existing && existing.createdAt != null && existing.createdAt !== ""
+          ? existing.createdAt
+          : now;
     var songPublishedAt =
       manualReleaseMs || fetchedReleaseMs || (existing && existing.songPublishedAt ? existing.songPublishedAt : now);
     var hasMeaning = !!meaningText;
@@ -2451,6 +2528,8 @@
       genreTags: genreTags,
       stickyNotes: collectStickies(),
       albumCoverDataUrl: cover || "",
+      createdAt: preservedPostCreatedAt,
+      updatedAt: now,
     };
 
     if (editingPubId) {

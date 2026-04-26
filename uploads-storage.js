@@ -47,6 +47,7 @@
       meaningAuthor: raw.meaningAuthor || "",
       meaningPublishedAt: raw.meaningPublishedAt || null,
       songPublishedAt: coerceTrackSongPublishedAt(raw, publishedById),
+      createdAt: raw.createdAt != null && raw.createdAt !== "" ? raw.createdAt : null,
       genreTags: Array.isArray(raw.genreTags) ? raw.genreTags : [],
       stickyNotes: Array.isArray(raw.stickyNotes) ? raw.stickyNotes : [],
       audioName: raw.audioName || "",

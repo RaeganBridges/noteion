@@ -722,6 +722,24 @@ body.composer-open {
   color: rgba(44, 40, 36, 0.55);
 }
 
+/* Board post time — under genre chips (profile desk). */
+.desk-card-posted-at {
+  flex-shrink: 0;
+  margin: 0.22rem 0 0;
+  font-family: var(--font-roboto);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  color: rgba(90, 82, 72, 0.72);
+}
+
+.desk-card-posted-at--solo {
+  margin-top: auto;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(45, 40, 35, 0.1);
+}
+
 .profile-empty {
   margin: 0 0 1rem max(0.35rem, env(safe-area-inset-left));
   padding: 1.25rem 1.25rem;
