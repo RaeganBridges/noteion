@@ -33,7 +33,7 @@
     gate.innerHTML =
       '<div class="auth-panel">' +
       '<div class="auth-panel-header">' +
-      '<h2 id="auth-gate-title" class="auth-panel-title">Cr8Dig</h2>' +
+      '<h2 id="auth-gate-title" class="auth-panel-title">CR8DIG</h2>' +
       '<p class="auth-panel-lede">Sign in or create an account.</p>' +
       "</div>" +
       '<div class="auth-tabs" role="tablist">' +
