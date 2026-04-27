@@ -924,6 +924,25 @@ body.composer-open {
   min-width: 0;
 }
 
+.composer-title-search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.composer-title-search-row .profile-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.composer-title-search-row .profile-fetch-lyrics {
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0;
+  padding: 0 0.85rem;
+}
+
 .profile-label--inline {
   margin-top: 0.25rem;
 }
