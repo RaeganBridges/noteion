@@ -8,9 +8,14 @@
   "use strict";
 
   var PREFIX = "songShareModalCommentsV1:";
+  var PUB_PREFIX = "songSharePostCommentsV1:";
 
   function storageKey(genreId, trackIdx) {
     return PREFIX + String(genreId) + ":" + String(trackIdx);
+  }
+
+  function pubStorageKey(pubId) {
+    return PUB_PREFIX + String(pubId || "");
   }
 
   function normalizeComments(arr) {
@@ -34,6 +39,38 @@
     localStorage.setItem(storageKey(genreId, trackIdx), JSON.stringify(normalizeComments(items)));
   }
 
+  function loadPubLocal(pubId) {
+    if (!pubId) return [];
+    try {
+      var raw = localStorage.getItem(pubStorageKey(pubId));
+      var arr = raw ? JSON.parse(raw) : [];
+      return normalizeComments(arr);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function savePubLocal(pubId, items) {
+    if (!pubId) return;
+    localStorage.setItem(pubStorageKey(pubId), JSON.stringify(normalizeComments(items)));
+  }
+
+  function mergeCommentsById(primary, secondary) {
+    var out = [];
+    var seen = {};
+    function add(list) {
+      normalizeComments(list).forEach(function (c) {
+        var cid = String((c && c.id) || "");
+        if (!cid || seen[cid]) return;
+        seen[cid] = true;
+        out.push(c);
+      });
+    }
+    add(primary);
+    add(secondary);
+    return out;
+  }
+
   function findPublishedPost(pubId) {
     var SP = global.SongSharePublished;
     if (!pubId || !SP || typeof SP.loadAll !== "function") return null;
@@ -47,7 +84,9 @@
   function load(genreId, trackIdx, pubId) {
     if (pubId) {
       var post = findPublishedPost(pubId);
-      return post ? normalizeComments(post.comments) : [];
+      var remote = post ? normalizeComments(post.comments) : [];
+      var local = loadPubLocal(pubId);
+      return mergeCommentsById(local, remote);
     }
     return loadLocal(genreId, trackIdx);
   }
@@ -72,6 +111,7 @@
     var items = load(genreId, trackIdx, pubId);
     items.unshift(item);
     if (pubId) {
+      savePubLocal(pubId, items);
       return saveShared(pubId, items);
     }
     saveLocal(genreId, trackIdx, items);
@@ -84,6 +124,7 @@
       return x.id !== commentId;
     });
     if (pubId) {
+      savePubLocal(pubId, next);
       return saveShared(pubId, next);
     }
     saveLocal(genreId, trackIdx, next);
