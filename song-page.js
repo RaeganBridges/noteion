@@ -382,58 +382,66 @@
     function renderPageComments() {
       var session = window.SongShareAuth && window.SongShareAuth.getSession();
       var pubId = currentTrackPubId();
-      var comments = window.SongShareModalComments ? window.SongShareModalComments.load(id, idx, pubId) : [];
-      var $host = $(".js-page-comments").empty();
+      var trackSlot = idx;
+      var pending =
+        window.SongShareModalComments && typeof window.SongShareModalComments.load === "function"
+          ? window.SongShareModalComments.load(id, idx, pubId)
+          : Promise.resolve([]);
 
-      var $feedInner = $('<div class="page-comments__feed-inner" aria-live="polite" />');
-      if (!comments.length) {
-        $feedInner.append('<p class="page-comments__empty">No comments yet.</p>');
-      }
+      Promise.resolve(pending).then(function (comments) {
+        if (trackSlot !== idx) return;
+        var $host = $(".js-page-comments").empty();
 
-      comments.forEach(function (c) {
-        if (!c || !c.body) return;
-        var own = session && c.userId === session.userId;
-        var commentBy = String(c.displayName || "Member").trim() || "Member";
-        var commentByHref = profileHrefFor(c.userId, commentBy);
-        var delBtn = own
-          ? '<button type="button" class="page-comments__remove js-page-comment-remove" data-comment-id="' +
-            escapeHtml(c.id) +
-            '" aria-label="Delete your comment">×</button>'
-          : "";
-        $feedInner.append(
-          '<div class="page-comments__item">' +
-            delBtn +
-            '<div class="page-comments__meta">' +
-            '<a class="page-comments__author-link" href="' +
-            escapeHtml(commentByHref) +
-            '">' +
-            escapeHtml(commentBy) +
-            "</a>" +
-            (c.ts ? " · " + escapeHtml(fmtWhen(c.ts)) : "") +
-            "</div>" +
-            '<div class="page-comments__text">' +
-            escapeHtml(String(c.body)) +
-            "</div></div>"
+        var $feedInner = $('<div class="page-comments__feed-inner" aria-live="polite" />');
+        if (!comments.length) {
+          $feedInner.append('<p class="page-comments__empty">No comments yet.</p>');
+        }
+
+        comments.forEach(function (c) {
+          if (!c || !c.body) return;
+          var own = session && c.userId === session.userId;
+          var commentBy = String(c.displayName || "Member").trim() || "Member";
+          var commentByHref = profileHrefFor(c.userId, commentBy);
+          var delBtn = own
+            ? '<button type="button" class="page-comments__remove js-page-comment-remove" data-comment-id="' +
+              escapeHtml(c.id) +
+              '" aria-label="Delete your comment">×</button>'
+            : "";
+          $feedInner.append(
+            '<div class="page-comments__item">' +
+              delBtn +
+              '<div class="page-comments__meta">' +
+              '<a class="page-comments__author-link" href="' +
+              escapeHtml(commentByHref) +
+              '">' +
+              escapeHtml(commentBy) +
+              "</a>" +
+              (c.ts ? " · " + escapeHtml(fmtWhen(c.ts)) : "") +
+              "</div>" +
+              '<div class="page-comments__text">' +
+              escapeHtml(String(c.body)) +
+              "</div></div>"
+          );
+        });
+
+        $host.append(
+          $('<h2 class="page-comments__heading" id="page-comments-heading">Comments</h2>'),
+          $feedInner
         );
+
+        if (session) {
+          $host.append(
+            '<label class="page-comments__label" for="page-comment-input">Your comment</label>',
+            '<textarea id="page-comment-input" class="page-comments__input js-page-comment-input" rows="2" maxlength="600" spellcheck="true" placeholder="Write a comment…"></textarea>',
+            '<button type="button" class="page-comments__post js-page-comment-post">Post</button>'
+          );
+        } else {
+          $host.append(
+            '<p class="page-comments__guest">Sign in to post comments.</p>',
+            '<a class="page-comments__auth-link" href="home.html">Back to sign in</a>'
+          );
+        }
       });
-
-      $host.append(
-        $('<h2 class="page-comments__heading" id="page-comments-heading">Comments</h2>'),
-        $feedInner
-      );
-
-      if (session) {
-        $host.append(
-          '<label class="page-comments__label" for="page-comment-input">Your comment</label>',
-          '<textarea id="page-comment-input" class="page-comments__input js-page-comment-input" rows="2" maxlength="600" spellcheck="true" placeholder="Write a comment…"></textarea>',
-          '<button type="button" class="page-comments__post js-page-comment-post">Post</button>'
-        );
-      } else {
-        $host.append(
-          '<p class="page-comments__guest">Sign in to post comments.</p>',
-          '<a class="page-comments__auth-link" href="home.html">Back to sign in</a>'
-        );
-      }
     }
 
     function syncNavLinks() {
@@ -587,29 +595,35 @@
       if (!sess || !window.SongShareModalComments) return;
       var body = String($(".js-page-comments .js-page-comment-input").val() || "").trim();
       if (!body) return;
-      window.SongShareModalComments.append(
-        id,
-        idx,
-        {
-          id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10),
-          userId: sess.userId,
-          displayName: sess.displayName || sess.email || "Member",
-          body: body,
-          ts: new Date().toISOString(),
-        },
-        currentTrackPubId()
-      );
-      $(".js-page-comments .js-page-comment-input").val("");
-      renderPageComments();
+      Promise.resolve(
+        window.SongShareModalComments.append(
+          id,
+          idx,
+          {
+            id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10),
+            userId: sess.userId,
+            displayName: sess.displayName || sess.email || "Member",
+            body: body,
+            ts: new Date().toISOString(),
+          },
+          currentTrackPubId()
+        )
+      ).then(function () {
+        $(".js-page-comments .js-page-comment-input").val("");
+        renderPageComments();
+      });
     });
 
     $(document).on("click", ".js-page-comment-remove", function () {
       var cid = $(this).attr("data-comment-id");
       var sess = window.SongShareAuth && window.SongShareAuth.getSession();
       if (!sess || !cid || !window.SongShareModalComments) return;
-      window.SongShareModalComments.removeById(id, idx, cid, currentTrackPubId());
-      playDeleteSound();
-      renderPageComments();
+      Promise.resolve(window.SongShareModalComments.removeById(id, idx, cid, currentTrackPubId())).then(
+        function () {
+          playDeleteSound();
+          renderPageComments();
+        }
+      );
     });
 
     $(".js-prev").on("click", function (e) {

@@ -231,12 +231,15 @@
   position: absolute;
   top: 0.25rem;
   right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 1.35rem;
   height: 1.35rem;
   padding: 0;
   font: inherit;
   font-size: 1rem;
-  line-height: 1.8;
+  line-height: 1;
   color: #6a6258;
   cursor: pointer;
   background: transparent;
