@@ -374,9 +374,15 @@
       });
     }
 
+    function currentTrackPubId() {
+      var t = tracks[idx];
+      return t && t.pubId ? String(t.pubId) : "";
+    }
+
     function renderPageComments() {
       var session = window.SongShareAuth && window.SongShareAuth.getSession();
-      var comments = window.SongShareModalComments ? window.SongShareModalComments.load(id, idx) : [];
+      var pubId = currentTrackPubId();
+      var comments = window.SongShareModalComments ? window.SongShareModalComments.load(id, idx, pubId) : [];
       var $host = $(".js-page-comments").empty();
 
       var $feedInner = $('<div class="page-comments__feed-inner" aria-live="polite" />');
@@ -581,13 +587,18 @@
       if (!sess || !window.SongShareModalComments) return;
       var body = String($(".js-page-comments .js-page-comment-input").val() || "").trim();
       if (!body) return;
-      window.SongShareModalComments.append(id, idx, {
-        id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10),
-        userId: sess.userId,
-        displayName: sess.displayName || sess.email || "Member",
-        body: body,
-        ts: new Date().toISOString(),
-      });
+      window.SongShareModalComments.append(
+        id,
+        idx,
+        {
+          id: "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10),
+          userId: sess.userId,
+          displayName: sess.displayName || sess.email || "Member",
+          body: body,
+          ts: new Date().toISOString(),
+        },
+        currentTrackPubId()
+      );
       $(".js-page-comments .js-page-comment-input").val("");
       renderPageComments();
     });
@@ -596,7 +607,7 @@
       var cid = $(this).attr("data-comment-id");
       var sess = window.SongShareAuth && window.SongShareAuth.getSession();
       if (!sess || !cid || !window.SongShareModalComments) return;
-      window.SongShareModalComments.removeById(id, idx, cid);
+      window.SongShareModalComments.removeById(id, idx, cid, currentTrackPubId());
       playDeleteSound();
       renderPageComments();
     });
