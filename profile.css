@@ -974,10 +974,6 @@ body.composer-open {
   cursor: wait;
 }
 
-.profile-fetch-lyrics--mobile {
-  display: none;
-}
-
 .profile-lyrics-status {
   margin: 0 0 0.5rem;
   font-size: 0.74rem;
@@ -1696,18 +1692,14 @@ body.composer-open {
 }
 
 @media (max-width: 839px) {
-  .profile-fetch-lyrics--desktop {
-    display: none;
+  .composer-field--row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
   }
 
-  .profile-fetch-lyrics--mobile {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-end;
-    height: calc(1em + 1.1rem + 2px);
-    margin-bottom: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+  .composer-field--row .composer-field-grow {
+    flex: 1 1 auto;
   }
 }
 
